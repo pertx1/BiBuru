@@ -13,14 +13,14 @@ import { TaskSheet, type BizOption, type GoalOption } from "./task-sheet";
 type Group = { key: string; title: string; tone?: "danger"; tasks: TaskWithSubs[] };
 
 export function TaskList({
-  groups, businesses, goals, today, emptyText, showDone, defaultBusinessId,
+  groups, businesses, goals, today, emptyText, showDone, defaultBusinessId, openTask,
 }: {
-  groups: Group[]; businesses: BizOption[]; goals: GoalOption[]; today: string; emptyText: string; showDone?: boolean; defaultBusinessId?: string;
+  groups: Group[]; businesses: BizOption[]; goals: GoalOption[]; today: string; emptyText: string; showDone?: boolean; defaultBusinessId?: string; openTask?: TaskWithSubs | null;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [, start] = useTransition();
-  const [editing, setEditing] = useState<TaskWithSubs | null>(null);
+  const [editing, setEditing] = useState<TaskWithSubs | null>(openTask ?? null);
   const bizById = new Map(businesses.map((b) => [b.id, b]));
   const [hidden, hide] = useOptimistic<string[], string>([], (s, id) => [...s, id]);
 

@@ -16,9 +16,9 @@ function summary(o: Order) {
   return o.order_items.map((i) => `${i.quantity}× ${i.product_name}${i.color ? ` ${i.color}` : ""}${i.size ? ` ${i.size}` : ""}`).join(" · ");
 }
 
-export function OrdersView({ businessId, orders, products, today }: { businessId: string; orders: Order[]; products: Product[]; today: string }) {
+export function OrdersView({ businessId, orders, products, today, openOrder }: { businessId: string; orders: Order[]; products: Product[]; today: string; openOrder?: Order | null }) {
   const router = useRouter();
-  const [editing, setEditing] = useState<Order | "new" | null>(null);
+  const [editing, setEditing] = useState<Order | "new" | null>(openOrder ?? null);
   const [, start] = useTransition();
   const close = () => { setEditing(null); router.refresh(); };
 

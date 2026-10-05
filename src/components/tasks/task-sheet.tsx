@@ -2,7 +2,9 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { loadTaskMeta, setTaskFolder } from "@/app/(app)/notas/actions";
+import { TagPicker, type TagLite } from "@/components/notes/tag-picker";
 import { addSubtask, deleteTask, saveTask, setTaskDue, snoozeTask, toggleTask } from "@/app/(app)/tareas/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Select, Textarea } from "@/components/ui/field";
@@ -31,6 +33,14 @@ export function TaskSheet({
   const [error, setError] = useState<string | null>(null);
   const [rec, setRec] = useState<Recurrence | null>(parseRecurrence(task?.recurrence));
   const [sub, setSub] = useState("");
+  const [meta, setMeta] = useState<{ folders: { id: string; name: string; parent_id: string | null }[]; allTags: TagLite[]; tags: TagLite[]; folderId: string | null } | null>(null);
+  const taskId = task?.id;
+  useEffect(() => {
+    if (!open || !taskId) return;
+    let alive = true;
+    void loadTaskMeta(taskId).then((m) => { if (alive) setMeta(m); });
+    return () => { alive = false; };
+  }, [open, taskId]);
   const done = () => { onClose(); router.refresh(); };
 
   function submit(fd: FormData) {
@@ -91,6 +101,16 @@ export function TaskSheet({
             <Field label="Objetivo" htmlFor="t-goal" className="col-span-2"><Select id="t-goal" name="goal_id" defaultValue={task?.goal_id ?? ""}><option value="">Ninguno</option>{goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}</Select></Field>
           )}
         </div>
+        {task && meta && !task.parent_id && (
+          <>
+            <Field label="Carpeta" htmlFor="t-folder">
+              <Select id="t-folder" defaultValue={meta.folderId ?? ""} onChange={(e) => void setTaskFolder(task.id, e.target.value || null)}>
+                <option value="">Ninguna</option>{meta.folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </Select>
+            </Field>
+            <div><p className="mb-1.5 text-sm font-medium">Etiquetas</p><TagPicker itemType="task" itemId={task.id} tags={meta.tags} all={meta.allTags} /></div>
+          </>
+        )}
         {!task?.parent_id && <Field label="Repetir" htmlFor="t-rec"><RecurrenceField value={rec} onChange={setRec} /></Field>}
         <Field label="Notas" htmlFor="t-notes"><Textarea id="t-notes" name="notes" defaultValue={task?.notes ?? ""} maxLength={5000} className="min-h-20" /></Field>
 

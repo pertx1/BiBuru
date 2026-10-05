@@ -12,9 +12,9 @@ import { formatEUR } from "@/lib/money";
 import { CategoriesManager } from "./categories-manager";
 import { ExpenseForm } from "./expense-form";
 
-export function ExpensesView({ businessId, workspaceId, expenses, categories, today }: { businessId: string; workspaceId: string; expenses: Expense[]; categories: Category[]; today: string }) {
+export function ExpensesView({ businessId, workspaceId, expenses, categories, today, openExpense }: { businessId: string; workspaceId: string; expenses: Expense[]; categories: Category[]; today: string; openExpense?: Expense | null }) {
   const router = useRouter();
-  const [editing, setEditing] = useState<Expense | "new" | null>(null);
+  const [editing, setEditing] = useState<Expense | "new" | null>(openExpense ?? null);
   const close = () => { setEditing(null); router.refresh(); };
 
   return (

@@ -176,3 +176,10 @@ export async function listProducts(businessId: string): Promise<Product[]> {
   if (error) fail("productos", error);
   return data;
 }
+
+export async function getExpense(businessId: string, id: string): Promise<Expense | null> {
+  const { supabase, workspaceId } = await getContext();
+  const { data, error } = await supabase.from("expenses").select("*, expense_categories(name, color)").eq("workspace_id", workspaceId).eq("business_id", businessId).eq("id", id).maybeSingle();
+  if (error) fail("gasto", error);
+  return data as Expense | null;
+}
