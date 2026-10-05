@@ -54,6 +54,18 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Las funciones `is_workspace_member/admin` son `security definer` con
   `search_path = ''` y usan `(select auth.uid())` para evaluarse una vez por consulta.
 
+## Negocios, dinero y estadísticas (Fase 2)
+- Dinero en céntimos enteros (`src/lib/money.ts`); fechas contables como `date` ISO sin zona (`src/lib/dates.ts`),
+  solo "hoy" depende de Europe/Madrid. Nunca `float` ni `Date` para importes/fechas contables.
+- Agregados (totales, serie mensual, rankings) se calculan en Postgres con funciones `stats_*` `security invoker`
+  (RLS aplica). Los totales de cada pedido los mantiene el trigger `refresh_order_totals`.
+- Referencias entre tablas con FK compuesta `(id, workspace_id)`: un negocio de un workspace no se puede enlazar
+  desde otro. Toda tabla nueva sigue la misma plantilla (ver migración 2) y su test en `tests/`.
+- Borrados con "Deshacer": el cliente conserva una copia y la restaura con el mismo `id` (acciones de guardado
+  aceptan `id` y hacen upsert). No hay borrado lógico.
+- Tipos: `npm run db:types` regenera `database.types.ts` desde las migraciones (sin Docker).
+- Server Actions en `src/app/(app)/negocios/actions.ts`; lecturas en `src/lib/data.ts`.
+
 ## Seguridad
 - Secretos solo en servidor; en el cliente únicamente `NEXT_PUBLIC_*` (URL y clave
   publishable de Supabase).

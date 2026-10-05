@@ -3,7 +3,7 @@
 | Fase | Estado |
 |---|---|
 | 1 · Base (repo, Supabase, Vercel, login, navegación, PWA) | **Hecha en código, pendiente de tu verificación** |
-| 2 · Negocios, pedidos, gastos, estadísticas, importación PROFITY | Pendiente |
+| 2 · Negocios, pedidos, gastos, estadísticas, importación PROFITY | **Hecha en código, pendiente de tu verificación** |
 | 3 · Tareas, calendario, objetivos | Pendiente |
 | 4 · Captura, bandeja, notas, carpetas, búsqueda | Pendiente |
 | 5 · Notificaciones push y tareas programadas | Pendiente |
@@ -19,6 +19,30 @@
 - Navegación móvil (barra inferior + botón de captura) y escritorio (barra lateral).
 - PWA: manifest, iconos, service worker, página sin conexión, guía de instalación en iPhone.
 - CI en GitHub Actions y workflow para aplicar migraciones a Supabase.
+
+## Fase 2 — qué hay
+- Migración `20261006000001_businesses.sql`: negocios, categorías de gasto, productos, pedidos + líneas
+  (totales mantenidos por trigger), gastos (recurrentes y adjuntos), ingresos sueltos, estadísticas en SQL
+  (`stats_*`), bucket privado `receipts` con RLS. Referencias entre workspaces imposibles (FK compuestas).
+- App: `/negocios` (tarjetas por negocio con variación y vista global con comparativa), y por negocio:
+  Resumen, Pedidos (filtros, líneas, estado rápido), Gastos (filtros, categorías editables, recurrentes, foto del
+  ticket), Ingresos, Productos, Estadísticas (selector de periodo + comparación). Deshacer en vez de confirmar.
+  Exportación CSV de pedidos y gastos (`;`, coma decimal, BOM, anti-inyección de fórmulas).
+- Importación de PROFITY: `npm run import:profity:dry` (simula) y `npm run import:profity` (importa, repetible sin
+  duplicar, con conciliación de nº y suma entre origen y destino).
+- Tests: 22 de SQL/permisos, más dinero, fechas, validación, CSV e importación (unitarios).
+- Probado de extremo a extremo con Postgres + PostgREST reales locales (`scripts/e2e/`): crear negocio, pedido,
+  gasto, ingreso, estadísticas, CSV e importación (dos veces, sin duplicar).
+
+### Decisiones y diferencias respecto a PROFITY
+- Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
+  los pedidos es informativo (no se resta otra vez para no contar dos veces).
+- `price` de un pedido en PROFITY es el total. Si no es divisible entre la cantidad, se importa como 1 línea de
+  cantidad 1 con el total exacto (los totales mandan) y se avisa.
+- Los apuntes de Vinted (categoría/fuente «Vinted») se importan a un negocio aparte si se desea.
+- **Pendiente (Fase 2b, a decidir):** stock de camisetas y DTF, reglas de color DTF, bolsa de imprenta, facturas
+  (enlaces) y el endpoint de Antola de PROFITY. Mientras tanto, PROFITY debe seguir funcionando.
+- **Pendiente:** asistente de importación de Excel/CSV dentro de la app (alternativa al script).
 
 ## Pendiente de ti (Fase 1)
 Seguir los pasos de la Fase 1 (resumen en README): crear Supabase, aplicar migración, crear tu usuario,

@@ -23,6 +23,13 @@ npm run lint && npm run typecheck && npm test
 npm run test:db              # tests de permisos; necesita un Postgres local
 ```
 
+## Importar PROFITY
+```bash
+# En .env.local: PROFITY_DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+npm run import:profity:dry                       # simula: cuántos registros y qué totales
+npm run import:profity -- --email tu@correo.com  # importa (repetible sin duplicar) y concilia
+```
+
 ## Variables
 Todas están comentadas en `.env.example`. Los secretos nunca se suben al repositorio.
 
