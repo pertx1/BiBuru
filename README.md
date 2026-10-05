@@ -27,5 +27,6 @@ npm run test:db              # tests de permisos; necesita un Postgres local
 Todas están comentadas en `.env.example`. Los secretos nunca se suben al repositorio.
 
 ## Documentación
+`docs/Fase-1-Guia.pdf` (guía de puesta en marcha; se regenera con `node scripts/build-guides.mjs`) ·
 `CLAUDE.md` (arquitectura y convenciones, incluido cómo compartir espacios) ·
 `PROGRESS.md` (estado de cada fase).

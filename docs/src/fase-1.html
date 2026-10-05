@@ -1,0 +1,225 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page{size:A4;margin:18mm 16mm}
+body{font-family:system-ui,Helvetica,Arial,sans-serif;font-size:11.5pt;line-height:1.5;color:#1c1b17}
+h1{font-size:26pt;margin:0 0 4pt;color:#0f766e}
+h2{font-size:17pt;margin:26pt 0 8pt;padding-bottom:4pt;border-bottom:2px solid #0f766e;page-break-after:avoid}
+h3{font-size:12.5pt;margin:16pt 0 4pt;page-break-after:avoid}
+.sub{color:#6b6a63;margin-bottom:14pt}
+.box{border:1px solid #d9d6cc;border-left:5px solid #0f766e;background:#f4f8f7;padding:8pt 12pt;margin:10pt 0;border-radius:4pt;page-break-inside:avoid}
+.warn{border-left-color:#b45309;background:#fdf6ec}
+.danger{border-left-color:#b91c1c;background:#fdf0f0}
+ol,ul{padding-left:20pt}li{margin:4pt 0}
+code,.v{font-family:Menlo,Consolas,monospace;background:#efede6;padding:1pt 4pt;border-radius:3pt;font-size:10.5pt}
+pre{background:#1c1b17;color:#f1efe8;padding:10pt;border-radius:5pt;font-size:9.5pt;white-space:pre-wrap;word-break:break-all;page-break-inside:avoid}
+table{border-collapse:collapse;width:100%;margin:8pt 0;page-break-inside:avoid}
+td,th{border:1px solid #d9d6cc;padding:5pt 8pt;text-align:left;vertical-align:top;font-size:10.5pt}th{background:#efede6}
+.ck{display:inline-block;width:10pt;height:10pt;border:1.5px solid #1c1b17;margin-right:6pt;vertical-align:middle}
+b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;font-weight:600}
+.pb{page-break-before:always}
+</style></head><body>
+
+<h1>BiBuru · Fase 1</h1>
+<div class="sub">Guía paso a paso para dejar la base funcionando en tu ordenador y en tu iPhone. Tiempo estimado: 45–60 minutos. Coste: 0 €.</div>
+
+<div class="box"><b>Cómo leer esta guía.</b> Cada paso dice <b>dónde entrar</b>, <b>qué pulsar</b>, <b>qué copiar</b> y <b>dónde pegarlo</b>. Lo que va en <b class="k">este formato</b> es un botón o menú que ves en pantalla. Lo que va en <code>este otro</code> es texto que copias o escribes tal cual. Las páginas web cambian de diseño de vez en cuando: si un botón se llama algo parecido pero no idéntico, es ese. Si algo no coincide en absoluto, hazme una captura y dime en qué paso estás.</div>
+
+<h2>0 · Antes de empezar</h2>
+<p>Necesitas:</p>
+<ul>
+<li><span class="ck"></span>Un ordenador con Chrome (o el navegador que uses).</li>
+<li><span class="ck"></span>Tu iPhone con Safari (iOS 16.4 o superior; para las notificaciones de la Fase 5).</li>
+<li><span class="ck"></span>Acceso a tu correo <code>oiier.gsss@gmail.com</code> (recibirás códigos de acceso).</li>
+<li><span class="ck"></span>Tu cuenta de GitHub (usuario <code>pertx1</code>).</li>
+<li><span class="ck"></span>Un bloc de notas (o la app Notas) para ir pegando datos que vas a necesitar. Lo llamaremos <b>«mi bloc»</b>.</li>
+</ul>
+<div class="box warn"><b>Nada de esto pide tarjeta.</b> Supabase, Vercel y GitHub tienen planes gratuitos sin tarjeta. Si alguna pantalla te pide una tarjeta o te ofrece «Upgrade», <b>pulsa Cancelar / Skip / Continue with Hobby</b> y avísame.</div>
+<div class="box danger"><b>Regla de oro de seguridad.</b> Hay claves que se pueden pegar sin miedo en Vercel (las que te digo aquí) y claves que <b>no se comparten con nadie</b>, ni conmigo: la <i>contraseña de la base de datos</i> y la clave <i>service_role</i> / <i>secret</i> de Supabase. En esta fase no necesitas pegar ninguna de las dos en ningún sitio.</div>
+
+<h2>1 · Llevar el código a la rama principal de GitHub</h2>
+<p>Ahora mismo el código está en una rama de trabajo. Vercel despliega desde la rama <code>main</code>, así que hay que fusionarlas.</p>
+<ol>
+<li>Dime en el chat: <b>«crea la PR de la Fase 1»</b>. Yo abro una <i>Pull Request</i> (una propuesta de fusión) y te doy el enlace.</li>
+<li>Abre el enlace. Entra en GitHub (si te lo pide).</li>
+<li>Baja hasta el recuadro verde/gris y pulsa <b class="k">Merge pull request</b>.</li>
+<li>Pulsa <b class="k">Confirm merge</b>.</li>
+<li>Comprueba: entra en <code>https://github.com/pertx1/BiBuru</code> y verás carpetas como <code>src</code>, <code>supabase</code>, <code>docs</code>. Si la pestaña <b class="k">Actions</b> muestra un círculo naranja o un ✔ verde, es la comprobación automática; si sale una ✘ roja, dímelo.</li>
+</ol>
+
+<h2 class="pb">2 · Crear tu base de datos en Supabase</h2>
+<h3>2.1 Crear la cuenta</h3>
+<ol>
+<li>Entra en <code>https://supabase.com</code> y pulsa <b class="k">Start your project</b> (arriba a la derecha).</li>
+<li>Pulsa <b class="k">Continue with GitHub</b> y autoriza. Así no necesitas otra contraseña.</li>
+<li>Si te pide crear una <i>Organization</i>: nombre <code>Personal</code>, tipo <b class="k">Personal</b>, plan <b class="k">Free</b>. Pulsa <b class="k">Create organization</b>.</li>
+</ol>
+<h3>2.2 Crear el proyecto</h3>
+<ol>
+<li>Pulsa <b class="k">New project</b>.</li>
+<li><b>Name</b>: <code>biburu</code>.</li>
+<li><b>Database Password</b>: pulsa <b class="k">Generate a password</b>. <b>Cópiala a «mi bloc»</b> bajo el título «Contraseña BD Supabase». No la necesitarás ahora, pero si la pierdes se puede restablecer.</li>
+<li><b>Region</b>: elige <b class="k">West EU (Ireland)</b> o <b class="k">Central EU (Frankfurt)</b>. Cualquiera de Europa; más cerca = más rápido.</li>
+<li>Si aparece un <b>Pricing plan / Compute</b>, deja <b class="k">Free</b> (0 $/mes).</li>
+<li>Pulsa <b class="k">Create new project</b> y espera 1–2 minutos hasta que desaparezca la rueda de carga.</li>
+</ol>
+<div class="box"><b>Dato:</b> los proyectos gratuitos de Supabase se pausan si pasan 7 días sin ningún uso. Con el uso diario de la app (y el cron de la Fase 5) no ocurrirá. Si algún día ves «Project paused», entra y pulsa <b class="k">Restore project</b>.</div>
+
+<h3>2.3 Copiar la URL y la clave pública</h3>
+<ol>
+<li>En el menú izquierdo, abajo del todo, pulsa el engranaje <b class="k">Project Settings</b>.</li>
+<li>Pulsa <b class="k">API Keys</b> (en algunas versiones: <b class="k">API</b> o <b class="k">Data API</b>).</li>
+<li>Busca la <b>Project URL</b> (algo como <code>https://abcdefghijk.supabase.co</code>). Cópiala a «mi bloc» como <b>SUPABASE_URL</b>. Si no la ves en esa pantalla, está en <b class="k">Project Settings → Data API</b> o en <b class="k">General</b>.</li>
+<li>En <b>API Keys</b> busca la clave <b>Publishable key</b> (empieza por <code>sb_publishable_…</code>). Pulsa el icono de copiar y pégala en «mi bloc» como <b>PUBLISHABLE_KEY</b>.
+<br>Si tu pantalla solo muestra la pestaña <b class="k">Legacy API Keys</b>, copia la clave <b>anon</b> / <b>public</b> (empieza por <code>eyJ…</code>) y anótala como <b>ANON_KEY</b>. También sirve.</li>
+</ol>
+<div class="box danger"><b>NO copies</b> la clave llamada <b>secret</b> (<code>sb_secret_…</code>) ni <b>service_role</b>. Son las llaves maestras. No las necesitas ahora.</div>
+
+<h2 class="pb">3 · Crear las tablas (aplicar la migración)</h2>
+<p>La «migración» es un archivo con instrucciones SQL que crea las tablas de usuarios, espacios y perfiles con sus reglas de seguridad.</p>
+<ol>
+<li>En GitHub abre <code>https://github.com/pertx1/BiBuru/blob/main/supabase/migrations/20261005000001_base.sql</code>.</li>
+<li>Pulsa el icono de <b class="k">Copy raw file</b> (dos cuadraditos, arriba a la derecha del código). Ya tienes todo el contenido copiado.</li>
+<li>En Supabase, menú izquierdo: <b class="k">SQL Editor</b>.</li>
+<li>Pulsa <b class="k">+ New query</b> (o <b class="k">New SQL snippet</b>).</li>
+<li>Pega (<b class="k">Ctrl+V</b> / <b class="k">Cmd+V</b>) en el recuadro grande.</li>
+<li>Pulsa el botón verde <b class="k">Run</b> (o <b class="k">Ctrl/Cmd + Enter</b>).</li>
+<li>Abajo debe poner <b>«Success. No rows returned»</b>. Si sale un error rojo, haz captura y mándamela; no lo repitas más de una vez.</li>
+<li>Comprueba: menú izquierdo <b class="k">Table Editor</b>. Deben aparecer <code>profiles</code>, <code>workspaces</code> y <code>workspace_members</code>.</li>
+</ol>
+<div class="box warn"><b>No lo ejecutes dos veces.</b> Si lo repites dará error («already exists»). Es inofensivo, pero no hace falta.</div>
+
+<h2>4 · Configurar el acceso por correo</h2>
+<h3>4.1 Cerrar el registro público</h3>
+<ol>
+<li><b class="k">Authentication</b> (icono de persona/candado, menú izquierdo).</li>
+<li>En el submenú, pulsa <b class="k">Sign In / Providers</b> (puede llamarse <b class="k">Providers</b> o <b class="k">Settings</b>).</li>
+<li>Busca <b>Allow new users to sign up</b> (en algunas versiones está en <b class="k">User Signups</b>) y <b>apágalo</b>.</li>
+<li>En <b>Email</b>, asegúrate de que está activado (<b class="k">Enable Email provider</b> ON) y <b>Confirm email</b> ON. Si ves <b>Email OTP Length</b>, déjalo en <code>6</code>.</li>
+<li>Pulsa <b class="k">Save</b>.</li>
+</ol>
+<h3>4.2 Poner el correo bonito (con enlace y código)</h3>
+<ol>
+<li><b class="k">Authentication → Email Templates</b> (puede estar dentro de <b class="k">Emails</b>).</li>
+<li>Elige la plantilla <b class="k">Magic Link</b>.</li>
+<li><b>Subject</b>: borra lo que haya y escribe <code>Tu acceso a BiBuru</code>.</li>
+<li><b>Message body</b> (modo <b class="k">Source</b>): borra todo y pega el contenido del archivo <code>supabase/templates/magic-link.html</code> del repositorio (en GitHub ábrelo y pulsa <b class="k">Copy raw file</b>).</li>
+<li>Pulsa <b class="k">Save</b>.</li>
+</ol>
+<div class="box"><b>¿Por qué un código además del enlace?</b> En el iPhone, la app instalada y Safari son «mundos separados». Si pulsas el enlace del correo se abre Safari, no la app. Con el código de 6 dígitos entras directamente dentro de la app instalada.</div>
+
+<h3>4.3 Crear tu usuario</h3>
+<p>Como el registro está cerrado, tu usuario lo creas tú a mano una sola vez.</p>
+<ol>
+<li><b class="k">Authentication → Users</b>.</li>
+<li>Pulsa <b class="k">Add user</b> → <b class="k">Create new user</b>.</li>
+<li><b>Email</b>: <code>oiier.gsss@gmail.com</code>.</li>
+<li><b>Password</b>: escribe cualquier cosa larga y aleatoria (no la usarás nunca; entras con códigos). No hace falta guardarla.</li>
+<li>Marca la casilla <b class="k">Auto Confirm User</b>.</li>
+<li>Pulsa <b class="k">Create user</b>.</li>
+<li>Comprueba: <b class="k">Table Editor → profiles</b> debe tener <b>1 fila</b>, y <b class="k">workspaces</b> otra llamada «Personal». Si están vacías, avísame (significa que la migración no se ejecutó entera).</li>
+</ol>
+
+<h2 class="pb">5 · Publicar la web en Vercel</h2>
+<h3>5.1 Cuenta</h3>
+<ol>
+<li>Entra en <code>https://vercel.com/signup</code>.</li>
+<li>Elige <b class="k">Hobby</b> (gratis, uso personal). Pon tu nombre.</li>
+<li>Pulsa <b class="k">Continue with GitHub</b> y autoriza.</li>
+</ol>
+<h3>5.2 Importar el proyecto</h3>
+<ol>
+<li>Pulsa <b class="k">Add New… → Project</b>.</li>
+<li>En <b>Import Git Repository</b>, si no ves <code>BiBuru</code>, pulsa <b class="k">Adjust GitHub App Permissions</b> y da acceso al repositorio <code>BiBuru</code> (<b class="k">Only select repositories</b> → BiBuru → <b class="k">Save</b>). Vuelve a Vercel.</li>
+<li>Junto a <code>pertx1/BiBuru</code> pulsa <b class="k">Import</b>.</li>
+<li><b>Framework Preset</b> debe decir <b>Next.js</b>. No toques el resto (Root Directory vacío, Build Command por defecto).</li>
+</ol>
+<h3>5.3 Variables de entorno (lo más importante)</h3>
+<p>Despliega el apartado <b class="k">Environment Variables</b> y añade estas tres, una a una (nombre en <b>Key</b>, valor en <b>Value</b>, pulsa <b class="k">Add</b>):</p>
+<table><tr><th>Key (nombre exacto)</th><th>Value (qué pegar)</th></tr>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>La <b>SUPABASE_URL</b> de «mi bloc» (<code>https://….supabase.co</code>), sin barra final.</td></tr>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code></td><td>La <b>PUBLISHABLE_KEY</b> (<code>sb_publishable_…</code>). Si solo tienes la antigua, usa en su lugar el nombre <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> con la clave <code>eyJ…</code>.</td></tr>
+<tr><td><code>ALLOWED_EMAILS</code></td><td><code>oiier.gsss@gmail.com</code></td></tr></table>
+<div class="box warn">Cuidado con espacios al principio o al final al pegar, y con errores en el nombre (mayúsculas y guiones bajos exactos). El 90 % de los fallos vienen de aquí.</div>
+<ol start="1">
+<li>Pulsa <b class="k">Deploy</b>. Espera 1–3 minutos. Saldrá confeti y <b>«Congratulations!»</b>.</li>
+<li>Pulsa en la miniatura o en <b class="k">Continue to Dashboard</b>. Verás tu dirección bajo <b>Domains</b>, parecida a <code>biburu-xxxx.vercel.app</code>. <b>Cópiala a «mi bloc» como TU_URL</b> (con <code>https://</code>).</li>
+</ol>
+
+<h3>5.4 Decirle a Supabase cuál es tu dirección</h3>
+<ol>
+<li>Supabase → <b class="k">Authentication → URL Configuration</b>.</li>
+<li><b>Site URL</b>: pega TU_URL (por ejemplo <code>https://biburu-xxxx.vercel.app</code>), sin barra final.</li>
+<li><b>Redirect URLs</b> → <b class="k">Add URL</b>: pega <code>https://biburu-xxxx.vercel.app/**</code> (tu URL con <code>/**</code> al final).</li>
+<li>Pulsa <b class="k">Save changes</b>.</li>
+</ol>
+<div class="box">Importante: el botón del correo usa la «Site URL». Si la dejas en <code>localhost</code> el enlace no funcionará.</div>
+
+<h2 class="pb">6 · Probar en el ordenador</h2>
+<ol>
+<li>Abre TU_URL en Chrome. Debe aparecer la pantalla de <b>BiBuru</b> con un recuadro de correo.</li>
+<li>Escribe <code>oiier.gsss@gmail.com</code> y pulsa <b class="k">Enviarme el acceso</b>.</li>
+<li>Abre tu correo (mira también <b>Spam</b>). Llega «Tu acceso a BiBuru» en menos de un minuto.</li>
+<li>Pulsa <b class="k">Entrar en BiBuru</b> (o escribe el código de 6 dígitos en la web).</li>
+<li>Debes ver <b>«Hola, oiier.gsss»</b> y el panel con la barra lateral a la izquierda.</li>
+</ol>
+<p><b>Checklist del ordenador:</b></p>
+<ul>
+<li><span class="ck"></span>La barra lateral muestra Inicio, Tareas, Calendario, Negocios, Objetivos, Notas, Favoritos, Ajustes.</li>
+<li><span class="ck"></span>Al pulsar cada sección aparece una pantalla con un texto explicando qué llegará.</li>
+<li><span class="ck"></span><b>Ajustes</b>: muestra tu correo, zona horaria <code>Europe/Madrid</code> y presupuesto de IA <code>10,00 €</code>.</li>
+<li><span class="ck"></span>En Ajustes, el selector <b>Claro / Oscuro / Sistema</b> cambia el aspecto.</li>
+<li><span class="ck"></span>Pulsa <b class="k">Cerrar sesión</b>: vuelves a la pantalla de acceso. Vuelve a entrar.</li>
+<li><span class="ck"></span>Prueba de seguridad: abre una ventana de incógnito, pega TU_URL: debe llevarte a la pantalla de acceso, sin mostrar nada. Intenta entrar con otro correo (p. ej. uno inventado): dirá que enviaste algo, pero no llegará nada y no podrás entrar. Es el comportamiento correcto.</li>
+<li><span class="ck"></span>Instalar en Chrome: a la derecha de la barra de direcciones aparece un icono de instalar (monitor con flecha). Púlsalo → <b class="k">Instalar</b>. Se abre como una app.</li>
+</ul>
+
+<h2 class="pb">7 · Probar en el iPhone</h2>
+<div class="box warn">Tiene que ser <b>Safari</b>. Chrome para iPhone no puede instalar apps en la pantalla de inicio.</div>
+<ol>
+<li>Abre <b>Safari</b> en el iPhone y entra en TU_URL.</li>
+<li>Pulsa el botón <b>Compartir</b> (cuadrado con una flecha hacia arriba, en la barra inferior; en iPad arriba).</li>
+<li>Desliza hacia abajo en el menú y pulsa <b class="k">Añadir a pantalla de inicio</b> (a veces dentro de <b class="k">Más</b>).</li>
+<li>Deja el nombre <code>BiBuru</code> y pulsa <b class="k">Añadir</b> (arriba a la derecha).</li>
+<li><b>Cierra Safari</b> y abre BiBuru <b>desde el icono nuevo</b> de la pantalla de inicio. Debe abrir a pantalla completa, sin barra de direcciones.</li>
+<li>Escribe <code>oiier.gsss@gmail.com</code> → <b class="k">Enviarme el acceso</b>.</li>
+<li>Sin cerrar BiBuru, ve a la app <b>Mail</b> (o Gmail) y abre el correo. <b>Mira el código de 6 dígitos y apréndelo o cópialo</b>. <b>No pulses el botón del correo</b>: abriría Safari, no la app.</li>
+<li>Vuelve a BiBuru (la app seguirá donde la dejaste), escribe el código y pulsa <b class="k">Entrar</b>.</li>
+</ol>
+<div class="box">Si al volver a BiBuru la pantalla se ha reiniciado, no pasa nada: pide otro correo y usa el nuevo código (el anterior queda invalidado).</div>
+<p><b>Checklist del iPhone:</b></p>
+<ul>
+<li><span class="ck"></span>Pantalla completa, sin barras de Safari. El contenido no queda tapado por la «isla» / muesca ni por la barra inferior del iPhone.</li>
+<li><span class="ck"></span>Barra inferior con <b>Inicio, Tareas, botón + central, Negocios, Más</b>. Todos los botones se pulsan sin esfuerzo.</li>
+<li><span class="ck"></span>El botón <b>+</b> central abre «La captura llega en la Fase 4».</li>
+<li><span class="ck"></span><b>Más</b> lista Calendario, Objetivos, Notas, Favoritos y Ajustes.</li>
+<li><span class="ck"></span>Al tocar el campo de correo o código, la pantalla <b>no hace zoom</b>.</li>
+<li><span class="ck"></span>En <b>Ajustes → Instalar la app</b> pone «La app está instalada en este dispositivo ✔».</li>
+<li><span class="ck"></span>Cierra del todo la app (desliza hacia arriba desde abajo, quita BiBuru) y ábrela otra vez: <b>sigues dentro</b>, sin volver a pedir correo.</li>
+<li><span class="ck"></span>Modo avión: activa el modo avión, abre BiBuru y navega a otra sección: aparece «Sin conexión» (en Fase 8 se mejorará para leer lo último visto). Desactiva el modo avión.</li>
+<li><span class="ck"></span>Modo oscuro: Ajustes del iPhone → Pantalla → Oscuro; BiBuru se adapta si está en «Sistema».</li>
+</ul>
+
+<h2 class="pb">8 · Si algo falla</h2>
+<table>
+<tr><th>Síntoma</th><th>Causa probable y solución</th></tr>
+<tr><td>El correo no llega</td><td>Mira Spam. El correo gratuito de Supabase tiene un límite muy bajo (unos 2–4 correos por hora): espera 15–60 minutos. Comprueba que el correo está bien escrito y que creaste el usuario (paso 4.3). Supabase solo envía desde su servidor gratuito a direcciones del equipo de tu proyecto; como tú eres el dueño, el tuyo vale. Si insiste en fallar, dime y configuramos un SMTP gratuito (Resend).</td></tr>
+<tr><td>«Código incorrecto o caducado»</td><td>Cada correo nuevo invalida el anterior. Usa siempre el último. Escribe solo los números.</td></tr>
+<tr><td>El enlace del correo abre una página de error o <code>localhost</code></td><td>La <b>Site URL</b> no está bien (paso 5.4). Corrígela y pide otro correo.</td></tr>
+<tr><td>Pantalla de error al abrir la web, o «Invalid input / Invalid URL»</td><td>Falta o está mal escrita una variable de entorno (paso 5.3). Corrígela en Vercel → tu proyecto → <b class="k">Settings → Environment Variables</b> y luego <b class="k">Deployments</b> → los tres puntos del último → <b class="k">Redeploy</b>. Las variables nuevas solo se aplican en un despliegue nuevo.</td></tr>
+<tr><td>Entras pero vuelve a la pantalla de acceso una y otra vez</td><td><code>ALLOWED_EMAILS</code> no contiene exactamente el correo con el que entras, o está vacía. Corrígela y redespliega.</td></tr>
+<tr><td>«Hola» sin nombre en Inicio y Ajustes con valores por defecto</td><td>Tu fila de <code>profiles</code> no existe: el usuario se creó antes de ejecutar la migración. Dime y lo arreglamos con una línea de SQL.</td></tr>
+<tr><td>En el iPhone no aparece «Añadir a pantalla de inicio»</td><td>No estás en Safari, o estás en una pestaña privada. Abre Safari normal.</td></tr>
+<tr><td>Vercel no encuentra el repositorio</td><td>Paso 5.2: da permiso al repo en la app de GitHub de Vercel.</td></tr>
+</table>
+
+<h2>9 · Cuando termines</h2>
+<p>Respóndeme con una de estas dos cosas:</p>
+<ul>
+<li><b>«Fase 1 OK»</b> y, si quieres, qué te ha parecido el diseño. Entonces preparo la Fase 2 (negocios, pedidos, gastos, estadísticas e importación de PROFITY). Antes te haré unas preguntas sobre cómo conservar las tablas de PROFITY (stock de camisetas y DTF, Vinted, facturas…), que son más ricas de lo previsto.</li>
+<li><b>«Me atasco en el paso X»</b> con una captura de pantalla del error (tapa claves y contraseñas si salen).</li>
+</ul>
+<table><tr><th>Dato</th><th>Dónde vive</th><th>¿Secreto?</th></tr>
+<tr><td>URL y publishable key de Supabase</td><td>Vercel (variables)</td><td>No (pública por diseño; la protegen las reglas RLS)</td></tr>
+<tr><td>ALLOWED_EMAILS</td><td>Vercel</td><td>Privado, no es una clave</td></tr>
+<tr><td>Contraseña de la BD</td><td>Tu bloc</td><td><b>Sí</b>. No la compartas</td></tr>
+<tr><td>Claves secret / service_role</td><td>—</td><td><b>Sí</b>. No se usan aún</td></tr></table>
+</body></html>
