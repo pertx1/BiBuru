@@ -85,6 +85,15 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Valores de objetivos en punto fijo ×100 (euros = céntimos). Progreso automático calculado al leer; el histórico guarda un punto por día.
 - Subtareas: un solo nivel, forzado por trigger.
 
+## Captura, notas y búsqueda (Fase 4)
+- Una captura nunca depende de la red ni de la IA: `enqueue` (IndexedDB) → `captureItem` (idempotente por `client_id`) → bandeja. La IA (Fase 6)
+  solo añade una propuesta (`inbox_items.proposal`); si falla, la captura sigue ahí.
+- Búsqueda: columnas `fts` generadas (`to_tsvector('spanish', …)`) + GIN; `search_all(ws, q)` es `security invoker` y construye la consulta
+  con prefijos (`prefix_tsquery`). Los vídeos se añaden en la Fase 7 ampliando esa función.
+- Carpetas: sin ciclos (trigger); borrar una carpeta sube sus subcarpetas y deja las notas sin carpeta.
+- Markdown: `react-markdown` sin HTML en bruto; imágenes e iframes desactivados.
+- DnD nativo de HTML5: hay que poner `dropEffect = "move"` en `dragover` o Chromium cancela el soltado.
+
 ## Seguridad
 - Secretos solo en servidor; en el cliente únicamente `NEXT_PUBLIC_*` (URL y clave
   publishable de Supabase).

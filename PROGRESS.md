@@ -6,7 +6,7 @@
 | 2 · Negocios, pedidos, gastos, estadísticas, importación PROFITY | **Hecha en código, pendiente de tu verificación** |
 | 2B · Módulo de producción (stock, DTF, bolsa imprenta, facturas, Antola) | **Hecha en código, pendiente de tu verificación** |
 | 3 · Tareas, calendario, objetivos | **Hecha en código, pendiente de tu verificación** |
-| 4 · Captura, bandeja, notas, carpetas, búsqueda | Pendiente |
+| 4 · Captura, bandeja, notas, carpetas, búsqueda | **Hecha en código, pendiente de tu verificación** |
 | 5 · Notificaciones push y tareas programadas | Pendiente |
 | 6 · IA (clasificación, chat, voz, control de gasto) | Pendiente |
 | 7 · Favoritos (vídeos) | Pendiente |
@@ -54,6 +54,19 @@
   vinculadas); histórico; ritmo («va con retraso»); tareas vinculadas; día/hora de revisión semanal en Ajustes (el aviso llega en la Fase 5).
 - Pendiente de fases posteriores: vínculo de tareas con carpetas (Fase 4), avisos (Fase 5).
 - Tests: lógica de recurrencias, alta rápida (40 casos), posponer, calendario, objetivos, agrupación y 14 de SQL (permisos, integridad).
+
+## Fase 4 — captura, bandeja, notas y búsqueda
+- **Captura rápida**: botón central (móvil) / «Captura rápida» (escritorio). Abre al instante, Enter guarda. La captura se escribe primero en el
+  dispositivo (IndexedDB, con localStorage de reserva) y luego se envía; sin red o con fallo no se pierde y se reenvía sola al volver la
+  conexión, al abrir la app o cada 30 s. El envío es idempotente (`client_id`): reenviar no duplica.
+- **Bandeja**: cada captura se convierte con un toque en tarea (entiende fechas y recurrencia) o nota, o se descarta; todo con «Deshacer».
+- **Notas**: Markdown con barra de formato, vista previa segura (sin HTML ni imágenes remotas), autoguardado con copia local si no hay red,
+  fijar, negocio, carpeta y etiquetas. **Carpetas** en árbol con arrastrar y soltar (notas y carpetas), renombrar, subcarpetas y borrado
+  seguro (nada se pierde; se deshace).
+- **Etiquetas** compartidas por notas y tareas (y vídeos en la Fase 7). **Tareas** ya tienen carpeta y etiquetas.
+- **Búsqueda global** (Ctrl/Cmd+K y botón en móvil): Postgres full-text en español sobre notas, tareas, pedidos (cliente, nº, productos) y
+  gastos; busca por raíz (camiseta ↔ camisetas) y mientras escribes.
+- Tests: 63 de SQL (permisos, ciclos de carpetas, búsqueda, idempotencia) y la cola sin conexión (7) + validación.
 
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
