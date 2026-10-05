@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { InstallGuide } from "@/components/pwa/install-guide";
-import { ReviewSettings } from "@/components/goals/review-settings";
+import { NotificationSettingsForm } from "@/components/notifications/notification-settings";
+import { PushSetup } from "@/components/notifications/push-setup";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -22,9 +23,11 @@ export default async function AjustesPage() {
   const { data: auth } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("timezone, ai_monthly_budget_cents, weekly_review_dow, weekly_review_time")
+    .select("*")
     .maybeSingle();
 
+  const { data: devices } = await supabase.from("push_subscriptions").select("id, endpoint, user_agent, created_at, last_success_at").order("created_at");
+  const p = profile;
   return (
     <>
       <PageHeader title="Ajustes" />
@@ -39,7 +42,16 @@ export default async function AjustesPage() {
             <dd>{((profile?.ai_monthly_budget_cents ?? 1000) / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })} / mes</dd>
           </dl>
         </Section>
-        <Section title="Revisión semanal de objetivos"><p className="mb-3 text-xs text-muted">El día y la hora en que te avisaremos para actualizar el avance de tus objetivos.</p><ReviewSettings dow={profile?.weekly_review_dow ?? 0} time={profile?.weekly_review_time ?? "10:00"} /></Section>
+        <Section title="Avisos en este dispositivo"><PushSetup vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} devices={devices ?? []} /></Section>
+        {p && (
+          <Section title="Qué avisos quieres">
+            <NotificationSettingsForm initial={{
+              task_lead_minutes: p.task_lead_minutes, event_lead_minutes: p.event_lead_minutes, quiet_hours_start: p.quiet_hours_start, quiet_hours_end: p.quiet_hours_end,
+              daily_digest_enabled: p.daily_digest_enabled, daily_digest_time: p.daily_digest_time, overdue_alert_enabled: p.overdue_alert_enabled, overdue_alert_time: p.overdue_alert_time,
+              weekly_review_enabled: p.weekly_review_enabled, weekly_review_dow: p.weekly_review_dow, weekly_review_time: p.weekly_review_time,
+            }} />
+          </Section>
+        )}
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <form action={signOut}>
