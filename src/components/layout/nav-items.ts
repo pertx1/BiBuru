@@ -1,5 +1,5 @@
 import {
-  Briefcase, CalendarDays, CheckSquare, Home, MoreHorizontal, NotebookText, Settings, Target, Video,
+  Briefcase, CalendarDays, CheckSquare, Home, Inbox, MoreHorizontal, NotebookText, Settings, Target, Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -8,6 +8,7 @@ export type NavItem = { href: string; label: string; icon: LucideIcon };
 /** Barra lateral de escritorio: todas las secciones. */
 export const sidebarItems: NavItem[] = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/bandeja", label: "Bandeja", icon: Inbox },
   { href: "/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/negocios", label: "Negocios", icon: Briefcase },
