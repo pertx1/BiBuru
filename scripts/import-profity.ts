@@ -53,7 +53,12 @@ async function readSource(): Promise<Source> {
     const expenses = await q(`select id, ${ts("date")} as date, category, concept, amount, "paymentMethod" from "Expense" where "userId"=$1 order by date, id`);
     const incomes = await q(`select id, ${ts("date")} as date, source, concept, amount, method from "Income" where "userId"=$1 order by date, id`);
     const orders = await q(`select id, "orderNumber"::text as "orderNumber", ${ts("date")} as date, quantity, model, color, size, price, status::text as status from "Order" where "userId"=$1 order by date, id`);
-    return { expenses, incomes, orders } as Source;
+    const tshirtStocks = await q(`select model::text as model, size, quantity from "TshirtStock" where "userId"=$1`);
+    const dtfStocks = await q(`select name, variant::text as variant, quantity from "DtfStock" where "userId"=$1`);
+    const shirtRules = await q(`select "shirtColor", "dtfColor" from "ShirtDtfRule" where "userId"=$1`);
+    const designRules = await q(`select design, "dtfColor" from "DesignDtfRule" where "userId"=$1`);
+    const invoices = await q(`select id, name, url from "Invoice" where "userId"=$1 order by "createdAt"`);
+    return { expenses, incomes, orders, tshirtStocks, dtfStocks, shirtRules, designRules, invoices } as Source;
   } finally {
     await pg.end();
   }
@@ -68,6 +73,8 @@ function printPlan(plan: Plan) {
     Ingresos: { registros: t.incomes.count, "suma (€)": eur(t.incomes.totalCents), nota: "" },
   });
   console.log(`Productos para el catálogo: ${plan.products.length}`);
+  const pr = plan.production;
+  console.log(`Producción: ${pr.tshirtStocks.length} filas de stock de prendas, ${pr.designs.length} diseños DTF, ${pr.dtfStocks.length} filas de stock DTF, ${pr.shirtRules.length + pr.designRules.length} reglas, ${pr.invoices.length} facturas`);
   for (const w of plan.warnings) console.log(`  ⚠ ${w}`);
 }
 
@@ -133,6 +140,42 @@ async function main() {
     if (error) throw error;
   }
 
+  // Producción (stock, diseños, reglas, facturas). Los upserts con onConflict no duplican.
+  const pr = plan.production;
+  const hasProduction = pr.tshirtStocks.length + pr.dtfStocks.length + pr.designs.length > 0;
+  if (hasProduction) {
+    const { error: pe } = await sb.from("businesses").update({ production_enabled: true }).eq("id", biz.main);
+    if (pe) throw pe;
+    const b = { ...base, business_id: biz.main };
+    for (const c of chunk(pr.tshirtStocks)) {
+      const { error } = await sb.from("tshirt_stocks").upsert(c.map((t) => ({ ...b, ...t })), { onConflict: "business_id,model,size", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+    for (const c of chunk(pr.designs)) {
+      const { error } = await sb.from("dtf_designs").upsert(c.map((d) => ({ ...b, ...d })), { onConflict: "business_id,name", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+    for (const c of chunk(pr.dtfStocks)) {
+      const { error } = await sb.from("dtf_stocks").upsert(c.map((d) => ({ ...b, ...d })), { onConflict: "business_id,name,variant", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+    for (const c of chunk(pr.shirtRules)) {
+      const { error } = await sb.from("shirt_dtf_rules").upsert(c.map((r) => ({ ...b, ...r })), { onConflict: "business_id,shirt_color_key", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+    for (const c of chunk(pr.designRules)) {
+      const { error } = await sb.from("design_dtf_rules").upsert(c.map((r) => ({ ...b, ...r })), { onConflict: "business_id,design", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+    const { data: haveInv } = await sb.from("invoices").select("external_id").eq("workspace_id", ws).like("external_id", "profity:%");
+    const haveInvIds = new Set((haveInv ?? []).map((r) => r.external_id));
+    const newInv = pr.invoices.filter((i) => !haveInvIds.has(i.external_id));
+    for (const c of chunk(newInv)) {
+      const { error } = await sb.from("invoices").insert(c.map((i) => ({ ...b, ...i })));
+      if (error) throw error;
+    }
+  }
+
   const existing = async (table: "orders" | "expenses" | "incomes") => {
     const ids = new Set<string>();
     for (let from = 0; ; from += 1000) {
@@ -195,10 +238,20 @@ async function main() {
       if ((data as unknown[]).length < 1000) return { count, totalCents: total };
     }
   };
+  const sumStock = async (table: "tshirt_stocks" | "dtf_stocks") => {
+    const { data, error } = await sb.from(table).select("quantity").eq("workspace_id", ws).eq("business_id", biz.main).limit(10000);
+    if (error) throw error;
+    return { count: data.length, totalCents: data.reduce((s, r) => s + r.quantity, 0) };
+  };
+  const countInvoices = async () => {
+    const { count, error } = await sb.from("invoices").select("id", { count: "exact", head: true }).eq("workspace_id", ws).like("external_id", "profity:%");
+    if (error) throw error;
+    return { count: count ?? 0, totalCents: 0 };
+  };
   const exp = expectedTotals(plan);
-  const got = { orders: await sumAll("orders", "total_cents"), ordersActive: await sumAll("orders", "total_cents", true), expenses: await sumAll("expenses", "amount_cents"), incomes: await sumAll("incomes", "amount_cents") };
+  const got = { orders: await sumAll("orders", "total_cents"), ordersActive: await sumAll("orders", "total_cents", true), expenses: await sumAll("expenses", "amount_cents"), incomes: await sumAll("incomes", "amount_cents"), tshirtStocks: await sumStock("tshirt_stocks"), dtfStocks: await sumStock("dtf_stocks"), invoices: await countInvoices() };
   const rows = (Object.keys(exp) as (keyof typeof exp)[]).map((k) => ({
-    tabla: k, "origen nº": exp[k].count, "destino nº": got[k].count, "origen €": eur(exp[k].totalCents), "destino €": eur(got[k].totalCents),
+    tabla: k, "origen nº": exp[k].count, "destino nº": got[k].count, "origen": k.endsWith("Stocks") ? `${exp[k].totalCents} uds` : eur(exp[k].totalCents), "destino": k.endsWith("Stocks") ? `${got[k].totalCents} uds` : eur(got[k].totalCents),
     resultado: exp[k].count === got[k].count && exp[k].totalCents === got[k].totalCents ? "✔ coincide" : "✘ NO coincide",
   }));
   console.log("\nConciliación origen ↔ destino:");

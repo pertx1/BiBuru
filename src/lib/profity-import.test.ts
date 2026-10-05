@@ -65,6 +65,26 @@ describe("importación de PROFITY", () => {
     expect(t.ordersActive).toEqual({ count: 2, totalCents: 5000 + 4590 });
   });
 
+  it("producción: stock, diseños, reglas y facturas", () => {
+    const p = buildPlan({
+      ...src,
+      tshirtStocks: [{ model: "SUDADERA_NEGRA", size: "m", quantity: 4 }, { model: "BLANCA", size: "L", quantity: -1 }],
+      dtfStocks: [{ name: "Ujue", variant: "BLANCO", quantity: 2 }, { name: "Ujue", variant: "NEGRO", quantity: 0 }, { name: "BA Azul", variant: "UNICO", quantity: 7 }, { name: "X", variant: "RARO", quantity: 1 }],
+      shirtRules: [{ shirtColor: "Roja", dtfColor: "Blanco" }], designRules: [{ design: "Ujue", dtfColor: "Todo color" }],
+      invoices: [{ id: "f1", name: "Luz", url: "https://x.com/luz" }, { id: "f2", name: "Mala", url: "javascript:alert(1)" }],
+    }, { separateVinted: false });
+    expect(p.production.tshirtStocks).toEqual([{ model: "Sudadera negra", size: "M", quantity: 4 }, { model: "Blanca", size: "L", quantity: -1 }]);
+    expect(p.production.designs).toEqual([{ name: "Ujue", kind: "paired" }, { name: "BA Azul", kind: "standalone" }]);
+    expect(p.production.dtfStocks).toHaveLength(3);
+    expect(p.production.shirtRules[0].shirt_color_key).toBe("roj"); // "Roja" y "Rojo" comparten clave
+    expect(p.production.invoices).toHaveLength(1);
+    expect(p.warnings.some((w) => w.includes("Mala"))).toBe(true);
+    expect(p.warnings.some((w) => w.includes("RARO"))).toBe(true);
+    const t = expectedTotals(p);
+    expect(t.tshirtStocks).toEqual({ count: 2, totalCents: 3 });
+    expect(t.dtfStocks).toEqual({ count: 3, totalCents: 9 });
+  });
+
   it("es determinista y los external_id no se repiten (reimportar no duplica)", () => {
     const a = buildPlan(src, { separateVinted: true });
     const b = buildPlan(src, { separateVinted: true });

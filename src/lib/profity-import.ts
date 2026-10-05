@@ -14,6 +14,7 @@
  */
 import { todayISO } from "./dates";
 import { toCents } from "./money";
+import { colorKey } from "./production/text";
 
 export type SrcExpense = { id: string; date: Date | string; category: string; concept: string | null; amount: number; paymentMethod: string | null };
 export type SrcIncome = { id: string; date: Date | string; source: string; concept: string | null; amount: number; method: string | null };
@@ -21,7 +22,27 @@ export type SrcOrder = {
   id: string; orderNumber: string | null; date: Date | string; quantity: number; model: string;
   color: string | null; size: string | null; price: number; status: string;
 };
-export type Source = { expenses: SrcExpense[]; incomes: SrcIncome[]; orders: SrcOrder[] };
+export type SrcTshirtStock = { model: string; size: string; quantity: number };
+export type SrcDtfStock = { name: string; variant: string; quantity: number };
+export type SrcShirtRule = { shirtColor: string; dtfColor: string };
+export type SrcDesignRule = { design: string; dtfColor: string };
+export type SrcInvoice = { id: string; name: string; url: string };
+export type Source = {
+  expenses: SrcExpense[]; incomes: SrcIncome[]; orders: SrcOrder[];
+  tshirtStocks?: SrcTshirtStock[]; dtfStocks?: SrcDtfStock[]; shirtRules?: SrcShirtRule[]; designRules?: SrcDesignRule[]; invoices?: SrcInvoice[];
+};
+
+/** Etiquetas de los modelos de prenda de PROFITY (enum TshirtModel). */
+const MODEL_LABELS: Record<string, string> = { BLANCA: "Blanca", NEGRA: "Negra", FUTBOL: "Fútbol", SUDADERA_NEGRA: "Sudadera negra" };
+
+export type PlanProduction = {
+  tshirtStocks: { model: string; size: string; quantity: number }[];
+  designs: { name: string; kind: "standalone" | "paired" }[];
+  dtfStocks: { name: string; variant: "UNICO" | "BLANCO" | "NEGRO"; quantity: number }[];
+  shirtRules: { shirt_color: string; shirt_color_key: string; dtf_color: string }[];
+  designRules: { design: string; dtf_color: string }[];
+  invoices: { external_id: string; name: string; url: string }[];
+};
 
 export type BizKey = "main" | "vinted";
 
@@ -37,6 +58,7 @@ export type PlanIncome = {
   external_id: string; biz: BizKey; income_date: string; source: string; concept: string | null; amount_cents: number; method: string | null;
 };
 export type Plan = {
+  production: PlanProduction;
   orders: PlanOrder[]; expenses: PlanExpense[]; incomes: PlanIncome[];
   categories: string[];
   products: { name: string; price_cents: number }[];
@@ -118,10 +140,36 @@ export function buildPlan(src: Source, opts: { separateVinted: boolean }): Plan 
   }
   if (inexact > 0) warnings.push(`${inexact} pedidos con total no divisible entre su cantidad: se importan como 1 línea de cantidad 1 con el total exacto.`);
 
+  const production = buildProduction(src, warnings);
   return {
-    orders, expenses, incomes, warnings,
+    production, orders, expenses, incomes, warnings,
     categories: [...categories.values()],
     products: [...latestPrice.entries()].map(([name, v]) => ({ name, price_cents: v.cents })),
+  };
+}
+
+function buildProduction(src: Source, warnings: string[]): PlanProduction {
+  const tshirtStocks = (src.tshirtStocks ?? []).map((t) => ({
+    model: MODEL_LABELS[t.model] ?? t.model.charAt(0) + t.model.slice(1).toLowerCase().replace(/_/g, " "), size: t.size.trim().toUpperCase(), quantity: Math.trunc(t.quantity),
+  }));
+  const dtfStocks = (src.dtfStocks ?? []).flatMap((d) => {
+    const variant = d.variant.toUpperCase();
+    if (variant !== "UNICO" && variant !== "BLANCO" && variant !== "NEGRO") { warnings.push(`DTF «${d.name}» con variante desconocida (${d.variant}): omitido.`); return []; }
+    return [{ name: d.name.trim(), variant: variant as "UNICO" | "BLANCO" | "NEGRO", quantity: Math.trunc(d.quantity) }];
+  });
+  // Un diseño es "único" si solo tiene variante UNICO en PROFITY; si tiene blanco/negro, emparejado.
+  const kinds = new Map<string, "standalone" | "paired">();
+  for (const d of dtfStocks) if (d.variant !== "UNICO") kinds.set(d.name, "paired");
+  for (const d of dtfStocks) if (!kinds.has(d.name)) kinds.set(d.name, "standalone");
+  const designs = [...kinds.entries()].map(([name, kind]) => ({ name, kind }));
+  const invoices = (src.invoices ?? []).flatMap((i) => {
+    if (!/^https?:\/\//i.test(i.url)) { warnings.push(`Factura «${i.name}» omitida: el enlace no es http(s).`); return []; }
+    return [{ external_id: `profity:invoice:${i.id}`, name: i.name.trim().slice(0, 80), url: i.url.trim() }];
+  });
+  return {
+    tshirtStocks, designs, dtfStocks, invoices,
+    shirtRules: (src.shirtRules ?? []).map((r) => ({ shirt_color: r.shirtColor.trim(), shirt_color_key: colorKey(r.shirtColor), dtf_color: r.dtfColor.trim() })),
+    designRules: (src.designRules ?? []).map((r) => ({ design: r.design.trim(), dtf_color: r.dtfColor.trim() })),
   };
 }
 
@@ -134,5 +182,9 @@ export function expectedTotals(plan: Plan) {
     ordersActive: { count: activeOrders.length, totalCents: sum(activeOrders.map((o) => ({ v: o.total_cents }))) },
     expenses: { count: plan.expenses.length, totalCents: sum(plan.expenses.map((e) => ({ v: e.amount_cents }))) },
     incomes: { count: plan.incomes.length, totalCents: sum(plan.incomes.map((i) => ({ v: i.amount_cents }))) },
+    // Producción: "totalCents" aquí son unidades de stock (no dinero).
+    tshirtStocks: { count: plan.production.tshirtStocks.length, totalCents: plan.production.tshirtStocks.reduce((s, t) => s + t.quantity, 0) },
+    dtfStocks: { count: plan.production.dtfStocks.length, totalCents: plan.production.dtfStocks.reduce((s, t) => s + t.quantity, 0) },
+    invoices: { count: plan.production.invoices.length, totalCents: 0 },
   };
 }

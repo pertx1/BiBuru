@@ -22,7 +22,7 @@ export default async function BusinessLayout({ children, params }: { children: R
         </div>
         <BusinessFormButton business={business} />
       </header>
-      <BusinessTabs id={id} />
+      <BusinessTabs id={id} production={business.production_enabled} />
       <div className="mt-5">{children}</div>
     </>
   );

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isEmailAllowed } from "@/lib/allowed-emails";
 import { getPublicEnv } from "@/lib/env";
 
-const PUBLIC_PATHS = ["/login", "/auth/confirm", "/offline"];
+const PUBLIC_PATHS = ["/login", "/auth/confirm", "/offline", "/api/antola"];
 
 /**
  * Refresca la sesión de Supabase en cada petición y manda a /login a quien no

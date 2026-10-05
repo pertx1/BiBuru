@@ -29,6 +29,9 @@ http.createServer((req, res) => {
   if (url.pathname.startsWith("/rest/v1/")) {
     const path = url.pathname.slice("/rest/v1".length) + url.search;
     const headers = { ...req.headers, host: "localhost:3001" };
+    // Como el gateway real de Supabase: una clave "publishable" (no es un JWT) equivale a rol anónimo.
+    const bearer = (headers.authorization ?? "").replace("Bearer ", "");
+    if (bearer && !verify(bearer)) delete headers.authorization;
     const p = http.request({ host: "localhost", port: 3001, path, method: req.method, headers }, (r) => { res.writeHead(r.statusCode, r.headers); r.pipe(res); });
     p.on("error", (e) => { res.writeHead(502); res.end(String(e)); });
     return req.pipe(p);

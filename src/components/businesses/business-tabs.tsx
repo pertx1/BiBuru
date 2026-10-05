@@ -13,11 +13,11 @@ const TABS = [
   { slug: "estadisticas", label: "Estadísticas" },
 ];
 
-export function BusinessTabs({ id }: { id: string }) {
+export function BusinessTabs({ id, production }: { id: string; production?: boolean }) {
   const pathname = usePathname();
   return (
     <nav aria-label="Secciones del negocio" className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 md:mx-0 md:px-0">
-      {TABS.map((t) => {
+      {[...TABS.slice(0, 5), ...(production ? [{ slug: "produccion", label: "Producción" }] : []), ...TABS.slice(5)].map((t) => {
         const href = `/negocios/${id}${t.slug ? `/${t.slug}` : ""}`;
         const active = t.slug === "" ? pathname === href : pathname.startsWith(href);
         return (

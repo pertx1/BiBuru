@@ -23,7 +23,7 @@ const refresh = () => revalidatePath("/negocios", "layout");
 export async function saveBusiness(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const parsed = businessSchema.safeParse({
     id: str(fd, "id") || undefined, name: str(fd, "name"), description: str(fd, "description"),
-    color: str(fd, "color"), icon: str(fd, "icon"),
+    color: str(fd, "color"), icon: str(fd, "icon"), production_enabled: fd.get("production_enabled") === "on",
   });
   if (!parsed.success) return firstError(parsed.error);
   const { supabase, workspaceId, userId } = await getContext();

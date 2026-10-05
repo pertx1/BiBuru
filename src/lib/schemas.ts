@@ -51,6 +51,7 @@ export const businessSchema = z.object({
   description: optText(500),
   color: hexColor,
   icon: z.enum(BUSINESS_ICONS),
+  production_enabled: z.boolean().default(false),
 });
 
 export const orderItemSchema = z.object({

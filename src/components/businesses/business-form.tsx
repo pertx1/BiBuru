@@ -53,6 +53,10 @@ export function BusinessFormButton({ business }: { business?: Business }) {
               {BUSINESS_ICONS.map((i) => <option key={i} value={i}>{ICON_LABELS[i]}</option>)}
             </Select>
           </Field>
+          <label className="flex min-h-11 items-start gap-3 text-sm">
+            <input type="checkbox" name="production_enabled" defaultChecked={business?.production_enabled} className="mt-1 size-5" />
+            <span><span className="font-medium">Módulo de producción</span><br /><span className="text-xs text-muted">Stock de prendas y DTF, bolsa para la imprenta, reglas de color y facturas (como en PROFITY).</span></span>
+          </label>
           <fieldset>
             <legend className="mb-1.5 text-sm font-medium">Color</legend>
             <div className="flex flex-wrap gap-2">
