@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  addDays, addMonths, diffDays, endOfMonth, formatDate, isValidISO, parseDateInput, previousPeriod,
-  resolvePeriod, startOfMonth, startOfWeek, todayISO,
+  addDays, addMonths, diffDays, endOfMonth, formatDate, isValidISO, nowLocal, parseDateInput, previousPeriod,
+  resolvePeriod, startOfMonth, startOfWeek, todayISO, zonedToUtc,
 } from "./dates";
 
 describe("fechas", () => {
@@ -63,5 +63,30 @@ describe("periodos", () => {
   });
   it("periodo anterior de días sueltos", () => {
     expect(previousPeriod({ from: "2026-09-06", to: "2026-10-05" })).toEqual({ from: "2026-08-07", to: "2026-09-05" });
+  });
+});
+
+describe("hora local <-> UTC (Europe/Madrid)", () => {
+  it("invierno (UTC+1) y verano (UTC+2)", () => {
+    expect(zonedToUtc("2026-01-15", "10:00").toISOString()).toBe("2026-01-15T09:00:00.000Z");
+    expect(zonedToUtc("2026-07-15", "10:00").toISOString()).toBe("2026-07-15T08:00:00.000Z");
+  });
+  it("cambio de hora de primavera (29/03/2026: 02:00 -> 03:00)", () => {
+    expect(zonedToUtc("2026-03-29", "01:30").toISOString()).toBe("2026-03-29T00:30:00.000Z");
+    expect(zonedToUtc("2026-03-29", "03:30").toISOString()).toBe("2026-03-29T01:30:00.000Z");
+    // 02:30 no existe: se lleva a una hora válida cercana (03:30 local)
+    expect(nowLocal(zonedToUtc("2026-03-29", "02:30")).time).toBe("03:30");
+  });
+  it("cambio de hora de otoño (25/10/2026: 03:00 -> 02:00): la hora repetida usa la primera", () => {
+    expect(zonedToUtc("2026-10-25", "02:30").toISOString()).toBe("2026-10-25T00:30:00.000Z");
+    expect(zonedToUtc("2026-10-25", "04:00").toISOString()).toBe("2026-10-25T03:00:00.000Z");
+  });
+  it("va y vuelve sin perder la hora", () => {
+    for (const [d, t] of [["2026-06-01", "23:59"], ["2026-12-31", "00:00"], ["2026-10-05", "09:05"]]) {
+      expect(nowLocal(zonedToUtc(d, t))).toEqual({ date: d, time: t });
+    }
+  });
+  it("otras zonas", () => {
+    expect(zonedToUtc("2026-07-15", "10:00", "America/New_York").toISOString()).toBe("2026-07-15T14:00:00.000Z");
   });
 });

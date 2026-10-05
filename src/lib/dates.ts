@@ -143,3 +143,27 @@ export function nowLocal(now: Date = new Date(), timeZone: string = TIMEZONE): {
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
   return { date: todayISO(now, timeZone), time: parts };
 }
+
+/** Desfase (minutos) de `timeZone` respecto a UTC en el instante `at` (positivo al este). */
+function tzOffsetMinutes(at: Date, timeZone: string): number {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+    .formatToParts(at).reduce<Record<string, number>>((a, x) => { if (x.type !== "literal") a[x.type] = +x.value; return a; }, {});
+  const asUTC = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  return Math.round((asUTC - Math.floor(at.getTime() / 1000) * 1000) / 60000);
+}
+
+/**
+ * Hora "de pared" local (fecha + HH:MM en `timeZone`) -> instante UTC. Resuelve el cambio de hora:
+ * una hora inexistente (salto de primavera) se lleva a la siguiente; una repetida (otoño) usa la primera.
+ */
+export function zonedToUtc(date: string, time: string, timeZone: string = TIMEZONE): Date {
+  const [h, m] = time.split(":").map(Number);
+  const guess = Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10), h, m);
+  // Desfases posibles ese día (antes y después de un posible cambio de hora).
+  const offsets = [...new Set([tzOffsetMinutes(new Date(guess - 86_400_000), timeZone), tzOffsetMinutes(new Date(guess + 86_400_000), timeZone)])];
+  const valid = offsets
+    .map((o) => guess - o * 60_000)
+    .filter((t) => { const l = nowLocal(new Date(t), timeZone); return l.date === date && l.time === time.slice(0, 5); });
+  if (valid.length > 0) return new Date(Math.min(...valid)); // otoño: hora repetida -> la primera
+  return new Date(guess - Math.min(...offsets) * 60_000);    // primavera: hora inexistente -> la siguiente válida
+}
