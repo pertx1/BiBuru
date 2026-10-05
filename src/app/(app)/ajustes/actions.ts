@@ -130,3 +130,23 @@ export async function deleteAccount(confirmEmail: string): Promise<ActionResult>
   await supabase.auth.signOut().catch(() => {});
   return { ok: true };
 }
+
+/**
+ * Genera claves nuevas para la configuración (VAPID de avisos, secreto del cron y clave de cifrado de Google).
+ * Solo para quien ha iniciado sesión; NO se guardan en ningún sitio: se muestran una vez para pegarlas en Vercel.
+ */
+export async function generateSetupKeys(): Promise<ActionResult & { keys?: Record<string, string> }> {
+  await getContext(); // exige sesión
+  const { randomBytes } = await import("node:crypto");
+  const webpush = (await import("web-push")).default;
+  const v = webpush.generateVAPIDKeys();
+  return {
+    ok: true,
+    keys: {
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: v.publicKey,
+      VAPID_PRIVATE_KEY: v.privateKey,
+      CRON_SECRET: randomBytes(32).toString("base64url"),
+      TOKEN_ENCRYPTION_KEY: randomBytes(32).toString("base64"),
+    },
+  };
+}

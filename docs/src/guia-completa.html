@@ -1,0 +1,399 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+@page{size:A4;margin:18mm 16mm}
+body{font-family:system-ui,Helvetica,Arial,sans-serif;font-size:11.5pt;line-height:1.5;color:#1c1b17}
+h1{font-size:26pt;margin:0 0 4pt;color:#0f766e}
+h2{font-size:17pt;margin:26pt 0 8pt;padding-bottom:4pt;border-bottom:2px solid #0f766e;page-break-after:avoid}
+h3{font-size:12.5pt;margin:16pt 0 4pt;page-break-after:avoid}
+.sub{color:#6b6a63;margin-bottom:14pt}
+.box{border:1px solid #d9d6cc;border-left:5px solid #0f766e;background:#f4f8f7;padding:8pt 12pt;margin:10pt 0;border-radius:4pt;page-break-inside:avoid}
+.warn{border-left-color:#b45309;background:#fdf6ec}
+.danger{border-left-color:#b91c1c;background:#fdf0f0}
+ol,ul{padding-left:20pt}li{margin:4pt 0}
+code,.v{font-family:Menlo,Consolas,monospace;background:#efede6;padding:1pt 4pt;border-radius:3pt;font-size:10.5pt}
+pre{background:#1c1b17;color:#f1efe8;padding:10pt;border-radius:5pt;font-size:9.5pt;white-space:pre-wrap;word-break:break-all;page-break-inside:avoid}
+table{border-collapse:collapse;width:100%;margin:8pt 0;page-break-inside:avoid}
+td,th{border:1px solid #d9d6cc;padding:5pt 8pt;text-align:left;vertical-align:top;font-size:10.5pt}th{background:#efede6}
+.ck{display:inline-block;width:10pt;height:10pt;border:1.5px solid #1c1b17;margin-right:6pt;vertical-align:middle}
+b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;font-weight:600}
+.pb{page-break-before:always}
+</style></head><body>
+<h1>BiBuru · Guía completa</h1>
+<div class="sub">Todo lo que tienes que hacer tú, paso a paso, desde cero hasta tener BiBuru funcionando en tu ordenador y en tu iPhone, con avisos, IA y YouTube. Tiempo estimado: 2–3 horas (puedes parar entre secciones). Coste: 0 € (la IA tiene tope de 10 €/mes y solo se usa si pones la clave).</div>
+
+<div class="box"><b>Cómo leer esta guía.</b> Cada paso dice <b>dónde entrar</b>, <b>qué pulsar</b>, <b>qué copiar</b> y <b>dónde pegarlo</b>. Lo que va en <b class="k">este formato</b> es un botón o menú que ves en pantalla. Lo que va en <code>este otro</code> es texto que copias o escribes tal cual. Las webs cambian de diseño de vez en cuando: si un botón se llama algo parecido pero no idéntico, es ese. Si algo no coincide en absoluto, hazme una captura y dime en qué paso estás.</div>
+
+<div class="box warn"><b>Importante: qué está comprobado y qué no.</b> He probado la app entera en un entorno local (base de datos real, navegador real, avisos descifrados, IA y YouTube simulados). <b>No he podido probarla contra tu Supabase, tu Vercel, tu iPhone, la API real de Gemini ni la de YouTube/TikTok</b>, porque no tengo acceso a tus cuentas. Los nombres de botones de Supabase, Vercel y Google Cloud están escritos de memoria: pueden variar un poco. Al final hay una sección «Si algo falla».</div>
+
+<h2>Índice</h2>
+<ol>
+<li>Llevar el código a GitHub (rama principal)</li><li>Crear la base de datos en Supabase</li><li>Crear las tablas (10 migraciones)</li><li>Configurar el acceso por correo</li><li>Publicar la web en Vercel</li><li>Decirle a Supabase tu dirección</li><li>Primera prueba (ordenador y iPhone)</li><li>Activar avisos y tareas programadas (cron)</li><li>Activar la IA (Gemini)</li><li>Conectar YouTube (Google Cloud)</li><li>Importar tus datos de PROFITY</li><li>Recorrido de pruebas por secciones</li><li>Uso diario, copias de seguridad y costes</li><li>Si algo falla</li><li>Checklist final</li>
+</ol>
+
+<h2 class="pb">0 · Antes de empezar</h2>
+<ul>
+<li><span class="ck"></span>Un ordenador con Chrome y un iPhone con Safari (iOS 16.4 o superior para los avisos).</li>
+<li><span class="ck"></span>Acceso a tu correo <code>oiier.gsss@gmail.com</code> (recibirás códigos).</li>
+<li><span class="ck"></span>Tu cuenta de GitHub (<code>pertx1</code>).</li>
+<li><span class="ck"></span>Un bloc de notas al que llamaremos <b>«mi bloc»</b>, donde pegarás datos que iremos recogiendo. <b>Lo guardas tú; no se lo mandes a nadie, ni a mí.</b></li>
+</ul>
+<div class="box warn"><b>Nada de esto pide tarjeta.</b> Supabase, Vercel, GitHub, Google AI Studio y Google Cloud (para YouTube) se usan en su capa gratuita. Si alguna pantalla te pide una tarjeta o te ofrece «Upgrade», <b>cancela</b> y avísame. La única API de pago potencial es Gemini: sin clave no gasta nada y, con clave, la app para al llegar a tu tope mensual.</div>
+<div class="box danger"><b>Regla de oro de seguridad.</b> Hay claves que van <b>solo</b> a Vercel (variables de entorno) y nunca a un chat, correo o captura: la contraseña de la base de datos, la clave <i>secret / service_role</i> de Supabase, <code>GEMINI_API_KEY</code>, <code>GOOGLE_CLIENT_SECRET</code> y las claves generadas en el paso 8. Si crees que se ha filtrado una, se cambia (la sección 13 explica cómo).</div>
+
+<h2 class="pb">1 · Llevar el código a la rama principal de GitHub</h2>
+<p>Ahora mismo el código está en una rama de trabajo. Vercel despliega desde <code>main</code>, así que hay que fusionarlas.</p>
+<ol>
+<li>Dime en el chat: <b>«crea la PR»</b>. Yo abro una <i>Pull Request</i> (propuesta de fusión) y te doy el enlace.</li>
+<li>Abre el enlace e inicia sesión en GitHub si te lo pide.</li>
+<li>Baja hasta el recuadro verde/gris y pulsa <b class="k">Merge pull request</b>, luego <b class="k">Confirm merge</b>.</li>
+<li>Comprueba: <code>https://github.com/pertx1/BiBuru</code> muestra carpetas <code>src</code>, <code>supabase</code>, <code>docs</code>. En la pestaña <b class="k">Actions</b>, un ✔ verde es bueno; una ✘ roja, dímelo.</li>
+</ol>
+
+<h2 class="pb">2 · Crear la base de datos en Supabase</h2>
+<h3>2.1 Crear la cuenta</h3>
+<ol>
+<li>Entra en <code>https://supabase.com</code> y pulsa <b class="k">Start your project</b> (arriba a la derecha).</li>
+<li>Pulsa <b class="k">Continue with GitHub</b> y autoriza. Así no necesitas otra contraseña.</li>
+<li>Si te pide crear una <i>Organization</i>: nombre <code>Personal</code>, tipo <b class="k">Personal</b>, plan <b class="k">Free</b>. Pulsa <b class="k">Create organization</b>.</li>
+</ol>
+<h3>2.2 Crear el proyecto</h3>
+<ol>
+<li>Pulsa <b class="k">New project</b>.</li>
+<li><b>Name</b>: <code>biburu</code>.</li>
+<li><b>Database Password</b>: pulsa <b class="k">Generate a password</b>. <b>Cópiala a «mi bloc»</b> bajo el título «Contraseña BD Supabase». No la necesitarás ahora, pero si la pierdes se puede restablecer.</li>
+<li><b>Region</b>: elige <b class="k">West EU (Ireland)</b> o <b class="k">Central EU (Frankfurt)</b>. Cualquiera de Europa; más cerca = más rápido.</li>
+<li>Si aparece un <b>Pricing plan / Compute</b>, deja <b class="k">Free</b> (0 $/mes).</li>
+<li>Pulsa <b class="k">Create new project</b> y espera 1–2 minutos hasta que desaparezca la rueda de carga.</li>
+</ol>
+<div class="box"><b>Dato:</b> los proyectos gratuitos de Supabase se pausan si pasan 7 días sin ningún uso. Con el uso diario de la app (y el cron de la Fase 5) no ocurrirá. Si algún día ves «Project paused», entra y pulsa <b class="k">Restore project</b>.</div>
+
+<h3>2.3 Copiar la URL y la clave pública</h3>
+<ol>
+<li>En el menú izquierdo, abajo del todo, pulsa el engranaje <b class="k">Project Settings</b>.</li>
+<li>Pulsa <b class="k">API Keys</b> (en algunas versiones: <b class="k">API</b> o <b class="k">Data API</b>).</li>
+<li>Busca la <b>Project URL</b> (algo como <code>https://abcdefghijk.supabase.co</code>). Cópiala a «mi bloc» como <b>SUPABASE_URL</b>. Si no la ves en esa pantalla, está en <b class="k">Project Settings → Data API</b> o en <b class="k">General</b>.</li>
+<li>En <b>API Keys</b> busca la clave <b>Publishable key</b> (empieza por <code>sb_publishable_…</code>). Pulsa el icono de copiar y pégala en «mi bloc» como <b>PUBLISHABLE_KEY</b>.
+<br>Si tu pantalla solo muestra la pestaña <b class="k">Legacy API Keys</b>, copia la clave <b>anon</b> / <b>public</b> (empieza por <code>eyJ…</code>) y anótala como <b>ANON_KEY</b>. También sirve.</li>
+</ol>
+<div class="box danger"><b>NO copies</b> la clave llamada <b>secret</b> (<code>sb_secret_…</code>) ni <b>service_role</b>. Son las llaves maestras. No las necesitas ahora.</div>
+
+
+
+<h2 class="pb">3 · Crear las tablas (aplicar las 10 migraciones, en orden)</h2>
+<p>Una «migración» es un archivo con instrucciones SQL que crea tablas y reglas de seguridad. Son <b>10 archivos y hay que ejecutarlos en este orden, una sola vez cada uno</b>.</p>
+<table><tr><th>Orden</th><th>Archivo (carpeta <code>supabase/migrations</code>)</th><th>Qué crea</th></tr><tr><td>1</td><td><code>20261005000001_base.sql</code></td><td>Usuarios, espacios, perfiles</td></tr><tr><td>2</td><td><code>20261006000001_businesses.sql</code></td><td>Negocios, pedidos, gastos, ingresos, almacén de tickets</td></tr><tr><td>3</td><td><code>20261007000001_production.sql</code></td><td>Producción (camisetas, DTF, bolsa, facturas)</td></tr><tr><td>4</td><td><code>20261008000001_tasks_calendar_goals.sql</code></td><td>Tareas, calendario, objetivos</td></tr><tr><td>5</td><td><code>20261009000001_capture_notes_search.sql</code></td><td>Bandeja, notas, etiquetas, búsqueda</td></tr><tr><td>6</td><td><code>20261010000001_notifications.sql</code></td><td>Avisos y cron</td></tr><tr><td>7</td><td><code>20261011000001_ai.sql</code></td><td>IA: consumo, chat</td></tr><tr><td>8</td><td><code>20261011000002_ai_cron.sql</code></td><td>IA: cola programada</td></tr><tr><td>9</td><td><code>20261012000001_favorites.sql</code></td><td>Favoritos y YouTube</td></tr><tr><td>10</td><td><code>20261013000001_account_delete.sql</code></td><td>Borrado de cuenta</td></tr></table>
+<p>Repite estos pasos <b>para cada archivo</b>, empezando por el 1:</p>
+<ol>
+<li>En GitHub abre <code>https://github.com/pertx1/BiBuru/blob/main/supabase/migrations/NOMBRE-DEL-ARCHIVO.sql</code> (cambia el nombre).</li>
+<li>Pulsa el icono <b class="k">Copy raw file</b> (dos cuadraditos, arriba a la derecha del código).</li>
+<li>En Supabase, menú izquierdo: <b class="k">SQL Editor</b> → <b class="k">+ New query</b>.</li>
+<li>Pega (<b class="k">Ctrl+V</b> / <b class="k">Cmd+V</b>) y pulsa el botón verde <b class="k">Run</b>.</li>
+<li>Abajo debe poner <b>«Success. No rows returned»</b>. Marca el archivo como hecho en esta lista y pasa al siguiente.</li>
+</ol>
+<div class="box warn"><b>Si un archivo da error:</b> no sigas con los siguientes. Haz una captura del error (texto rojo) y mándamela diciendo el número de archivo. <b>No ejecutes dos veces</b> un archivo que salió bien: daría «already exists» (inofensivo, pero lía).</div>
+<div class="box">El archivo 6 intenta activar las extensiones <code>pg_cron</code> y <code>pg_net</code>. Si Supabase te las pide activar a mano: <b class="k">Database → Extensions</b>, busca cada una y pulsa el interruptor. Después vuelve a ejecutar <b>solo</b> el bloque de la función <code>configure_cron</code> (lo haré yo si hace falta: dímelo).</div>
+<p><b>Comprobación:</b> <b class="k">Table Editor</b> debe listar, entre otras: <code>profiles</code>, <code>businesses</code>, <code>orders</code>, <code>expenses</code>, <code>tasks</code>, <code>notes</code>, <code>inbox_items</code>, <code>saved_videos</code>, <code>integrations</code>. Y <b class="k">Storage</b> debe mostrar un bucket privado llamado <code>receipts</code>.</p>
+
+<h2 class="pb">4 · Configurar el acceso por correo</h2>
+
+<h3>4.1 Cerrar el registro público</h3>
+<ol>
+<li><b class="k">Authentication</b> (icono de persona/candado, menú izquierdo).</li>
+<li>En el submenú, pulsa <b class="k">Sign In / Providers</b> (puede llamarse <b class="k">Providers</b> o <b class="k">Settings</b>).</li>
+<li>Busca <b>Allow new users to sign up</b> (en algunas versiones está en <b class="k">User Signups</b>) y <b>apágalo</b>.</li>
+<li>En <b>Email</b>, asegúrate de que está activado (<b class="k">Enable Email provider</b> ON) y <b>Confirm email</b> ON. Si ves <b>Email OTP Length</b>, déjalo en <code>6</code>.</li>
+<li>Pulsa <b class="k">Save</b>.</li>
+</ol>
+<h3>4.2 Poner el correo bonito (con enlace y código)</h3>
+<ol>
+<li><b class="k">Authentication → Email Templates</b> (puede estar dentro de <b class="k">Emails</b>).</li>
+<li>Elige la plantilla <b class="k">Magic Link</b>.</li>
+<li><b>Subject</b>: borra lo que haya y escribe <code>Tu acceso a BiBuru</code>.</li>
+<li><b>Message body</b> (modo <b class="k">Source</b>): borra todo y pega el contenido del archivo <code>supabase/templates/magic-link.html</code> del repositorio (en GitHub ábrelo y pulsa <b class="k">Copy raw file</b>).</li>
+<li>Pulsa <b class="k">Save</b>.</li>
+</ol>
+<div class="box"><b>¿Por qué un código además del enlace?</b> En el iPhone, la app instalada y Safari son «mundos separados». Si pulsas el enlace del correo se abre Safari, no la app. Con el código de 6 dígitos entras directamente dentro de la app instalada.</div>
+
+<h3>4.3 Crear tu usuario</h3>
+<p>Como el registro está cerrado, tu usuario lo creas tú a mano una sola vez.</p>
+<ol>
+<li><b class="k">Authentication → Users</b>.</li>
+<li>Pulsa <b class="k">Add user</b> → <b class="k">Create new user</b>.</li>
+<li><b>Email</b>: <code>oiier.gsss@gmail.com</code>.</li>
+<li><b>Password</b>: escribe cualquier cosa larga y aleatoria (no la usarás nunca; entras con códigos). No hace falta guardarla.</li>
+<li>Marca la casilla <b class="k">Auto Confirm User</b>.</li>
+<li>Pulsa <b class="k">Create user</b>.</li>
+<li>Comprueba: <b class="k">Table Editor → profiles</b> debe tener <b>1 fila</b>, y <b class="k">workspaces</b> otra llamada «Personal». Si están vacías, avísame (significa que la migración no se ejecutó entera).</li>
+</ol>
+
+
+
+<h2 class="pb">5 · Publicar la web en Vercel</h2>
+<h3>5.1 Cuenta</h3>
+<ol>
+<li>Entra en <code>https://vercel.com/signup</code>.</li>
+<li>Elige <b class="k">Hobby</b> (gratis, uso personal). Pon tu nombre.</li>
+<li>Pulsa <b class="k">Continue with GitHub</b> y autoriza.</li>
+</ol>
+<h3>5.2 Importar el proyecto</h3>
+<ol>
+<li>Pulsa <b class="k">Add New… → Project</b>.</li>
+<li>En <b>Import Git Repository</b>, si no ves <code>BiBuru</code>, pulsa <b class="k">Adjust GitHub App Permissions</b> y da acceso al repositorio <code>BiBuru</code> (<b class="k">Only select repositories</b> → BiBuru → <b class="k">Save</b>). Vuelve a Vercel.</li>
+<li>Junto a <code>pertx1/BiBuru</code> pulsa <b class="k">Import</b>.</li>
+<li><b>Framework Preset</b> debe decir <b>Next.js</b>. No toques el resto (Root Directory vacío, Build Command por defecto).</li>
+</ol>
+
+<h3>5.3 Variables de entorno</h3>
+<p>En <b class="k">Environment Variables</b> añade estas tres, una a una (nombre en <b>Key</b>, valor en <b>Value</b>, <b class="k">Add</b>). Las demás se añaden en los pasos 8, 9 y 10.</p>
+<table><tr><th>Key (nombre exacto)</th><th>Value (qué pegar)</th></tr>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>La <b>SUPABASE_URL</b> de «mi bloc» (<code>https://….supabase.co</code>), sin barra final.</td></tr>
+<tr><td><code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code></td><td>La <b>PUBLISHABLE_KEY</b> (<code>sb_publishable_…</code>). Si solo tienes la antigua, usa en su lugar el nombre <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> con la clave <code>eyJ…</code>.</td></tr>
+<tr><td><code>ALLOWED_EMAILS</code></td><td><code>oiier.gsss@gmail.com</code></td></tr></table>
+<div class="box warn">Cuidado con espacios al principio o al final al pegar y con errores en el nombre (mayúsculas y guiones bajos exactos). El 90 % de los fallos vienen de aquí.</div>
+<ol>
+<li>Pulsa <b class="k">Deploy</b>. Espera 1–3 minutos hasta ver <b>«Congratulations!»</b>.</li>
+<li>En el panel verás tu dirección bajo <b>Domains</b> (parecida a <code>biburu-xxxx.vercel.app</code>). <b>Cópiala a «mi bloc» como TU_URL</b> (con <code>https://</code>).</li>
+</ol>
+
+<h2 class="pb">6 · Decirle a Supabase tu dirección</h2>
+<h3>5.4 Decirle a Supabase cuál es tu dirección</h3>
+<ol>
+<li>Supabase → <b class="k">Authentication → URL Configuration</b>.</li>
+<li><b>Site URL</b>: pega TU_URL (por ejemplo <code>https://biburu-xxxx.vercel.app</code>), sin barra final.</li>
+<li><b>Redirect URLs</b> → <b class="k">Add URL</b>: pega <code>https://biburu-xxxx.vercel.app/**</code> (tu URL con <code>/**</code> al final).</li>
+<li>Pulsa <b class="k">Save changes</b>.</li>
+</ol>
+<div class="box">Importante: el botón del correo usa la «Site URL». Si la dejas en <code>localhost</code> el enlace no funcionará.</div>
+
+
+
+<h2 class="pb">7 · Primera prueba</h2>
+<h3>7.1 Ordenador</h3>
+<ol>
+<li>Abre TU_URL en Chrome: aparece BiBuru con un recuadro de correo.</li>
+<li>Escribe <code>oiier.gsss@gmail.com</code> → <b class="k">Enviarme el acceso</b>.</li>
+<li>Abre el correo (mira Spam). Pulsa <b class="k">Entrar en BiBuru</b> o escribe el código de 6 dígitos en la web.</li>
+<li>Debes ver «Hola, …» y la barra lateral con Inicio, Asistente, Bandeja, Tareas, Calendario, Negocios, Objetivos, Notas, Favoritos, Ajustes.</li>
+<li>Prueba de seguridad: ventana de incógnito con TU_URL → te lleva al acceso sin mostrar nada.</li>
+</ol>
+<h3>7.2 iPhone (tiene que ser Safari)</h3>
+<ol>
+<li>Safari → TU_URL → botón <b>Compartir</b> (cuadrado con flecha) → <b class="k">Añadir a pantalla de inicio</b> → <b class="k">Añadir</b>.</li>
+<li><b>Cierra Safari</b> y abre BiBuru desde el icono nuevo (pantalla completa).</li>
+<li>Escribe tu correo → <b class="k">Enviarme el acceso</b>. En Mail abre el correo y <b>copia el código de 6 dígitos; no pulses el botón del correo</b> (abriría Safari, no la app).</li>
+<li>Vuelve a BiBuru, escribe el código → <b class="k">Entrar</b>. Si la app se reinició, pide otro correo y usa el código nuevo.</li>
+</ol>
+<ul><li><span class="ck"></span>Pantalla completa, sin tapar por la isla ni por la barra inferior.</li><li><span class="ck"></span>Los campos no hacen zoom al tocarlos.</li><li><span class="ck"></span>Ajustes → <b>Instalar la app</b> dice «instalada ✔».</li><li><span class="ck"></span>Cierras del todo la app y la abres: sigues dentro.</li></ul>
+
+<h2 class="pb">8 · Activar avisos y tareas programadas (cron)</h2>
+<p>Esto hace que lleguen los avisos de tareas, el resumen de la mañana, y que la IA y YouTube trabajen en segundo plano <b>aunque la app esté cerrada y el móvil bloqueado</b>.</p>
+<h3>8.1 Generar las claves (sin instalar nada)</h3>
+<ol>
+<li>En BiBuru abre <b class="k">Ajustes → Asistente de configuración</b> y pulsa <b class="k">Generar claves</b>.</li>
+<li>Aparecen cuatro claves: <code>NEXT_PUBLIC_VAPID_PUBLIC_KEY</code>, <code>VAPID_PRIVATE_KEY</code>, <code>CRON_SECRET</code> y <code>TOKEN_ENCRYPTION_KEY</code>. <b>Cópialas a «mi bloc»</b> con el botón de copiar de cada una. No se guardan en ningún sitio: si cierras la pantalla sin copiarlas, genera otras.</li>
+</ol>
+<h3>8.2 Clave secreta de Supabase</h3>
+<ol>
+<li>Supabase → <b class="k">Project Settings → API Keys</b>.</li>
+<li>Copia la clave <b>secret</b> (<code>sb_secret_…</code>) —o, en <b class="k">Legacy API Keys</b>, la <b>service_role</b>— a «mi bloc» como <b>SERVICE_KEY</b>. <b>Es la llave maestra: solo a Vercel.</b></li>
+</ol>
+<h3>8.3 Pegarlas en Vercel</h3>
+<ol>
+<li>Vercel → tu proyecto → <b class="k">Settings → Environment Variables</b>. Añade (todas en <b>All Environments</b>):</li></ol>
+<table><tr><th>Key</th><th>Value</th></tr>
+<tr><td><code>NEXT_PUBLIC_VAPID_PUBLIC_KEY</code></td><td>la del asistente</td></tr>
+<tr><td><code>VAPID_PRIVATE_KEY</code></td><td>la del asistente</td></tr>
+<tr><td><code>VAPID_SUBJECT</code></td><td><code>mailto:oiier.gsss@gmail.com</code></td></tr>
+<tr><td><code>CRON_SECRET</code></td><td>la del asistente</td></tr>
+<tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>SERVICE_KEY de «mi bloc»</td></tr>
+<tr><td><code>TOKEN_ENCRYPTION_KEY</code></td><td>la del asistente (la usará YouTube, paso 10)</td></tr></table>
+<ol start="2"><li><b class="k">Deployments</b> → los tres puntos del último despliegue → <b class="k">Redeploy</b> (sin marcar «use existing build cache» si te lo pregunta). Las variables nuevas solo valen tras redesplegar.</li></ol>
+<div class="box warn"><b>Después de redesplegar, vuelve a entrar en BiBuru</b> si te pide sesión. <b>No vuelvas a generar claves</b> con el asistente salvo que quieras sustituirlas en Vercel.</div>
+<h3>8.4 Programar el cron en Supabase</h3>
+<ol>
+<li>Supabase → <b class="k">SQL Editor → + New query</b> y pega esto cambiando <code>TU_URL</code> (con https://, sin barra final) y <code>TU_CRON_SECRET</code> (el <b>CRON_SECRET</b> de tu bloc):
+<pre>select public.configure_cron('TU_URL', 'TU_CRON_SECRET');</pre></li>
+<li><b class="k">Run</b>. Debe responder: <i>Programado: avisos (1 min), IA (2 min), análisis de vídeos (3 min) y sincronización de YouTube (cada 6 h)</i>.</li>
+<li>Si da error por <code>cron</code> o <code>net</code>: <b class="k">Database → Extensions</b>, activa <code>pg_cron</code> y <code>pg_net</code> y repite.</li>
+<li>Para ver que corre: <b class="k">Database → Cron</b> (o <code>select * from cron.job_run_details order by start_time desc limit 5;</code>). Debe haber filas con «succeeded».</li>
+</ol>
+<div class="box"><b>Plan B (si Supabase Cron no te va):</b> en <code>https://cron-job.org</code> (gratis) crea 4 tareas con la cabecera <code>Authorization: Bearer TU_CRON_SECRET</code> a: <code>TU_URL/api/cron/reminders</code> (cada minuto), <code>/api/cron/ai</code> (cada 2 min), <code>/api/cron/videos</code> (cada 3 min) y <code>/api/cron/youtube-sync</code> (cada 6 h).</div>
+<h3>8.5 Activar los avisos en el iPhone</h3>
+<ol>
+<li>Abre BiBuru <b>desde el icono de la pantalla de inicio</b> (los avisos en iPhone solo funcionan con la app instalada).</li>
+<li><b class="k">Ajustes → Avisos en este dispositivo → Activar avisos en este dispositivo</b>. Acepta el permiso.</li>
+<li>Pulsa <b class="k">Enviar aviso de prueba</b>: debe llegarte «BiBuru · aviso de prueba» <b>aunque bloquees el móvil</b>.</li>
+<li>Prueba real: crea una tarea para dentro de 10 minutos con hora, cierra la app y bloquea el móvil. Debe avisarte a la hora elegida (por defecto 30 min antes para eventos y a su hora para tareas; ajustable en <b class="k">Qué avisos quieres</b>).</li>
+</ol>
+<div class="box">Los avisos llegan con un retraso de hasta ~1 minuto (el cron es por minutos). Si no llega nada: sección 14.</div>
+
+<h2 class="pb">9 · Activar la IA (Gemini)</h2>
+<p>La IA clasifica lo que apuntas, responde en el chat, dicta por voz y resume vídeos. <b>Es opcional</b>: sin clave, BiBuru funciona igual (la captura se clasifica a mano).</p>
+<ol>
+<li>Entra en <code>https://aistudio.google.com</code> con tu cuenta de Google.</li>
+<li>Pulsa <b class="k">Get API key</b> (menú izquierdo o arriba) → <b class="k">Create API key</b>. Si te pide elegir proyecto, <b class="k">Create API key in new project</b>.</li>
+<li>Copia la clave (<code>AIza…</code>) a «mi bloc» como <b>GEMINI_KEY</b>.</li>
+<li>Vercel → <b class="k">Environment Variables</b>: añade <code>GEMINI_API_KEY</code> = GEMINI_KEY. Opcionales (no los pongas si no sabes): <code>GEMINI_MODEL_FAST</code> (por defecto <code>gemini-3.5-flash-lite</code>), <code>GEMINI_MODEL_VIDEO</code> (por defecto <code>gemini-3.8-flash</code>), <code>AI_MAX_RPM</code> (peticiones por minuto, por defecto 10).</li>
+<li><b>Redeploy</b> (como en 8.3).</li>
+<li>BiBuru → <b class="k">Ajustes → Inteligencia artificial</b>: debe decir «Clave de Gemini configurada en el servidor ✔». Comprueba el <b>presupuesto mensual</b> (10 € por defecto) y los <b>precios por millón de tokens</b>.</li>
+</ol>
+<div class="box warn"><b>Importante sobre costes.</b> Los precios que trae BiBuru son <b>estimaciones mías</b>, no los oficiales. Entra en <code>https://ai.google.dev/pricing</code>, mira el precio vigente de tus dos modelos (entrada y salida, € o $ por millón de tokens) y corrígelos en <b class="k">Ajustes → Inteligencia artificial → Precios</b>. Si los precios que pones son más altos que los reales, el tope salta antes (lado seguro). Si el nombre de un modelo ha cambiado, cámbialo con las variables <code>GEMINI_MODEL_*</code>.</div>
+<div class="box"><b>Qué hace el tope:</b> al 80 % te llega un aviso; al 100 % la IA se pausa hasta el mes siguiente (o hasta que subas el presupuesto). <b>La captura rápida nunca se bloquea.</b> Además, los vídeos de más de 20 minutos no se analizan solos: te enseñan el coste estimado y tú decides.</div>
+<h3>Pruebas</h3>
+<ul>
+<li><span class="ck"></span>Captura <i>«Comprar etiquetas mañana a las 9»</i> con el botón +; en <b class="k">Bandeja</b> aparece una propuesta «Tarea» con <b class="k">Aceptar</b>, <b class="k">Corregir</b>, <b class="k">Descartar</b>.</li>
+<li><span class="ck"></span>Captura <i>«Gasto de 42,50 euros en etiquetas»</i>: la propuesta pide <b class="k">Confirmar</b>; <b>un gasto nunca se crea solo</b>.</li>
+<li><span class="ck"></span><b>Asistente</b>: pregunta «¿Qué tareas tengo mañana?».</li>
+<li><span class="ck"></span>Micrófono del panel de captura: pulsa, habla, pulsa de nuevo; el texto aparece (iPhone: acepta el permiso del micrófono).</li>
+</ul>
+
+<h2 class="pb">10 · Conectar YouTube (Google Cloud)</h2>
+<p>Trae tus «Me gusta» y listas de YouTube a <b>Favoritos</b> y los resume. BiBuru solo pide permiso de <b>lectura</b>. <b>Es opcional</b>: sin esto puedes pegar enlaces a mano en Favoritos.</p>
+<div class="box warn"><b>Límites que debes conocer:</b> (1) La lista <b>«Ver más tarde»</b> no se puede importar: Google no la ofrece a ninguna aplicación. Pasa esos vídeos a una lista normal o pega los enlaces. (2) <b>TikTok</b> no tiene API de lectura pública: se guarda por enlace y se analiza solo con título/autor, sin ver el vídeo. (3) En modo «pruebas», Google caduca el acceso a los 7 días; el paso 10.6 lo evita.</div>
+<h3>10.1 Crear el proyecto</h3>
+<ol>
+<li>Entra en <code>https://console.cloud.google.com</code> con tu cuenta de Google. Acepta los términos si te los pide (no te pedirá tarjeta para esto).</li>
+<li>Arriba, junto al logo, pulsa el selector de proyecto → <b class="k">Proyecto nuevo</b>. Nombre: <code>BiBuru</code> → <b class="k">Crear</b>. Selecciona el proyecto cuando termine.</li>
+</ol>
+<h3>10.2 Activar la API de YouTube</h3>
+<ol>
+<li>Menú (☰) → <b class="k">APIs y servicios → Biblioteca</b>.</li>
+<li>Busca <code>YouTube Data API v3</code> → ábrela → <b class="k">Habilitar</b>.</li>
+</ol>
+<h3>10.3 Pantalla de consentimiento</h3>
+<ol>
+<li><b class="k">APIs y servicios → Pantalla de consentimiento de OAuth</b> (puede llamarse <b class="k">Google Auth Platform</b>). Pulsa <b class="k">Comenzar</b>.</li>
+<li>Nombre de la aplicación: <code>BiBuru</code>. Correo de asistencia: el tuyo. <b class="k">Siguiente</b>.</li>
+<li>Público: <b class="k">Externo</b>. <b class="k">Siguiente</b>. Correo de contacto: el tuyo. Acepta la política → <b class="k">Crear</b>.</li>
+<li>En <b class="k">Público</b> (o «Usuarios de prueba») pulsa <b class="k">Add users</b> y añade <code>oiier.gsss@gmail.com</code> → <b class="k">Guardar</b>.</li>
+<li>En <b class="k">Acceso a los datos</b> (Scopes) → <b class="k">Añadir o quitar permisos</b> → busca y marca <code>.../auth/youtube.readonly</code> → <b class="k">Actualizar</b> → <b class="k">Guardar</b>.</li>
+</ol>
+<h3>10.4 Crear las credenciales</h3>
+<ol>
+<li><b class="k">Credenciales → + Crear credenciales → ID de cliente de OAuth</b> (o <b class="k">Clientes → Crear cliente</b>).</li>
+<li>Tipo de aplicación: <b class="k">Aplicación web</b>. Nombre: <code>BiBuru web</code>.</li>
+<li>En <b>URI de redirección autorizados</b> → <b class="k">+ Añadir URI</b>: pega <code>TU_URL/api/google/callback</code> (por ejemplo <code>https://biburu-xxxx.vercel.app/api/google/callback</code>; exactamente así, sin barra final).</li>
+<li><b class="k">Crear</b>. Aparecen <b>ID de cliente</b> y <b>Secreto del cliente</b>: cópialos a «mi bloc» como <b>GOOGLE_ID</b> y <b>GOOGLE_SECRET</b>.</li>
+</ol>
+<h3>10.5 Pegar en Vercel y conectar</h3>
+<ol>
+<li>Vercel → Environment Variables: <code>GOOGLE_CLIENT_ID</code> = GOOGLE_ID y <code>GOOGLE_CLIENT_SECRET</code> = GOOGLE_SECRET. (<code>TOKEN_ENCRYPTION_KEY</code> ya la pusiste en 8.3.) <b>Redeploy</b>.</li>
+<li>BiBuru → <b class="k">Ajustes → YouTube y vídeos → Conectar con Google</b>.</li>
+<li>Google avisará de que «la app no está verificada»: es normal (eres tú). Pulsa <b class="k">Configuración avanzada → Ir a BiBuru (no seguro)</b> y acepta el permiso de <b>ver tu cuenta de YouTube</b>.</li>
+<li>Vuelves a Ajustes con «Cuenta de Google conectada ✔». Pulsa <b class="k">Elegir listas…</b>, marca las que quieras y luego <b class="k">Sincronizar ahora</b>.</li>
+</ol>
+<h3>10.6 Que no caduque a los 7 días</h3>
+<ol><li>Google Cloud → <b class="k">Pantalla de consentimiento → Público</b> → <b class="k">Publicar la aplicación</b> (<i>Pasar a producción</i>). Para un uso personal con un solo usuario Google puede mostrar el aviso de «no verificada»; no hace falta verificarla. Si no publicas, tendrás que pulsar «Conectar con Google» de nuevo cada semana.</li></ol>
+<h3>Pruebas</h3>
+<ul>
+<li><span class="ck"></span>En <b>Favoritos</b> pega un enlace de YouTube: aparece guardado y, en 1–3 minutos, con resumen, puntos clave, categoría y utilidad.</li>
+<li><span class="ck"></span>Pega un enlace de TikTok: se guarda con su título y la ficha indica que se analizó solo con texto.</li>
+<li><span class="ck"></span>Un vídeo de más de 20 min aparece como «Vídeo largo: confirma el análisis» con coste estimado y dos botones.</li>
+<li><span class="ck"></span>Pega el mismo enlace dos veces: dice «ya estaba guardado» (sin duplicados).</li>
+<li><span class="ck"></span>Capturar un enlace de YouTube desde el botón + y aceptarlo en la Bandeja lo manda a Favoritos.</li>
+</ul>
+
+<h2 class="pb">11 · Importar tus datos de PROFITY</h2>
+<p>El importador es un programa que se ejecuta <b>una vez</b>, en un ordenador con Node. Para no instalar nada, usa <b>GitHub Codespaces</b> (un ordenador en el navegador, gratis hasta 120 horas de núcleo al mes para cuentas personales; si te pidiera tarjeta, no sigas y avísame).</p>
+<h3>11.1 Conseguir la cadena de conexión de PROFITY</h3>
+<ol>
+<li>Entra en el panel de la base de datos de PROFITY (Neon: <code>https://console.neon.tech</code>) → tu proyecto → <b class="k">Dashboard → Connection string</b>.</li>
+<li>Copia la cadena (empieza por <code>postgresql://</code>) a «mi bloc» como <b>PROFITY_DB</b>. Si hay un selector, elige la rama principal y el rol por defecto.</li>
+</ol>
+<h3>11.2 Abrir Codespaces</h3>
+<ol>
+<li>En <code>https://github.com/pertx1/BiBuru</code> pulsa el botón verde <b class="k">&lt;&gt; Code</b> → pestaña <b class="k">Codespaces</b> → <b class="k">Create codespace on main</b>. Espera 1–2 minutos: se abre un editor tipo VS Code en el navegador.</li>
+<li>Abajo hay una zona negra llamada <b>Terminal</b>. Escribe <code>npm install</code> y pulsa Intro. Espera a que termine.</li>
+<li>Crea el archivo de claves: escribe <code>cp .env.example .env.local</code> + Intro, y ábrelo con un clic en <code>.env.local</code> en la lista de archivos de la izquierda.</li>
+<li>Rellena <b>solo</b> estas tres líneas (sin comillas ni espacios):<pre>PROFITY_DATABASE_URL=PROFITY_DB de tu bloc
+NEXT_PUBLIC_SUPABASE_URL=SUPABASE_URL de tu bloc
+SUPABASE_SERVICE_ROLE_KEY=SERVICE_KEY de tu bloc</pre>Guarda con <b class="k">Ctrl+S</b>.</li>
+</ol>
+<h3>11.3 Simular y luego importar</h3>
+<ol>
+<li>Simulación (no escribe nada): <pre>npm run import:profity:dry</pre> Te cuenta cuántos registros hay y los totales de ingresos, gastos y pedidos.</li>
+<li>Si los números te cuadran con lo que ves en PROFITY: <pre>npm run import:profity -- --email oiier.gsss@gmail.com</pre> Te muestra el resumen y pide confirmar. Al final dice <b>«Todo coincide. Importación completada.»</b> (compara los totales origen/destino). Si dice «NO coincide», <b>no sigas</b> y mándame la salida.</li>
+<li>Se puede repetir sin duplicar. Por defecto, tus ventas van a <b>Akerra</b> y lo de Vinted a un negocio <b>Vinted</b> (opciones <code>--business</code>, <code>--vinted-business</code>, <code>--no-vinted</code>).</li>
+</ol>
+<div class="box danger"><b>Al terminar, borra el Codespace</b> (<code>https://github.com/codespaces</code> → los tres puntos → <b class="k">Delete</b>): contiene tu clave secreta de Supabase. Esa clave <b>nunca</b> se sube al repositorio (<code>.env.local</code> está ignorado por git).</div>
+<p><b>Comprobación:</b> en BiBuru → <b class="k">Negocios</b> aparecen Akerra y Vinted con sus pedidos, gastos e ingresos y las estadísticas coinciden con las de PROFITY. <b>Mientras dudes, no apagues PROFITY.</b></p>
+
+<h2 class="pb">12 · Recorrido de pruebas por secciones</h2>
+<p>Haz esto una vez en el ordenador y una vez en el iPhone. Si algo no hace lo que dice, apunta la sección y la captura.</p>
+<table>
+<tr><th>Sección</th><th>Qué probar</th></tr>
+<tr><td><b>Inicio</b></td><td>Barra de captura arriba; tareas de hoy y atrasadas (marcar una como hecha); eventos de hoy; tarjetas de cada negocio con beneficio y variación; objetivos; avisos de «capturas por revisar» y «vídeos sin revisar».</td></tr>
+<tr><td><b>Captura rápida</b> (botón +)</td><td>Abre al instante; escribe y Enter guarda en menos de 5 s. <b>Sin conexión</b>: activa modo avión, captura algo («Guardado. Se enviará…»), desactívalo: llega solo a la Bandeja, sin duplicar.</td></tr>
+<tr><td><b>Bandeja</b></td><td>Aceptar / corregir / descartar propuestas; botones manuales (Tarea, Nota, Idea…) si no hay IA; «Deshacer» tras descartar.</td></tr>
+<tr><td><b>Tareas</b></td><td>Añadir con lenguaje natural («llamar a Marta mañana 10:00 !!»); repetición (cada semana); subtareas; vistas Hoy, 7 días, Todas, Por negocio, Hechas; posponer; recordatorios.</td></tr>
+<tr><td><b>Calendario</b></td><td>Vistas día, semana, mes; crear evento; evento recurrente; las tareas con fecha aparecen también.</td></tr>
+<tr><td><b>Negocios</b></td><td>Crear negocio; pedidos con líneas (producto, color, talla, precio); gastos con categoría y foto del ticket; ingresos; estadísticas por periodo y exportar CSV; Producción (stock de camisetas, DTF, bolsa de imprenta, facturas, reglas).</td></tr>
+<tr><td><b>Objetivos</b></td><td>Crear uno de cada tipo (número, euros, porcentaje, hitos); objetivo automático ligado a ingresos; ver ritmo («va por delante / con retraso»).</td></tr>
+<tr><td><b>Notas</b></td><td>Carpetas, Markdown (negrita, listas, tareas), vista previa, etiquetas; cierra la pestaña sin esperar: se guarda solo.</td></tr>
+<tr><td><b>Búsqueda</b></td><td>Lupa arriba (o <b class="k">Ctrl/Cmd+K</b>): encuentra notas, tareas, pedidos, gastos y vídeos, sin importar tildes ni mayúsculas.</td></tr>
+<tr><td><b>Asistente</b> y <b>Favoritos</b></td><td>Ver las pruebas de los pasos 9 y 10.</td></tr>
+<tr><td><b>Sin conexión</b></td><td>Abre Inicio, Tareas y Favoritos con conexión; luego modo avión: puedes <b>leer</b> lo último cargado con un aviso naranja; las páginas que no habías visitado muestran la pantalla «sin conexión». Escribir (editar tareas, notas…) requiere conexión; solo la captura rápida funciona sin ella.</td></tr>
+<tr><td><b>Ajustes</b></td><td>Avisos, IA y presupuesto, YouTube, apariencia, instalar, <b>Tus datos</b> (descargar JSON/CSV), cerrar sesión.</td></tr>
+</table>
+
+<h2 class="pb">13 · Uso diario, copias de seguridad y costes</h2>
+<h3>Copias de seguridad</h3>
+<ul>
+<li><b>Descarga tus datos</b> en <b class="k">Ajustes → Tus datos → Todo (JSON)</b> cada mes (guárdalo en tu nube). Los CSV se abren en Excel.</li>
+<li>Los tickets (fotos/PDF) están en Supabase → Storage → <code>receipts</code>; el JSON conserva sus rutas.</li>
+<li>El plan gratuito de Supabase <b>no incluye copias automáticas descargables</b>: la exportación mensual es tu seguro.</li>
+</ul>
+<h3>Límites gratuitos que conviene saber</h3>
+<table>
+<tr><th>Servicio</th><th>Límite relevante</th><th>Qué hacer</th></tr>
+<tr><td>Supabase Free</td><td>500 MB de base de datos, 1 GB de archivos, pausa tras 7 días sin actividad.</td><td>El cron y el uso diario evitan la pausa. Si ves «Project paused»: <b class="k">Restore project</b>.</td></tr>
+<tr><td>Vercel Hobby</td><td>Uso personal no comercial; funciones de hasta 60 s.</td><td>Si en el futuro vendes la app a terceros, hay que pasar a un plan de pago (te avisaré).</td></tr>
+<tr><td>Gemini</td><td>De pago por uso; tope propio de 10 €/mes en BiBuru.</td><td>Revisa <b class="k">Ajustes → Inteligencia artificial</b> una vez al mes. En AI Studio puedes ver el uso real.</td></tr>
+<tr><td>YouTube API</td><td>10.000 unidades/día (sincronizar cuesta ~1 por cada 50 vídeos).</td><td>Sin acción.</td></tr>
+</table>
+<h3>Cambiar o perder una clave</h3>
+<ul>
+<li><b>Supabase secret/service_role:</b> Supabase → API Keys → regenerar; pégala en Vercel (<code>SUPABASE_SERVICE_ROLE_KEY</code>) y redeploy.</li>
+<li><b>CRON_SECRET:</b> nueva en el asistente → Vercel → redeploy → vuelve a ejecutar el <code>select public.configure_cron(...)</code> del paso 8.4 con la nueva.</li>
+<li><b>VAPID:</b> si cambias estas claves, hay que <b>volver a activar los avisos</b> en cada dispositivo.</li>
+<li><b>TOKEN_ENCRYPTION_KEY:</b> si la cambias, hay que <b>desconectar y volver a conectar</b> YouTube (el acceso guardado ya no se podría descifrar).</li>
+<li><b>GEMINI_API_KEY / GOOGLE_CLIENT_SECRET:</b> regenerar en su consola y actualizar en Vercel + redeploy.</li>
+</ul>
+<h3>Si un día quieres salirte</h3>
+<p><b>Ajustes → Tus datos → Borrar mi cuenta y todos mis datos</b> (pide escribir tu correo; borra tickets, datos y accesos; es irreversible). Descarga antes el JSON.</p>
+<h3>Abrir BiBuru a más personas</h3>
+<p>Hoy el registro está cerrado en tres capas. Para más gente: activar «Allow new users to sign up» en Supabase, poner <code>shouldCreateUser: true</code> en la acción de login y sustituir <code>ALLOWED_EMAILS</code> por una tabla de invitaciones. Los espacios compartidos ya están preparados en la base de datos (falta la pantalla de invitaciones). Pídemelo cuando quieras.</p>
+
+<h2 class="pb">14 · Si algo falla</h2>
+<table>
+<tr><th>Síntoma</th><th>Causa probable → qué hacer</th></tr>
+<tr><td>El despliegue de Vercel falla en «Build»</td><td>Falta o está mal escrita una variable. Revisa los nombres del paso 5.3 y vuelve a desplegar. Si sigue, copia el final del registro rojo y mándamelo.</td></tr>
+<tr><td>«Redirect to /login» en bucle o «perfil»</td><td>La migración 1 no se ejecutó entera o el usuario se creó antes de ella. Mira <b class="k">Table Editor → profiles</b>: debe tener 1 fila. Si está vacía, bórralo en Authentication → Users, comprueba la migración 1 y créalo otra vez.</td></tr>
+<tr><td>El correo no llega</td><td>Mira Spam. El SMTP gratuito de Supabase es lento y limitado (pocos correos por hora): espera unos minutos y no pidas muchos seguidos. Comprueba que el usuario existe y «Site URL» es tu dirección.</td></tr>
+<tr><td>El enlace del correo abre localhost o da error</td><td>«Site URL» y «Redirect URLs» mal puestas (paso 6). En el iPhone, usa el <b>código</b> en lugar del enlace.</td></tr>
+<tr><td>«Invalid API key» / pantalla en blanco tras entrar</td><td>URL o clave de Supabase mal pegadas en Vercel (espacios, falta algún carácter). Corrige y redeploy.</td></tr>
+<tr><td>Los avisos no llegan</td><td>Comprueba en orden: (1) app instalada en la pantalla de inicio del iPhone; (2) «Enviar aviso de prueba» funciona; si no → variables VAPID y redeploy; (3) <code>select * from cron.job_run_details order by start_time desc limit 5;</code> con «succeeded»; si «failed», el <code>CRON_SECRET</code> de <code>configure_cron</code> no coincide con el de Vercel; (4) horas de silencio en Ajustes.</td></tr>
+<tr><td>La IA dice «no está configurada»</td><td>Falta <code>GEMINI_API_KEY</code> o no redesplegaste.</td></tr>
+<tr><td>Error de IA con «404 / model not found»</td><td>El nombre del modelo cambió: pon uno vigente en <code>GEMINI_MODEL_FAST</code> / <code>GEMINI_MODEL_VIDEO</code> (los ves en AI Studio) y redeploy.</td></tr>
+<tr><td>Las capturas se quedan «pendientes de IA»</td><td>Presupuesto agotado, límite por minuto o el cron de IA sin programar (paso 8.4). Se reintentan solas; o pulsa «Reintentar» en la tarjeta.</td></tr>
+<tr><td>Google: «Error 400: redirect_uri_mismatch»</td><td>La URI del paso 10.4 no coincide letra por letra con <code>TU_URL/api/google/callback</code>. Corrígela en Google Cloud (tarda unos minutos en aplicarse).</td></tr>
+<tr><td>Google: «Acceso bloqueado: app no completó la verificación»</td><td>Tu correo no está como usuario de prueba (paso 10.3, punto 4).</td></tr>
+<tr><td>«Google no entregó el permiso permanente»</td><td>Quita BiBuru en <code>https://myaccount.google.com/permissions</code> y vuelve a conectar.</td></tr>
+<tr><td>YouTube dejó de sincronizar tras una semana</td><td>La app seguía en modo «pruebas»: haz el paso 10.6 y reconecta.</td></tr>
+<tr><td>El importador de PROFITY falla al conectar</td><td>Cadena de Neon incorrecta o con comillas. Debe ir sin comillas y completa (incluye <code>?sslmode=require</code> si Neon la da así).</td></tr>
+<tr><td>Veo la pantalla «sin conexión» con internet</td><td>Cierra y vuelve a abrir la app. Si persiste, en Safari: Ajustes → Safari → Avanzado → Datos de sitios web → borra el de tu dominio y vuelve a instalar.</td></tr>
+</table>
+
+<h2 class="pb">15 · Checklist final</h2>
+<ul>
+<li><span class="ck"></span>Código fusionado en <code>main</code> y desplegado en Vercel.</li>
+<li><span class="ck"></span>10 migraciones ejecutadas, tablas y bucket <code>receipts</code> visibles.</li>
+<li><span class="ck"></span>Registro público desactivado; tu usuario creado; incógnito no deja entrar.</li>
+<li><span class="ck"></span>Entras en el ordenador y en el iPhone (con código) y la app instalada se mantiene abierta.</li>
+<li><span class="ck"></span>Claves generadas y pegadas en Vercel; <code>configure_cron</code> ejecutado; aviso de prueba recibido con el móvil bloqueado.</li>
+<li><span class="ck"></span>(Opcional) Gemini: clasifica una captura, el chat responde, precios revisados.</li>
+<li><span class="ck"></span>(Opcional) YouTube conectado, app publicada, un vídeo analizado.</li>
+<li><span class="ck"></span>Datos de PROFITY importados y totales coincidentes; Codespace borrado.</li>
+<li><span class="ck"></span>Primera exportación JSON descargada y guardada.</li>
+</ul>
+<div class="box"><b>Cuando termines</b> cada bloque, dime «hecho hasta el paso N» o mándame una captura si algo no coincide: te ayudo a resolverlo.</div>
+</body></html>

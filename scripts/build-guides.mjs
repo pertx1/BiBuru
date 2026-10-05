@@ -7,7 +7,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 for (const f of readdirSync("docs/src").filter((f) => f.endsWith(".html"))) {
   const page = await browser.newPage();
   await page.goto("file://" + path.resolve("docs/src", f));
-  const name = f.replace(/^fase-(\d+)\.html$/, "Fase-$1-Guia.pdf");
+  const name = f === "guia-completa.html" ? "BiBuru-Guia-Completa.pdf" : f.replace(/^fase-(\d+)\.html$/, "Fase-$1-Guia.pdf");
   await page.pdf({ path: `docs/${name}`, format: "A4", printBackground: true, displayHeaderFooter: true,
     headerTemplate: "<span></span>",
     footerTemplate: '<div style="font-size:8px;width:100%;text-align:center;color:#888">BiBuru · <span class="pageNumber"></span>/<span class="totalPages"></span></div>',

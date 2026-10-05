@@ -13,5 +13,5 @@ Sirven para ver la app funcionando de verdad antes de desplegar. No forman parte
 ## Atajos
 - `bash scripts/e2e/up.sh` levanta todo (con `KEEP_DB=1` conserva la base); `bash scripts/e2e/down.sh` lo apaga.
 - `bash scripts/e2e/seed.sh` importa la base de ejemplo de PROFITY (`profity_test`).
-- `shots.mjs` (capturas móvil/escritorio), `browser-flow.mjs` (Fase 2), `phase3.mjs` y `recurring.mjs` (Fase 3).
+- `shots.mjs` (capturas móvil/escritorio), `browser-flow.mjs` (Fase 2), `phase3.mjs` y `recurring.mjs` (Fase 3), `phase4.mjs`, `phase5.mjs`, `phase67.mjs` (IA y Favoritos, con `fake-gemini.mjs`) y `phase8.mjs`.
 - No uses `pkill -f` con el nombre del servidor dentro de una orden larga: puede matar tu propio shell; `down.sh` ya lo hace bien.

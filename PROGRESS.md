@@ -108,6 +108,14 @@
 - Prueba e2e con Gemini falso: `scripts/e2e/phase67.mjs`. Corregido: el cron necesita permiso de ejecución de `ai_spend`/`ai_recent_calls` para `service_role`.
 - **Sin verificar con servicios reales**: OAuth/API de YouTube y oEmbed de TikTok (solo probados con respuestas simuladas); duración desconocida (sin cuenta conectada) se estima en 30 min.
 
+## Fase 8 — pulido
+- Inicio completo (captura, hoy/atrasadas, eventos, recordatorios, negocios del mes con variación, objetivos, bandeja y vídeos por revisar).
+- Lectura sin conexión (service worker v3 + aviso), exportación JSON/CSV, borrado de cuenta con cascada (arreglo: las FK `user_id` ahora son `on delete cascade`), CSP, asistente de claves en Ajustes.
+- Rendimiento medido en local: páginas principales 13–30 ms de servidor (sin latencia de red a Supabase); gráficos cargados bajo demanda; índices GIN para búsqueda.
+- Revisión de seguridad: endpoints con secreto o sesión, token cifrado y columna no legible, SSRF acotado a dominios conocidos, `npm audit --omit=dev` sin avisos (los 5 de dev son de `eslint-config-next`).
+- Guía PDF final: `docs/BiBuru-Guia-Completa.pdf`.
+- **Pendiente / límites**: asistente de importación Excel/CSV dentro de la app (hoy: script con Codespaces); pruebas contra Supabase/Vercel/iPhone/Gemini/YouTube reales; edición sin conexión.
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

@@ -3,10 +3,10 @@
 Tu segundo cerebro: tareas, negocios, notas y objetivos en un solo panel (PWA).
 
 ## Puesta en marcha desde cero
-La guía PDF detallada se entrega al terminar todas las fases. Resumen:
+La guía paso a paso (para no técnicos) está en `docs/BiBuru-Guia-Completa.pdf` (fuente: `docs/src/guia-completa.html`; se regenera con `node scripts/build-guides.mjs`). Resumen:
 
 1. **Supabase** (gratis): crea un proyecto → copia *Project URL* y la clave *publishable*.
-2. **Migraciones**: pega el contenido de cada archivo de `supabase/migrations` (en orden)
+2. **Migraciones** (10 archivos): pega el contenido de cada archivo de `supabase/migrations` (en orden)
    en Supabase → SQL Editor → Run. (Alternativa con CLI: `npx supabase link` y `npx supabase db push`.)
 3. **Auth**: desactiva "Allow new users to sign up", crea tu usuario a mano, pega la plantilla
    `supabase/templates/magic-link.html` y en *URL Configuration* pon tu URL de Vercel.
@@ -24,6 +24,7 @@ npm run test:db              # tests de permisos; necesita un Postgres local
 ```
 
 ## Avisos y cron (Fase 5)
+0. Las claves (VAPID, `CRON_SECRET`, `TOKEN_ENCRYPTION_KEY`) se pueden generar en **Ajustes → Asistente de configuración** sin instalar nada (o `npm run vapid`).
 1. `npm run vapid` genera las claves de avisos. En Vercel añade `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`,
    `CRON_SECRET` (cadena larga aleatoria) y `SUPABASE_SERVICE_ROLE_KEY` (clave secreta de Supabase). Redespliega.
 2. En Supabase → SQL Editor ejecuta (una vez): `select public.configure_cron('https://TU-APP.vercel.app', 'TU_CRON_SECRET');`
@@ -42,6 +43,11 @@ Si Supabase Cron no estuviera disponible: cron-job.org → URL `https://TU-APP.v
 2. En https://console.cloud.google.com crea un proyecto → *APIs y servicios* → habilita **YouTube Data API v3** → *Pantalla de consentimiento OAuth* (externa, en pruebas, añade tu correo como usuario de prueba) → *Credenciales* → *ID de cliente OAuth* tipo **Aplicación web** con URI de redirección `https://TU-APP.vercel.app/api/google/callback`.
 3. En Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y `TOKEN_ENCRYPTION_KEY` (comando en `.env.example`). Redespliega.
 4. Ajustes → *YouTube y vídeos* → **Conectar con Google**. Es gratis (sin tarjeta); en modo «pruebas» Google pide reconectar cada 7 días: publica la app (*Pasar a producción*) para evitarlo.
+
+## Tus datos, sin conexión y borrado (Fase 8)
+- **Ajustes → Tus datos**: exportación completa en JSON y CSV por tema (Excel); **borrar cuenta** elimina todo en cascada (migración `20261013000001_account_delete.sql`).
+- **Sin conexión**: el service worker guarda la última versión de cada sección (máx. 30 páginas) para leerla; se borran al abrir `/login`. Escribir sin red solo está soportado en la captura rápida (cola local).
+- **Seguridad**: cabecera `Content-Security-Policy` en `next.config.ts` (conexiones solo a Supabase), endpoints de cron con secreto, token de Google cifrado, RLS probada con `npm run test:db`.
 
 ## Importar PROFITY
 ```bash
