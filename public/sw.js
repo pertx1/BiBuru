@@ -1,10 +1,14 @@
-/* BiBuru · service worker (Fase 1).
+/* BiBuru · service worker.
  * - Estáticos inmutables de Next (/_next/static) e iconos: caché primero.
- * - Navegaciones: red primero; si no hay red, página /offline.
- * - Nunca se cachean respuestas de la API ni datos de usuario.
+ * - Navegaciones a las secciones de la app: red primero; la última página cargada se guarda (máx. 30) para poder
+ *   LEERLA sin conexión. Si no hay copia, página /offline. Las copias se borran al abrir /login (cerrar sesión o borrar cuenta).
+ * - Nunca se cachean respuestas de la API ni acciones: escribir sin conexión solo se hace en la captura rápida (cola local).
  * Subir VERSION invalida las cachés antiguas. */
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `biburu-static-${VERSION}`;
+const PAGES_CACHE = `biburu-pages-${VERSION}`;
+const MAX_PAGES = 30;
+const CACHEABLE = /^\/($|(tareas|calendario|notas|negocios|objetivos|favoritos|bandeja|chat|mas|ajustes)(\/|$))/;
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
@@ -16,7 +20,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== STATIC_CACHE && k !== PAGES_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -28,7 +32,20 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req).catch(() => caches.match(OFFLINE_URL)));
+    if (url.pathname.startsWith("/login")) event.waitUntil(caches.delete(PAGES_CACHE)); // sesión cerrada: fuera copias de datos
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res.ok && !res.redirected && CACHEABLE.test(url.pathname) && (res.headers.get("content-type") || "").includes("text/html")) {
+          const copy = res.clone();
+          event.waitUntil(caches.open(PAGES_CACHE).then(async (c) => {
+            await c.put(url.pathname + url.search, copy);
+            const keys = await c.keys();
+            await Promise.all(keys.slice(0, Math.max(0, keys.length - MAX_PAGES)).map((k) => c.delete(k)));
+          }));
+        }
+        return res;
+      }).catch(async () => (await caches.open(PAGES_CACHE).then((c) => c.match(url.pathname + url.search))) || (await caches.match(OFFLINE_URL))),
+    );
     return;
   }
 

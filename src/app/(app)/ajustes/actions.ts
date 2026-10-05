@@ -96,3 +96,37 @@ export async function saveAiSettings(input: AiSettings): Promise<ActionResult> {
   revalidatePath("/ajustes");
   return { ok: true };
 }
+
+/**
+ * Borra la cuenta y TODOS sus datos (irreversible). Exige escribir el correo. Orden: tickets del almacenamiento,
+ * acceso de Google (mejor esfuerzo) y, por último, el usuario (las claves foráneas en cascada borran el resto).
+ */
+export async function deleteAccount(confirmEmail: string): Promise<ActionResult> {
+  const { supabase, userId, workspaceId } = await getContext();
+  const { data: auth } = await supabase.auth.getUser();
+  const email = auth.user?.email?.toLowerCase();
+  if (!email || confirmEmail.trim().toLowerCase() !== email) return { ok: false, error: "Escribe tu correo exactamente para confirmar." };
+  try {
+    const admin = (await import("@/lib/supabase/admin")).createAdminClient();
+    const { data: tok } = await admin.from("integrations").select("refresh_token_enc").eq("user_id", userId).eq("provider", "google").maybeSingle();
+    if (tok) {
+      try {
+        const { decryptSecret } = await import("@/lib/favorites/crypto");
+        await fetch("https://oauth2.googleapis.com/revoke", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: decryptSecret(tok.refresh_token_enc) }), signal: AbortSignal.timeout(8000) });
+      } catch { /* mejor esfuerzo */ }
+    }
+    const bucket = admin.storage.from("receipts");
+    const { data: dirs } = await bucket.list(workspaceId, { limit: 1000 });
+    for (const d of dirs ?? []) {
+      const { data: files } = await bucket.list(`${workspaceId}/${d.name}`, { limit: 1000 });
+      if (files?.length) await bucket.remove(files.map((f) => `${workspaceId}/${d.name}/${f.name}`));
+    }
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error) throw error;
+  } catch (e) {
+    console.error("[account] delete:", e instanceof Error ? e.message : e);
+    return { ok: false, error: "No se pudo borrar la cuenta. Inténtalo de nuevo o escríbeme." };
+  }
+  await supabase.auth.signOut().catch(() => {});
+  return { ok: true };
+}

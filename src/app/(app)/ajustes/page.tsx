@@ -10,6 +10,7 @@ import { DEFAULT_PRICES } from "@/lib/ai/pricing";
 import { getContext } from "@/lib/context";
 import { YoutubeSettings } from "@/components/favorites/youtube-settings";
 import { googleConfig } from "@/lib/favorites/youtube";
+import { DataSettings } from "@/components/account/data-settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -79,6 +80,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
+        <Section title="Tus datos"><DataSettings email={auth.user?.email ?? ""} /></Section>
         <form action={signOut}>
           <Button type="submit" variant="secondary">Cerrar sesión</Button>
         </form>
