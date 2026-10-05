@@ -1,0 +1,15 @@
+<!-- Plantilla "Magic Link" de Supabase (Authentication → Email Templates).
+     Asunto sugerido: Tu acceso a BiBuru -->
+<div style="font-family:system-ui,sans-serif;max-width:420px;margin:auto;color:#1c1b17">
+  <h2 style="margin:0 0 12px">Tu acceso a BiBuru</h2>
+  <p>Si estás en el ordenador, pulsa el botón:</p>
+  <p>
+    <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+       style="display:inline-block;background:#0f766e;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">
+      Entrar en BiBuru
+    </a>
+  </p>
+  <p>Si estás en la app del iPhone, escribe este código:</p>
+  <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:8px 0">{{ .Token }}</p>
+  <p style="color:#6b6a63;font-size:13px">Caduca en una hora. Si no lo has pedido tú, ignora este correo.</p>
+</div>
