@@ -175,4 +175,44 @@ d("Negocios, pedidos, gastos: permisos y cálculos", () => {
     expect(dates).toEqual(["2026-02-28", "2026-03-31", "2026-04-30"]);
     void run;
   });
+
+  it("borrar un pedido borra sus líneas y no falla el trigger de totales", async () => {
+    const o = (await q(
+      `insert into orders (workspace_id,user_id,business_id) values ($1,$2,$3) returning id`,
+      [ids.aliceWs, ids.alice, ids.aliceBiz],
+    )).rows[0].id;
+    await q(`insert into order_items (workspace_id,user_id,order_id,product_name,unit_price_cents) values ($1,$2,$3,'X',100)`, [ids.aliceWs, ids.alice, o]);
+    const left = await asUser(ids.alice, async (c) => {
+      const del = await c.query("delete from orders where id=$1", [o]);
+      expect(del.rowCount).toBe(1);
+      return (await c.query("select count(*)::int n from order_items where order_id=$1", [o])).rows[0].n;
+    });
+    expect(left).toBe(0);
+  });
+
+  it("un usuario puede borrar su pedido y los totales siguen bien al editar líneas como usuario", async () => {
+    const o = (await q(
+      `insert into orders (workspace_id,user_id,business_id) values ($1,$2,$3) returning id`,
+      [ids.aliceWs, ids.alice, ids.aliceBiz],
+    )).rows[0].id;
+    const total = await asUser(ids.alice, async (c) => {
+      await c.query(
+        `insert into order_items (workspace_id,user_id,order_id,product_name,quantity,unit_price_cents) values ($1,$2,$3,'Y',3,1000)`,
+        [ids.aliceWs, ids.alice, o],
+      );
+      return (await c.query("select total_cents from orders where id=$1", [o])).rows[0].total_cents;
+    });
+    expect(total).toBe("3000");
+  });
+
+  it("los tickets (Storage) solo son visibles para miembros del workspace", async () => {
+    await q("insert into storage.objects (bucket_id, name) values ('receipts', $1), ('receipts', $2)", [
+      `${ids.aliceWs}/${ids.aliceBiz}/a.jpg`, `${ids.bobWs}/${ids.bobBiz}/b.jpg`,
+    ]);
+    const r = await asUser(ids.alice, (c) => c.query("select name from storage.objects where bucket_id='receipts'"));
+    expect(r.rows.map((x) => x.name)).toEqual([`${ids.aliceWs}/${ids.aliceBiz}/a.jpg`]);
+    await expect(
+      asUser(ids.alice, (c) => c.query("insert into storage.objects (bucket_id, name) values ('receipts', $1)", [`${ids.bobWs}/x/hack.jpg`])),
+    ).rejects.toThrow(/row-level security/);
+  });
 });

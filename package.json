@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "bash scripts/test-db.sh",
-    "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts"
+    "db:types": "bash scripts/gen-types.sh",
+    "import:profity": "tsx scripts/import-profity.ts",
+    "import:profity:dry": "tsx scripts/import-profity.ts --dry-run"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
