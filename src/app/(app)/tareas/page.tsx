@@ -5,7 +5,9 @@ import { TaskList } from "@/components/tasks/task-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { listBusinesses } from "@/lib/data";
 import { z } from "zod";
-import { getNow, getTask, listGoals, listTasks, TASK_VIEWS, type TaskView } from "@/lib/tasks/data";
+import { ReminderList } from "@/components/notifications/reminder-list";
+import { nowLocal } from "@/lib/dates";
+import { getNow, getTask, listGoals, listReminders, listTasks, TASK_VIEWS, type TaskView } from "@/lib/tasks/data";
 import { groupTasks } from "@/lib/tasks/groups";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +25,7 @@ const EMPTY: Record<TaskView, string> = {
 export default async function TareasPage({ searchParams }: { searchParams: Promise<{ v?: string; abrir?: string }> }) {
   const { v, abrir } = await searchParams;
   const view = (TASK_VIEWS.find((x) => x === v) ?? "hoy") as TaskView;
-  const [now, tasks, businesses, goals, openTask] = await Promise.all([getNow(), listTasks(view), listBusinesses(), listGoals({ status: "active" }), abrir && z.uuid().safeParse(abrir).success ? getTask(abrir) : Promise.resolve(null)]);
+  const [now, tasks, businesses, goals, openTask, reminders] = await Promise.all([getNow(), listTasks(view), listBusinesses(), listGoals({ status: "active" }), abrir && z.uuid().safeParse(abrir).success ? getTask(abrir) : Promise.resolve(null), view === "hoy" ? listReminders() : Promise.resolve([])]);
   const biz = new Map(businesses.map((b) => [b.id, b.name]));
   const bizOptions = businesses.map((b) => ({ id: b.id, name: b.name, color: b.color }));
   const goalOptions = goals.map((g) => ({ id: g.id, title: g.title }));
@@ -43,6 +45,7 @@ export default async function TareasPage({ searchParams }: { searchParams: Promi
           <NewTaskButton businesses={bizOptions} goals={goalOptions} today={now.date} />
         </div>
       </div>
+      <ReminderList today={now.date} reminders={reminders.map((r) => ({ id: r.id, title: r.title, status: r.status, local: nowLocal(new Date(r.remind_at), now.timezone) }))} />
       <TaskList groups={groupTasks(view, tasks, now.date, biz)} businesses={bizOptions} goals={goalOptions} today={now.date} emptyText={EMPTY[view]} openTask={openTask} />
     </>
   );

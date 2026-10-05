@@ -173,3 +173,16 @@ export const goalLike = (g: Goal): GoalLike => ({
 });
 
 export { startOfMonth };
+
+export type Reminder = Database["public"]["Tables"]["reminders"]["Row"];
+
+/** Recordatorios sueltos pendientes (o pospuestos) de los próximos 30 días, y los que ya vencieron sin resolver. */
+export async function listReminders(): Promise<Reminder[]> {
+  const { supabase, workspaceId } = await getContext();
+  const { data, error } = await supabase.from("reminders").select("*").eq("workspace_id", workspaceId).in("status", ["pending", "snoozed", "sent"])
+    .gte("remind_at", new Date(Date.now() - 3 * 86_400_000).toISOString()).lte("remind_at", new Date(Date.now() + 30 * 86_400_000).toISOString())
+    .order("remind_at").limit(50);
+  if (error) fail("recordatorios", error);
+  // «sent» ya avisados siguen visibles 3 días por si no se resolvieron; los pendientes siempre.
+  return data.filter((r) => r.status !== "sent" || Date.now() - Date.parse(r.sent_at ?? r.remind_at) < 3 * 86_400_000);
+}

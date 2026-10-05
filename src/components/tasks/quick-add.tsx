@@ -3,7 +3,9 @@
 import { CornerDownLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { createReminder } from "@/app/(app)/aviso/actions";
 import { createTaskQuick } from "@/app/(app)/tareas/actions";
+import { isReminderText, REMINDER_PREFIX } from "@/lib/tasks/reminder-text";
 import { useToast } from "@/components/ui/toast";
 import { describeRecurrence } from "@/lib/tasks/recurrence";
 import { dueLabel } from "@/lib/tasks/format";
@@ -19,7 +21,8 @@ export function QuickAdd({
   const [pending, start] = useTransition();
   const router = useRouter();
   const toast = useToast();
-  const parsed = useMemo(() => (text.trim() ? parseQuickTask(text, today, nowTime) : null), [text, today, nowTime]);
+  const isReminder = isReminderText(text);
+  const parsed = useMemo(() => (text.trim() ? parseQuickTask(text.replace(REMINDER_PREFIX, ""), today, nowTime) : null), [text, today, nowTime]);
 
   function submit() {
     const value = text.trim();
@@ -27,8 +30,9 @@ export function QuickAdd({
     setText("");
     setError(null);
     start(async () => {
-      const r = await createTaskQuick(value, { businessId, goalId });
-      if (r.ok) { toast({ message: "Tarea añadida", durationMs: 2500 }); router.refresh(); }
+      const reminder = isReminderText(value);
+      const r = reminder ? await createReminder(value) : await createTaskQuick(value, { businessId, goalId });
+      if (r.ok) { toast({ message: reminder ? "Recordatorio creado ⏰" : "Tarea añadida", durationMs: 2500 }); router.refresh(); }
       else { setText(value); setError(r.error); }
     });
   }
@@ -48,7 +52,8 @@ export function QuickAdd({
       {parsed && (
         <p className="flex flex-wrap gap-1.5 px-1 text-xs text-muted" aria-live="polite">
           <span className="font-medium text-foreground">{parsed.title}</span>
-          {due && <span className={cn("rounded-full bg-surface-2 px-2 py-0.5", due.overdue && "text-danger")}>{due.text}</span>}
+          {isReminder && <span className="rounded-full bg-accent/15 px-2 py-0.5 font-medium text-accent">⏰ Recordatorio</span>}
+          {due && <span className={cn("rounded-full bg-surface-2 px-2 py-0.5", due.overdue && "text-danger")}>{due.text}{isReminder && !parsed.time && " 09:00"}</span>}
           {parsed.recurrence && <span className="rounded-full bg-surface-2 px-2 py-0.5">{describeRecurrence(parsed.recurrence)}</span>}
           {parsed.priority > 0 && <span className="rounded-full bg-surface-2 px-2 py-0.5">Prioridad {parsed.priority === 3 ? "alta" : "media"}</span>}
           {parsed.businessHint && <span className="rounded-full bg-surface-2 px-2 py-0.5">#{parsed.businessHint}</span>}
