@@ -124,6 +124,31 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"events": {
+                  Row: {
+                    "all_day": boolean,"business_id": string | null,"created_at": string,"end_date": string,"end_time": string | null,"id": string,"location": string | null,"notes": string | null,"recurrence": Json | null,"start_date": string,"start_time": string | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "all_day"?: boolean,"business_id"?: string | null,"created_at"?: string,"end_date": string,"end_time"?: string | null,"id"?: string,"location"?: string | null,"notes"?: string | null,"recurrence"?: Json | null,"start_date": string,"start_time"?: string | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "all_day"?: boolean,"business_id"?: string | null,"created_at"?: string,"end_date"?: string,"end_time"?: string | null,"id"?: string,"location"?: string | null,"notes"?: string | null,"recurrence"?: Json | null,"start_date"?: string,"start_time"?: string | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "events_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "events_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"expense_categories": {
                   Row: {
                     "color": string,"created_at": string,"id": string,"name": string,"updated_at": string,"user_id": string,"workspace_id": string
@@ -174,6 +199,81 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "expenses_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"goal_milestones": {
+                  Row: {
+                    "created_at": string,"done": boolean,"goal_id": string,"id": string,"sort_order": number,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"done"?: boolean,"goal_id": string,"id"?: string,"sort_order"?: number,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"done"?: boolean,"goal_id"?: string,"id"?: string,"sort_order"?: number,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "goal_milestones_goal_id_workspace_id_fkey"
+      columns: ["goal_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "goals"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "goal_milestones_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"goal_progress": {
+                  Row: {
+                    "created_at": string,"goal_id": string,"id": string,"note": string | null,"recorded_on": string,"updated_at": string,"user_id": string,"value": number,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"goal_id": string,"id"?: string,"note"?: string | null,"recorded_on"?: string,"updated_at"?: string,"user_id"?: string,"value": number,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"goal_id"?: string,"id"?: string,"note"?: string | null,"recorded_on"?: string,"updated_at"?: string,"user_id"?: string,"value"?: number,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "goal_progress_goal_id_workspace_id_fkey"
+      columns: ["goal_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "goals"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "goal_progress_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"goals": {
+                  Row: {
+                    "auto_source": string | null,"business_id": string | null,"completed_at": string | null,"created_at": string,"current_value": number,"deadline": string | null,"description": string | null,"id": string,"measure_type": string,"period_start": string | null,"status": string,"target_value": number,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "auto_source"?: string | null,"business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"current_value"?: number,"deadline"?: string | null,"description"?: string | null,"id"?: string,"measure_type"?: string,"period_start"?: string | null,"status"?: string,"target_value"?: number,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "auto_source"?: string | null,"business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"current_value"?: number,"deadline"?: string | null,"description"?: string | null,"id"?: string,"measure_type"?: string,"period_start"?: string | null,"status"?: string,"target_value"?: number,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "goals_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "goals_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -338,13 +438,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_monthly_budget_cents": number,"created_at": string,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"id": string,"quiet_hours_end": string,"quiet_hours_start": string,"timezone": string,"updated_at": string,"user_id": string
+                    "ai_monthly_budget_cents": number,"created_at": string,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"id": string,"quiet_hours_end": string,"quiet_hours_start": string,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id": string
+                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id"?: string
+                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -374,6 +474,43 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "shirt_dtf_rules_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"tasks": {
+                  Row: {
+                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_date": string | null,"due_time": string | null,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"sort_order": number,"status": string,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tasks_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tasks_goal_id_workspace_id_fkey"
+      columns: ["goal_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "goals"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tasks_parent_id_workspace_id_fkey"
+      columns: ["parent_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tasks_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
