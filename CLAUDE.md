@@ -126,3 +126,8 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Gasto y pedidos solo se crean tras confirmación humana; la autoaplicación se limita a task/note/idea/event con confianza ≥ 0,85.
 - Pruebas con `fakeProvider`; `server-only` está aliasado a un stub en `vitest.config.mts`.
 - Si cambian modelos o precios de Gemini: variables `GEMINI_MODEL_*` y precios editables en Ajustes (tabla `ai_prices`).
+
+## Favoritos (Fase 7)
+- `saved_videos` / `video_categories` siguen la convención por espacio. `integrations` es la excepción deliberada: credencial personal, RLS por `user_id`, sin insert desde el cliente y sin permiso de lectura del token (`refresh_token_enc`); solo el servidor (clave de servicio) lo lee y descifra.
+- Los módulos de `src/lib/favorites/*` que usan servidor no se importan desde componentes de cliente (usar `labels.ts` para constantes compartidas).
+- Cualquier fetch a dominios externos desde enlaces del usuario se limita a dominios conocidos (anti-SSRF).

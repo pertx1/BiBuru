@@ -406,6 +406,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"integrations": {
+                  Row: {
+                    "account_email": string | null,"created_at": string,"id": string,"last_sync_added": number,"last_sync_at": string | null,"last_sync_error": string | null,"provider": string,"refresh_token_enc": string,"scopes": string | null,"sync_likes": boolean,"sync_playlists": NonNullable<Json>,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_email"?: string | null,"created_at"?: string,"id"?: string,"last_sync_added"?: number,"last_sync_at"?: string | null,"last_sync_error"?: string | null,"provider": string,"refresh_token_enc": string,"scopes"?: string | null,"sync_likes"?: boolean,"sync_playlists"?: NonNullable<Json>,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "account_email"?: string | null,"created_at"?: string,"id"?: string,"last_sync_added"?: number,"last_sync_at"?: string | null,"last_sync_error"?: string | null,"provider"?: string,"refresh_token_enc"?: string,"scopes"?: string | null,"sync_likes"?: boolean,"sync_playlists"?: NonNullable<Json>,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "integrations_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"invoices": {
                   Row: {
                     "business_id": string,"created_at": string,"external_id": string | null,"id": string,"name": string,"updated_at": string,"url": string,"user_id": string,"workspace_id": string
@@ -583,13 +602,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -644,6 +663,37 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "reminders_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"saved_videos": {
+                  Row: {
+                    "actions": NonNullable<Json>,"added_via": string,"analysis_attempts": number,"analysis_cost_micros": number,"analysis_error": string | null,"analysis_mode": string | null,"analysis_next_try_at": string | null,"analysis_status": string,"business_id": string | null,"business_reason": string | null,"category_id": string | null,"channel": string | null,"created_at": string,"duration_sec": number | null,"external_id": string | null,"fts": unknown,"id": string,"key_points": NonNullable<Json>,"notes": string | null,"origin_list": string | null,"published_at": string | null,"source": string,"status": string,"summary": string | null,"thumbnail_url": string | null,"title": string,"updated_at": string,"url": string,"user_id": string,"utility": number | null,"workspace_id": string
+                  }
+                  Insert: {
+                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source": string,"status"?: string,"summary"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url": string,"user_id"?: string,"utility"?: number | null,"workspace_id": string
+                  }
+                  Update: {
+                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source"?: string,"status"?: string,"summary"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url"?: string,"user_id"?: string,"utility"?: number | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "saved_videos_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "saved_videos_category_id_workspace_id_fkey"
+      columns: ["category_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "video_categories"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "saved_videos_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -781,6 +831,25 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "tshirt_stocks_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"video_categories": {
+                  Row: {
+                    "created_at": string,"id": string,"name": string,"pinned": boolean,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"name": string,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"name"?: string,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "video_categories_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"

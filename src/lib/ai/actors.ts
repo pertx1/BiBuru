@@ -10,7 +10,7 @@ import { noteSchema } from "@/lib/notes/schemas";
 
 type Db = SupabaseClient<Database>;
 export type Actor = { supabase: Db; workspaceId: string; userId: string; timezone: string };
-export type Created = { kind: "task" | "note" | "event" | "goal" | "reminder" | "expense" | "order"; id: string; label: string; href: string };
+export type Created = { kind: "task" | "note" | "event" | "goal" | "reminder" | "expense" | "order" | "video"; id: string; label: string; href: string };
 export class ActionError extends Error {}
 
 /**
@@ -39,7 +39,7 @@ async function resolveFolder(a: Actor, name?: string | null): Promise<string | n
   return data?.find((f) => normalizeText(f.name) === q)?.id ?? null;
 }
 
-export async function addTagsTo(a: Actor, itemType: "note" | "task", itemId: string, tags: string[]): Promise<void> {
+export async function addTagsTo(a: Actor, itemType: "note" | "task" | "video", itemId: string, tags: string[]): Promise<void> {
   const names = [...new Set(tags.map((t) => t.replace(/^#/, "").trim()).filter((t) => t.length > 0 && t.length <= 40))].slice(0, 8);
   if (names.length === 0) return;
   const { data: existing } = await a.supabase.from("tags").select("id, name").eq("workspace_id", a.workspaceId);

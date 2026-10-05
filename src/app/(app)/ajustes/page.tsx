@@ -8,6 +8,8 @@ import { getBudget } from "@/lib/ai/run";
 import { getModelNames, hasGeminiKey } from "@/lib/ai/gemini";
 import { DEFAULT_PRICES } from "@/lib/ai/pricing";
 import { getContext } from "@/lib/context";
+import { YoutubeSettings } from "@/components/favorites/youtube-settings";
+import { googleConfig } from "@/lib/favorites/youtube";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -24,7 +26,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default async function AjustesPage() {
+export default async function AjustesPage({ searchParams }: { searchParams: Promise<{ google?: string }> }) {
+  const sp = await searchParams;
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const { data: profile } = await supabase
@@ -34,6 +37,7 @@ export default async function AjustesPage() {
 
   const { data: devices } = await supabase.from("push_subscriptions").select("id, endpoint, user_agent, created_at, last_success_at").order("created_at");
   const p = profile;
+  const { data: integ } = await supabase.from("integrations").select("account_email, last_sync_at, last_sync_error, last_sync_added, sync_likes, sync_playlists").eq("provider", "google").maybeSingle();
   const ctx = await getContext();
   const budgetCents = p?.ai_monthly_budget_cents ?? 1000;
   const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
@@ -68,6 +72,10 @@ export default async function AjustesPage() {
         <Section title="Inteligencia artificial">
           <BudgetBanner />
           <AiSettingsForm hasKey={hasGeminiKey()} budgetEur={budgetCents / 100} autoApply={p?.ai_auto_apply ?? false} spentMicros={budget.spentMicros} pct={budget.pct} byFeature={budget.byFeature} prices={prices} />
+        </Section>
+        <Section title="YouTube y vídeos">
+          <YoutubeSettings configured={!!googleConfig() && !!process.env.TOKEN_ENCRYPTION_KEY} longMinutes={p?.video_long_minutes ?? 20} flash={sp.google}
+            status={integ ? { email: integ.account_email, lastSyncAt: integ.last_sync_at, lastError: integ.last_sync_error, lastAdded: integ.last_sync_added, likes: integ.sync_likes, playlists: Array.isArray(integ.sync_playlists) ? (integ.sync_playlists as { id: string; title: string }[]) : [] } : null} />
         </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>

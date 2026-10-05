@@ -96,6 +96,18 @@
 - Tests: `src/lib/ai/*.test.ts` (precios, clasificación, `runAi` con BD en memoria y proveedor falso) y `tests/ai.test.ts` (RLS).
 - **Sin verificar con servicios reales**: no hay clave de Gemini en el entorno de desarrollo; nombres de modelo y precios por defecto son estimaciones (configurables).
 
+## Fase 7 — Favoritos (vídeos)
+- Enlaces de YouTube y TikTok desde Favoritos o desde la captura rápida (la bandeja los manda a Favoritos). Sin duplicados (por id y por URL).
+  TikTok: oEmbed oficial + resolución de enlaces cortos (solo dominios de TikTok, sin scraping ni descargas).
+- OAuth de Google solo lectura (`youtube.readonly`), token cifrado AES-256-GCM (`TOKEN_ENCRYPTION_KEY`), columna ilegible desde el navegador (permisos de columna + RLS por usuario).
+  Sincroniza «Me gusta» y listas elegidas cada 6 h (`/api/cron/youtube-sync`) y con «Sincronizar ahora». «Ver más tarde» no es accesible por la API de Google.
+- Análisis con Gemini (cola `/api/cron/videos`, reintentos, estados pendiente/analizando/listo/error/espera confirmación): resumen, puntos clave, categoría reutilizada, etiquetas, ideas, negocio y utilidad 1–5.
+  YouTube por URL directa; TikTok y otros solo con texto (la ficha lo indica). Vídeos largos (umbral editable, 20 min): coste estimado y confirmación; análisis ligero casi gratis.
+- Vistas por estado/categoría/negocio, búsqueda (también en la búsqueda global), orden por utilidad o fecha, categorías (renombrar, fijar, fusionar), convertir en tarea o nota.
+- Cron: `configure_cron` programa avisos, IA, vídeos y YouTube (volver a ejecutarlo una vez).
+- Prueba e2e con Gemini falso: `scripts/e2e/phase67.mjs`. Corregido: el cron necesita permiso de ejecución de `ai_spend`/`ai_recent_calls` para `service_role`.
+- **Sin verificar con servicios reales**: OAuth/API de YouTube y oEmbed de TikTok (solo probados con respuestas simuladas); duración desconocida (sin cuenta conectada) se estima en 30 min.
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

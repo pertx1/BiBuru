@@ -37,6 +37,12 @@ Si Supabase Cron no estuviera disponible: cron-job.org → URL `https://TU-APP.v
    `select public.configure_cron('https://TU-APP.vercel.app', 'TU_CRON_SECRET');` (programa también la cola de IA).
 3. En **Ajustes → Inteligencia artificial** fija el presupuesto mensual (10 € por defecto) y revisa los precios por modelo.
 
+## YouTube y Favoritos (Fase 7)
+1. Aplica `20261012000001_favorites.sql` y vuelve a ejecutar `select public.configure_cron(...)` (programa también vídeos y YouTube).
+2. En https://console.cloud.google.com crea un proyecto → *APIs y servicios* → habilita **YouTube Data API v3** → *Pantalla de consentimiento OAuth* (externa, en pruebas, añade tu correo como usuario de prueba) → *Credenciales* → *ID de cliente OAuth* tipo **Aplicación web** con URI de redirección `https://TU-APP.vercel.app/api/google/callback`.
+3. En Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y `TOKEN_ENCRYPTION_KEY` (comando en `.env.example`). Redespliega.
+4. Ajustes → *YouTube y vídeos* → **Conectar con Google**. Es gratis (sin tarjeta); en modo «pruebas» Google pide reconectar cada 7 días: publica la app (*Pasar a producción*) para evitarlo.
+
 ## Importar PROFITY
 ```bash
 # En .env.local: PROFITY_DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY

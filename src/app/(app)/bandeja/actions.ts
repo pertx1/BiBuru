@@ -6,7 +6,10 @@ import { z } from "zod";
 import { createExpense, createNote, createOrder, resolveExpense, resolveOrder, type Actor } from "@/lib/ai/actors";
 import { proposalSchema, type Proposal } from "@/lib/ai/classify";
 import { applyProposal, classifyInboxItem } from "@/lib/ai/inbox";
+import { hasGeminiKey } from "@/lib/ai/gemini";
 import { sessionAiContext } from "@/lib/ai/session";
+import { addVideoByUrl, analyzeSoon } from "@/lib/favorites/service";
+import { classifyVideoUrl, firstUrl } from "@/lib/favorites/url";
 import { getContext } from "@/lib/context";
 import type { Json } from "@/lib/supabase/database.types";
 import { captureSchema } from "@/lib/notes/schemas";
@@ -137,7 +140,17 @@ export async function acceptProposal(id: string, edited?: unknown): Promise<Acti
     let c;
     if (p.kind === "expense" && p.expense) c = await createExpense(a, await resolveExpense(a, { business: p.business ?? "", amount_eur: p.expense.amount_eur, concept: p.expense.concept ?? p.title, category: p.expense.category, supplier: p.expense.supplier, payment_method: p.expense.payment_method, date: p.date }));
     else if (p.kind === "order" && p.order) c = await createOrder(a, await resolveOrder(a, { business: p.business ?? "", customer: p.order.customer, channel: p.order.channel, date: p.date, items: p.order.items }));
-    else if (p.kind === "link") c = await createNote(a, { title: `Enlace: ${p.url ?? p.title}`.slice(0, 200), body: p.url ?? item.raw_text, tags: ["enlace"] }); // la Fase 7 los envía a Favoritos
+    else if (p.kind === "link") {
+      // Vídeos de YouTube / TikTok → Favoritos (se analizan en segundo plano). Cualquier otro enlace → nota.
+      const ref = classifyVideoUrl(firstUrl(p.url ?? item.raw_text) ?? "");
+      if (ref && ref.source !== "other") {
+        const r = await addVideoByUrl(a, ref.url);
+        if (!r.ok) throw new Error(r.error);
+        if (!r.duplicate && r.id && hasGeminiKey()) analyzeSoon(a.userId, a.workspaceId, r.id);
+        c = { kind: "video", id: r.id, label: r.duplicate ? "Ya estaba en Favoritos" : "Guardado en Favoritos", href: "/favoritos" };
+        revalidatePath("/favoritos");
+      } else c = await createNote(a, { title: `Enlace: ${p.url ?? p.title}`.slice(0, 200), body: p.url ?? item.raw_text, tags: ["enlace"] });
+    }
     else c = await applyProposal(a, p);
     const created = { kind: c.kind as Created["kind"], id: c.id };
     await a.supabase.from("inbox_items").update({ status: "accepted", processed_at: new Date().toISOString(), proposal: { ...p, result: { ...created, label: c.label, href: c.href } } as unknown as Json }).eq("id", id).eq("workspace_id", a.workspaceId);

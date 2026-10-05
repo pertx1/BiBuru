@@ -18,7 +18,9 @@ export const hasGeminiKey = () => !!process.env.GEMINI_API_KEY;
 export function geminiProvider(): AiProvider {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new AiError("Falta GEMINI_API_KEY en el servidor", undefined, false);
-  const ai = new GoogleGenAI({ apiKey });
+  // GEMINI_BASE_URL solo se usa en las pruebas locales con un Gemini falso; en producción no se define.
+  const baseUrl = process.env.GEMINI_BASE_URL?.trim();
+  const ai = new GoogleGenAI({ apiKey, ...(baseUrl ? { httpOptions: { baseUrl } } : {}) });
 
   return {
     async generate(req: AiRequest): Promise<AiResponse> {
