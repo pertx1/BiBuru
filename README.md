@@ -3,7 +3,7 @@
 Tu segundo cerebro: tareas, negocios, notas y objetivos en un solo panel (PWA).
 
 ## Puesta en marcha desde cero
-Guía completa paso a paso: `docs/Fase-1-Guia.pdf`. Resumen:
+La guía PDF detallada se entrega al terminar todas las fases. Resumen:
 
 1. **Supabase** (gratis): crea un proyecto → copia *Project URL* y la clave *publishable*.
 2. **Migraciones**: pega el contenido de cada archivo de `supabase/migrations` (en orden)
@@ -27,6 +27,6 @@ npm run test:db              # tests de permisos; necesita un Postgres local
 Todas están comentadas en `.env.example`. Los secretos nunca se suben al repositorio.
 
 ## Documentación
-`docs/Fase-1-Guia.pdf` (guía de puesta en marcha; se regenera con `node scripts/build-guides.mjs`) ·
+`docs/src/` (borrador de la guía PDF final; se genera con `node scripts/build-guides.mjs`) ·
 `CLAUDE.md` (arquitectura y convenciones, incluido cómo compartir espacios) ·
 `PROGRESS.md` (estado de cada fase).

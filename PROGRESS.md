@@ -21,7 +21,7 @@
 - CI en GitHub Actions y workflow para aplicar migraciones a Supabase.
 
 ## Pendiente de ti (Fase 1)
-Seguir `docs/Fase-1-Guia.pdf`: crear Supabase, aplicar migración, crear tu usuario,
+Seguir los pasos de la Fase 1 (resumen en README): crear Supabase, aplicar migración, crear tu usuario,
 subir a Vercel, probar en ordenador e iPhone.
 
 ## Notas para la Fase 2

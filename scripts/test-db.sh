@@ -12,4 +12,4 @@ psql "$TEST_URL" -q -v ON_ERROR_STOP=1 -f supabase/tests/00-stub-supabase.sql
 for f in supabase/migrations/*.sql; do
   psql "$TEST_URL" -q -v ON_ERROR_STOP=1 -f "$f"
 done
-DATABASE_TEST_URL="$TEST_URL" npx vitest run tests/rls.test.ts
+DATABASE_TEST_URL="$TEST_URL" npx vitest run --no-file-parallelism tests/rls.test.ts tests/business.test.ts
