@@ -25,6 +25,17 @@ server-port = 3001
 CONF
 nohup /tmp/pgrst/postgrest /tmp/pgrst.conf > /tmp/pgrst.log 2>&1 &
 MOCK_USERS="[{\"id\":\"$USER_ID\",\"email\":\"yo@example.com\"}]" nohup node scripts/e2e/mock-supabase.mjs > /tmp/mock.log 2>&1 &
+# Claves de prueba para el cron y los avisos (el mini Supabase firma con este secreto JWT).
+export SUPABASE_SERVICE_ROLE_KEY=$(node -e '
+const c=require("node:crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");
+const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"service_role",exp:Math.floor(Date.now()/1000)+86400});
+console.log(h+"."+p+"."+c.createHmac("sha256","super-secret-jwt-token-with-at-least-32-characters-long").update(h+"."+p).digest("base64url"))')
+export CRON_SECRET=test-cron-secret-0123456789abcdef
+[ -f /tmp/vapid.env ] || node -e '
+const w=require("web-push");const k=w.generateVAPIDKeys();
+console.log("NEXT_PUBLIC_VAPID_PUBLIC_KEY="+k.publicKey+"\nVAPID_PRIVATE_KEY="+k.privateKey+"\nVAPID_SUBJECT=mailto:test@example.com")' > /tmp/vapid.env
+set -a; . /tmp/vapid.env; set +a
+export NODE_TLS_REJECT_UNAUTHORIZED=0   # el "servicio push" de pruebas usa un certificado autofirmado
 export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_dummykeydummykeydummy ALLOWED_EMAILS=yo@example.com
 npm run build >/tmp/build.log 2>&1 || { tail -20 /tmp/build.log; exit 1; }
 PORT=3100 nohup npm start > /tmp/next.log 2>&1 &

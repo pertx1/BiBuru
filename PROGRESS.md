@@ -7,7 +7,7 @@
 | 2B · Módulo de producción (stock, DTF, bolsa imprenta, facturas, Antola) | **Hecha en código, pendiente de tu verificación** |
 | 3 · Tareas, calendario, objetivos | **Hecha en código, pendiente de tu verificación** |
 | 4 · Captura, bandeja, notas, carpetas, búsqueda | **Hecha en código, pendiente de tu verificación** |
-| 5 · Notificaciones push y tareas programadas | Pendiente |
+| 5 · Notificaciones push y tareas programadas | **Hecha en código, pendiente de tu verificación** |
 | 6 · IA (clasificación, chat, voz, control de gasto) | Pendiente |
 | 7 · Favoritos (vídeos) | Pendiente |
 | 8 · Pulido | Pendiente |
@@ -67,6 +67,21 @@
 - **Búsqueda global** (Ctrl/Cmd+K y botón en móvil): Postgres full-text en español sobre notas, tareas, pedidos (cliente, nº, productos) y
   gastos; busca por raíz (camiseta ↔ camisetas) y mientras escribes.
 - Tests: 63 de SQL (permisos, ciclos de carpetas, búsqueda, idempotencia) y la cola sin conexión (7) + validación.
+
+## Fase 5 — avisos y tareas programadas
+- **Web Push estándar** (VAPID, sin proveedores externos). Alta guiada en Ajustes: en iPhone enseña a instalar la app y pide el permiso con un
+  botón (iOS exige gesto del usuario); botón «Enviar aviso de prueba»; lista de dispositivos.
+- **Tipos de aviso**: tarea con hora (antelación configurable), evento con hora (antelación configurable), recordatorio suelto
+  («recuérdame el viernes a las 9 pedir presupuesto»), resumen de la mañana, atrasadas por la tarde y revisión semanal de objetivos.
+  Horas de silencio: no se envía nada; lo que cae en ese tramo llega al terminar si sigue siendo útil.
+- **Al tocar el aviso** se abre `/aviso/...` con «Hecho» y «Posponer» (1 h, esta tarde, mañana, semana). Android y escritorio además
+  muestran los botones en la propia notificación (iOS no los admite).
+- **Cron**: Supabase Cron (`pg_cron` + `pg_net`) llama cada minuto a `/api/cron/reminders` con `CRON_SECRET`. Se activa una vez con
+  `select public.configure_cron('https://TU-APP.vercel.app', 'TU_CRON_SECRET');`. Alternativa: cron-job.org (GET o POST con cabecera
+  `Authorization: Bearer …`). El endpoint es idempotente (registro `notification_log`) y borra suscripciones caducadas (404/410).
+- Probado con un «servicio push» local que **descifra** los avisos (RFC 8291): 6 tipos de aviso, sin duplicados al repetir, reintento tras
+  fallo temporal, borrado de suscripciones caducadas y horas de silencio. Tests: 17 de planificación + 8 de SQL + conversión de hora local ↔ UTC con cambios de hora.
+- Pendiente de ti: generar claves (`npm run vapid`), `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` en Vercel y programar el cron (ver README).
 
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de

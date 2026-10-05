@@ -23,6 +23,14 @@ npm run lint && npm run typecheck && npm test
 npm run test:db              # tests de permisos; necesita un Postgres local
 ```
 
+## Avisos y cron (Fase 5)
+1. `npm run vapid` genera las claves de avisos. En Vercel añade `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`,
+   `CRON_SECRET` (cadena larga aleatoria) y `SUPABASE_SERVICE_ROLE_KEY` (clave secreta de Supabase). Redespliega.
+2. En Supabase → SQL Editor ejecuta (una vez): `select public.configure_cron('https://TU-APP.vercel.app', 'TU_CRON_SECRET');`
+   (Supabase → Database → Extensions: activa `pg_cron` y `pg_net` si no lo están.)
+3. En el iPhone: instala la app (Safari → Compartir → Añadir a pantalla de inicio), abre Ajustes → «Activar avisos» y pulsa «Enviar aviso de prueba».
+Si Supabase Cron no estuviera disponible: cron-job.org → URL `https://TU-APP.vercel.app/api/cron/reminders`, cada minuto, cabecera `Authorization: Bearer TU_CRON_SECRET`.
+
 ## Importar PROFITY
 ```bash
 # En .env.local: PROFITY_DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY

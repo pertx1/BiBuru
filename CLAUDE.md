@@ -94,6 +94,16 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Markdown: `react-markdown` sin HTML en bruto; imágenes e iframes desactivados.
 - DnD nativo de HTML5: hay que poner `dropEffect = "move"` en `dragover` o Chromium cancela el soltado.
 
+## Avisos (Fase 5)
+- Planificación pura en `src/lib/notifications/planning.ts` sobre hora «de pared» local (sin convertir a UTC); el orquestador
+  `cron.ts` consulta, **reclama** cada aviso en `notification_log` (único por usuario+clave) y solo entonces envía. Si ningún dispositivo lo
+  recibe por un fallo temporal se libera la reclamación (reintento al minuto siguiente); 404/410 borran la suscripción.
+- El cron usa la clave de servicio (`createAdminClient`, solo servidor) porque no hay sesión de usuario. `/api/cron/*` y `/api/antola/*`
+  son públicos para el proxy de sesión pero exigen su propio secreto (comparación en tiempo constante).
+- Tareas y eventos NO materializan recordatorios: se calculan en cada pasada (una sola fuente de verdad, sin sincronizaciones que olvidar).
+  `reminders` solo guarda los recordatorios sueltos. Un aviso de tarea solo se envía si al editarla su hora era futura.
+- El service worker muestra SIEMPRE una notificación por cada push (obligatorio en iOS) y abre `/aviso/<tipo>/<id>`.
+
 ## Seguridad
 - Secretos solo en servidor; en el cliente únicamente `NEXT_PUBLIC_*` (URL y clave
   publishable de Supabase).
