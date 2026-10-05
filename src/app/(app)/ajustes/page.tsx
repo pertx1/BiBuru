@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { InstallGuide } from "@/components/pwa/install-guide";
+import { ReviewSettings } from "@/components/goals/review-settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +22,7 @@ export default async function AjustesPage() {
   const { data: auth } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("timezone, ai_monthly_budget_cents")
+    .select("timezone, ai_monthly_budget_cents, weekly_review_dow, weekly_review_time")
     .maybeSingle();
 
   return (
@@ -38,6 +39,7 @@ export default async function AjustesPage() {
             <dd>{((profile?.ai_monthly_budget_cents ?? 1000) / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })} / mes</dd>
           </dl>
         </Section>
+        <Section title="Revisión semanal de objetivos"><p className="mb-3 text-xs text-muted">El día y la hora en que te avisaremos para actualizar el avance de tus objetivos.</p><ReviewSettings dow={profile?.weekly_review_dow ?? 0} time={profile?.weekly_review_time ?? "10:00"} /></Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <form action={signOut}>

@@ -11,6 +11,8 @@ const TABS = [
   { slug: "ingresos", label: "Ingresos" },
   { slug: "productos", label: "Productos" },
   { slug: "estadisticas", label: "Estadísticas" },
+  { slug: "tareas", label: "Tareas" },
+  { slug: "objetivos", label: "Objetivos" },
 ];
 
 export function BusinessTabs({ id, production }: { id: string; production?: boolean }) {
