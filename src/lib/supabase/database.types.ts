@@ -5,19 +5,119 @@ export type Database = {
   
   "public": {
           Tables: {
-            "businesses": {
+            "api_tokens": {
                   Row: {
-                    "archived": boolean,"color": string,"created_at": string,"description": string | null,"icon": string,"id": string,"name": string,"sort_order": number,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"id": string,"kind": string,"token_hash": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "archived"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"name": string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"id"?: string,"kind": string,"token_hash": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "archived"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"name"?: string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"token_hash"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "api_tokens_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "api_tokens_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"businesses": {
+                  Row: {
+                    "archived": boolean,"color": string,"created_at": string,"description": string | null,"icon": string,"id": string,"name": string,"production_enabled": boolean,"sort_order": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "archived"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"name": string,"production_enabled"?: boolean,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "archived"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"name"?: string,"production_enabled"?: boolean,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "businesses_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"design_dtf_rules": {
+                  Row: {
+                    "business_id": string,"created_at": string,"design": string,"dtf_color": string,"id": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"design": string,"dtf_color": string,"id"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"design"?: string,"dtf_color"?: string,"id"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "design_dtf_rules_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "design_dtf_rules_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"dtf_designs": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"kind": string,"name": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"kind"?: string,"name": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"name"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dtf_designs_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "dtf_designs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"dtf_stocks": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"name": string,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"name": string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant": string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dtf_stocks_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "dtf_stocks_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -105,6 +205,31 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"invoices": {
+                  Row: {
+                    "business_id": string,"created_at": string,"external_id": string | null,"id": string,"name": string,"updated_at": string,"url": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"external_id"?: string | null,"id"?: string,"name": string,"updated_at"?: string,"url": string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"external_id"?: string | null,"id"?: string,"name"?: string,"updated_at"?: string,"url"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "invoices_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "invoices_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"order_items": {
                   Row: {
                     "color": string | null,"created_at": string,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
@@ -161,6 +286,31 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"print_bag_checks": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"key": string,"quantity": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"key": string,"quantity": number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"key"?: string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "print_bag_checks_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "print_bag_checks_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"products": {
                   Row: {
                     "active": boolean,"business_id": string,"cost_cents": number,"created_at": string,"id": string,"name": string,"price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
@@ -205,6 +355,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"shirt_dtf_rules": {
+                  Row: {
+                    "business_id": string,"created_at": string,"dtf_color": string,"id": string,"shirt_color": string,"shirt_color_key": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"dtf_color": string,"id"?: string,"shirt_color": string,"shirt_color_key": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"dtf_color"?: string,"id"?: string,"shirt_color"?: string,"shirt_color_key"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shirt_dtf_rules_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "shirt_dtf_rules_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"tshirt_stocks": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"model": string,"quantity": number,"size": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"model": string,"quantity"?: number,"size": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"model"?: string,"quantity"?: number,"size"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tshirt_stocks_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tshirt_stocks_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"workspace_members": {
                   Row: {
                     "created_at": string,"role": string,"user_id": string,"workspace_id": string
@@ -243,7 +443,13 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "is_workspace_admin":
+            "antola_snapshot":
+{ Args: { "p_hash": string }; Returns: Json
+                           },
+"apply_workspace_policies":
+{ Args: { "tbl": string }; Returns: undefined
+                           },
+"is_workspace_admin":
 { Args: { "ws": string }; Returns: boolean
                            },
 "is_workspace_member":
