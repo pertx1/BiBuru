@@ -66,6 +66,25 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Tipos: `npm run db:types` regenera `database.types.ts` desde las migraciones (sin Docker).
 - Server Actions en `src/app/(app)/negocios/actions.ts`; lecturas en `src/lib/data.ts`.
 
+## Producción (Fase 2B)
+- Tablas por negocio (`tshirt_stocks`, `dtf_designs`, `dtf_stocks`, `shirt_dtf_rules`, `design_dtf_rules`, `print_bag_checks`, `invoices`,
+  `api_tokens`). La lógica pura vive en `src/lib/production/` (catálogo, stock, bolsa) con tests; el stock mostrado es siempre
+  `base − demanda de pedidos pendientes`, nunca se guarda ya descontado.
+- Helper SQL `apply_workspace_policies(tabla)`: aplica trigger `updated_at`, RLS y permisos estándar a una tabla nueva (usarlo en migraciones).
+- Antola no usa la service role: `antola_snapshot(hash)` (security definer) es la única función ejecutable por `anon`.
+
+## Tareas, calendario y objetivos (Fase 3)
+- Fechas y horas «de pared»: `date` + `time` en la zona del perfil, sin convertir a UTC. El cron (Fase 5) las interpreta con `profiles.timezone`.
+  Es lo que evita saltos al cambiar la hora y hace triviales las recurrencias.
+- Recurrencias propias (`src/lib/tasks/recurrence.ts`) sobre fechas ISO: diaria, semanal (días, semana desde lunes), mensual y anual,
+  sin derivar el día 31 ni el 29 de febrero. Guardadas como jsonb `{freq, interval, byweekday, until}`. No se usa `rrule` por sus problemas
+  con zonas horarias; el motor está cubierto por tests.
+- Alta rápida: parser determinista (`quick-parse.ts`). `chrono-node` se probó y falla con «pasado mañana» o «5 de la tarde».
+  La IA (Fase 6) puede reutilizar el mismo parser como base.
+- Completar una tarea recurrente crea la siguiente ocurrencia (desde hoy si se completó tarde); eso permite deshacer borrando la creada.
+- Valores de objetivos en punto fijo ×100 (euros = céntimos). Progreso automático calculado al leer; el histórico guarda un punto por día.
+- Subtareas: un solo nivel, forzado por trigger.
+
 ## Seguridad
 - Secretos solo en servidor; en el cliente únicamente `NEXT_PUBLIC_*` (URL y clave
   publishable de Supabase).

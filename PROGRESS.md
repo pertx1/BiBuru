@@ -4,7 +4,8 @@
 |---|---|
 | 1 · Base (repo, Supabase, Vercel, login, navegación, PWA) | **Hecha en código, pendiente de tu verificación** |
 | 2 · Negocios, pedidos, gastos, estadísticas, importación PROFITY | **Hecha en código, pendiente de tu verificación** |
-| 3 · Tareas, calendario, objetivos | Pendiente |
+| 2B · Módulo de producción (stock, DTF, bolsa imprenta, facturas, Antola) | **Hecha en código, pendiente de tu verificación** |
+| 3 · Tareas, calendario, objetivos | **Hecha en código, pendiente de tu verificación** |
 | 4 · Captura, bandeja, notas, carpetas, búsqueda | Pendiente |
 | 5 · Notificaciones push y tareas programadas | Pendiente |
 | 6 · IA (clasificación, chat, voz, control de gasto) | Pendiente |
@@ -33,6 +34,26 @@
 - Tests: 22 de SQL/permisos, más dinero, fechas, validación, CSV e importación (unitarios).
 - Probado de extremo a extremo con Postgres + PostgREST reales locales (`scripts/e2e/`): crear negocio, pedido,
   gasto, ingreso, estadísticas, CSV e importación (dos veces, sin duplicar).
+
+## Fase 2B — módulo de producción (portado de PROFITY)
+- Se activa por negocio (casilla en «Editar negocio»). Pestaña **Producción**: Stock (prendas por modelo y talla, DTF por diseño),
+  «Pedir ya» (stock − pedidos sin hacer/sin llegar, como en PROFITY), Bolsa para la imprenta (con marcas y aviso de «ha cambiado»),
+  Reglas de color de DTF, Facturas (enlaces) y conexión con Antola.
+- Catálogo editable (antes estaba fijo en el código): modelos de prenda y diseños DTF (únicos o blanco/negro).
+- Antola: `GET /api/antola/stock` con `Authorization: Bearer pf_…`. Solo se guarda el hash; la función SQL `antola_snapshot`
+  es lo único que un usuario sin sesión puede llamar. La clave de PROFITY no se puede migrar (solo guardaba el hash): hay que generar una nueva.
+- El script de importación trae también stock, reglas, diseños y facturas.
+
+## Fase 3 — tareas, calendario y objetivos
+- **Tareas**: alta en una línea en español («llamar a la imprenta mañana a las 10 #akerra !!», «cada lunes»…), vistas Hoy / 7 días / Todas /
+  Por negocio / Hechas, atrasadas arrastradas a Hoy, subtareas, prioridad, recurrencia, posponer (1 hora, esta tarde, mañana, semana que viene),
+  deshacer en todo. Al completar una tarea recurrente se crea la siguiente (sin generar atrasadas).
+- **Calendario**: mes, semana (cuadrícula con franjas en escritorio, lista por días en móvil) y agenda; eventos con recurrencia y varios días;
+  tareas con fecha; color por negocio; tocar un día para añadir.
+- **Objetivos**: número, euros, porcentaje o hitos; progreso manual o automático (ingresos/beneficio del periodo del negocio, o % de tareas
+  vinculadas); histórico; ritmo («va con retraso»); tareas vinculadas; día/hora de revisión semanal en Ajustes (el aviso llega en la Fase 5).
+- Pendiente de fases posteriores: vínculo de tareas con carpetas (Fase 4), avisos (Fase 5).
+- Tests: lógica de recurrencias, alta rápida (40 casos), posponer, calendario, objetivos, agrupación y 14 de SQL (permisos, integridad).
 
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
