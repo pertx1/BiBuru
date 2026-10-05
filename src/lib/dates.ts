@@ -137,3 +137,9 @@ export function monthLabel(iso: string, withYear = true): string {
   const m = MONTHS[+iso.slice(5, 7) - 1];
   return withYear ? `${m} ${iso.slice(2, 4)}` : m;
 }
+
+/** Fecha y hora actuales ("AAAA-MM-DD", "HH:MM") en la zona indicada. */
+export function nowLocal(now: Date = new Date(), timeZone: string = TIMEZONE): { date: string; time: string } {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(now);
+  return { date: todayISO(now, timeZone), time: parts };
+}
