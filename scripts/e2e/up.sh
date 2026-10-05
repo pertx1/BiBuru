@@ -3,7 +3,7 @@
 # Requisitos: Postgres local y PostgREST en /tmp/pgrst/postgrest (ver README). Uso: bash scripts/e2e/up.sh
 set -euo pipefail
 export PGPASSWORD=postgres
-bash scripts/db-setup.sh
+if [ -z "${KEEP_DB:-}" ]; then bash scripts/db-setup.sh; fi
 psql -h localhost -U postgres -d biburu_test -q <<'SQL' >/dev/null
 do $$ begin
   if not exists (select from pg_roles where rolname='authenticator') then create role authenticator login password 'postgres' noinherit; end if;

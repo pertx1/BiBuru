@@ -9,3 +9,9 @@ Sirven para ver la app funcionando de verdad antes de desplegar. No forman parte
 3. `node scripts/e2e/mock-supabase.mjs` (escucha en 54321).
 4. `npm run build && npm start` con `NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321`.
 5. `USER_ID=<uuid del usuario> node scripts/e2e/browser-flow.mjs` recorre: crear negocio, pedido, gasto, ingreso, estadísticas y CSV.
+
+## Atajos
+- `bash scripts/e2e/up.sh` levanta todo (con `KEEP_DB=1` conserva la base); `bash scripts/e2e/down.sh` lo apaga.
+- `bash scripts/e2e/seed.sh` importa la base de ejemplo de PROFITY (`profity_test`).
+- `shots.mjs` (capturas móvil/escritorio), `browser-flow.mjs` (Fase 2), `phase3.mjs` y `recurring.mjs` (Fase 3).
+- No uses `pkill -f` con el nombre del servidor dentro de una orden larga: puede matar tu propio shell; `down.sh` ya lo hace bien.
