@@ -405,6 +405,19 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_log": {
+                  Row: {
+                    "created_at": string,"dedupe_key": string,"id": string,"kind": string,"user_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"dedupe_key": string,"id"?: string,"kind": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"dedupe_key"?: string,"id"?: string,"kind"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"order_items": {
                   Row: {
                     "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
@@ -513,18 +526,68 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_monthly_budget_cents": number,"created_at": string,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"id": string,"quiet_hours_end": string,"quiet_hours_start": string,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_time": string
+                    "ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_time"?: string
+                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"id"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_time"?: string
+                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "profiles_default_workspace_id_fkey"
       columns: ["default_workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"last_success_at": string | null,"p256dh": string,"updated_at": string,"user_agent": string | null,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"last_success_at"?: string | null,"p256dh": string,"updated_at"?: string,"user_agent"?: string | null,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"last_success_at"?: string | null,"p256dh"?: string,"updated_at"?: string,"user_agent"?: string | null,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"reminders": {
+                  Row: {
+                    "created_at": string,"event_id": string | null,"id": string,"remind_at": string,"sent_at": string | null,"status": string,"task_id": string | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"event_id"?: string | null,"id"?: string,"remind_at": string,"sent_at"?: string | null,"status"?: string,"task_id"?: string | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"event_id"?: string | null,"id"?: string,"remind_at"?: string,"sent_at"?: string | null,"status"?: string,"task_id"?: string | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reminders_event_id_workspace_id_fkey"
+      columns: ["event_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "events"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "reminders_task_id_workspace_id_fkey"
+      columns: ["task_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "reminders_workspace_id_fkey"
+      columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
       referencedColumns: ["id"]
@@ -710,6 +773,9 @@ isOneToOne: false
                            },
 "apply_workspace_policies":
 { Args: { "tbl": string }; Returns: undefined
+                           },
+"configure_cron":
+{ Args: { "app_url": string,"secret": string }; Returns: string
                            },
 "is_workspace_admin":
 { Args: { "ws": string }; Returns: boolean

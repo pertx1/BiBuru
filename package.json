@@ -12,7 +12,8 @@
     "test:db": "bash scripts/test-db.sh",
     "db:types": "bash scripts/gen-types.sh",
     "import:profity": "tsx scripts/import-profity.ts",
-    "import:profity:dry": "tsx scripts/import-profity.ts --dry-run"
+    "import:profity:dry": "tsx scripts/import-profity.ts --dry-run",
+    "vapid": "node scripts/generate-vapid.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -31,6 +32,7 @@
     "recharts": "^3.10.1",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.7.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -39,6 +41,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^5.0.3",
     "dotenv": "^18.0.5",
     "eslint": "^9",
