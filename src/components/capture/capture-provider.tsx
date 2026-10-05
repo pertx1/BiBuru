@@ -3,6 +3,7 @@
 import { Send, WifiOff, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { captureItem } from "@/app/(app)/bandeja/actions";
+import { VoiceButton } from "@/components/ai/voice-button";
 import { useToast } from "@/components/ui/toast";
 import { enqueue, flushQueue, queueSize, type QueuedCapture, type SendResult } from "@/lib/capture/queue";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,7 @@ export function CaptureProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [pending, setPending] = useState(0);
+  const [voiced, setVoiced] = useState(false);
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const ref = useRef<HTMLTextAreaElement>(null);
   const toast = useToast();
@@ -73,9 +75,10 @@ export function CaptureProvider({ children }: { children: React.ReactNode }) {
   async function save() {
     const value = text.trim();
     if (!value) return;
-    const item = { clientId: crypto.randomUUID(), text: value.slice(0, 10000), capturedAt: new Date().toISOString(), source: "text" as const };
+    const item = { clientId: crypto.randomUUID(), text: value.slice(0, 10000), capturedAt: new Date().toISOString(), source: voiced ? ("voice" as const) : ("text" as const) };
     await enqueue(item); // primero en el dispositivo: pase lo que pase, no se pierde
     setText("");
+    setVoiced(false);
     setOpen(false);
     setPending((n) => n + 1);
     toast({ message: navigator.onLine ? "Guardado en la bandeja ✔" : "Guardado. Se enviará al volver la conexión", durationMs: 2500 });
@@ -103,9 +106,12 @@ export function CaptureProvider({ children }: { children: React.ReactNode }) {
               <p className="flex items-center gap-1.5 text-xs text-muted">
                 {!online ? <><WifiOff className="size-3.5" aria-hidden /> Sin conexión: se guardará en el dispositivo</> : pending > 0 ? `${pending} esperando para enviarse` : "Enter guarda · Mayús+Enter salto de línea"}
               </p>
+              <span className="flex items-center gap-2">
+                {online && <VoiceButton onText={(t) => { setText((x) => (x ? `${x} ${t}` : t)); setVoiced(true); setTimeout(() => ref.current?.focus(), 0); }} onError={(m) => toast({ message: m })} />}
               <button type="button" onClick={() => void save()} disabled={!text.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground disabled:opacity-50 md:min-h-9">
                 <Send className="size-4" aria-hidden /> Guardar
               </button>
+              </span>
             </div>
           </div>
         </div>

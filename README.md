@@ -31,6 +31,12 @@ npm run test:db              # tests de permisos; necesita un Postgres local
 3. En el iPhone: instala la app (Safari → Compartir → Añadir a pantalla de inicio), abre Ajustes → «Activar avisos» y pulsa «Enviar aviso de prueba».
 Si Supabase Cron no estuviera disponible: cron-job.org → URL `https://TU-APP.vercel.app/api/cron/reminders`, cada minuto, cabecera `Authorization: Bearer TU_CRON_SECRET`.
 
+## IA (Fase 6)
+1. Crea una clave en https://aistudio.google.com → *Get API key* y ponla en Vercel como `GEMINI_API_KEY` (opcional: `GEMINI_MODEL_FAST`, `GEMINI_MODEL_VIDEO`, `AI_MAX_RPM`).
+2. Aplica la migración `20261011000001_ai.sql` y `20261011000002_ai_cron.sql`, y vuelve a ejecutar una vez
+   `select public.configure_cron('https://TU-APP.vercel.app', 'TU_CRON_SECRET');` (programa también la cola de IA).
+3. En **Ajustes → Inteligencia artificial** fija el presupuesto mensual (10 € por defecto) y revisa los precios por modelo.
+
 ## Importar PROFITY
 ```bash
 # En .env.local: PROFITY_DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY

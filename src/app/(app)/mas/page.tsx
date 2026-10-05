@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, Inbox, ChevronRight, NotebookText, Settings, Target, Video } from "lucide-react";
+import { CalendarDays, Inbox, Sparkles, ChevronRight, NotebookText, Settings, Target, Video } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 
 export const metadata = { title: "Más" };
 
 const items = [
+  { href: "/chat", label: "Asistente (chat con IA)", icon: Sparkles },
   { href: "/bandeja", label: "Bandeja de entrada", icon: Inbox },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/objetivos", label: "Objetivos", icon: Target },

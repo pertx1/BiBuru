@@ -5,7 +5,45 @@ export type Database = {
   
   "public": {
           Tables: {
-            "api_tokens": {
+            "ai_prices": {
+                  Row: {
+                    "created_at": string,"id": string,"input_eur_per_mtok": number,"model": string,"output_eur_per_mtok": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"input_eur_per_mtok": number,"model": string,"output_eur_per_mtok": number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"input_eur_per_mtok"?: number,"model"?: string,"output_eur_per_mtok"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_prices_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ai_usage": {
+                  Row: {
+                    "cost_micros": number,"created_at": string,"error": string | null,"feature": string,"id": string,"input_tokens": number,"model": string,"ok": boolean,"output_tokens": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "cost_micros"?: number,"created_at"?: string,"error"?: string | null,"feature": string,"id"?: string,"input_tokens"?: number,"model": string,"ok"?: boolean,"output_tokens"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "cost_micros"?: number,"created_at"?: string,"error"?: string | null,"feature"?: string,"id"?: string,"input_tokens"?: number,"model"?: string,"ok"?: boolean,"output_tokens"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_usage_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"api_tokens": {
                   Row: {
                     "business_id": string,"created_at": string,"id": string,"kind": string,"token_hash": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
@@ -43,6 +81,25 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "businesses_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"chat_messages": {
+                  Row: {
+                    "action_status": string | null,"content": string,"conversation_id": string,"created_at": string,"id": string,"links": Json | null,"pending_action": Json | null,"role": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "action_status"?: string | null,"content"?: string,"conversation_id": string,"created_at"?: string,"id"?: string,"links"?: Json | null,"pending_action"?: Json | null,"role": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "action_status"?: string | null,"content"?: string,"conversation_id"?: string,"created_at"?: string,"id"?: string,"links"?: Json | null,"pending_action"?: Json | null,"role"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "chat_messages_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -307,13 +364,13 @@ isOneToOne: false
                   ]
                 },"inbox_items": {
                   Row: {
-                    "captured_at": string,"client_id": string,"created_at": string,"id": string,"processed_at": string | null,"proposal": Json | null,"raw_text": string,"source": string,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "ai_attempts": number,"ai_last_error": string | null,"ai_next_try_at": string | null,"captured_at": string,"client_id": string,"created_at": string,"id": string,"processed_at": string | null,"proposal": Json | null,"raw_text": string,"source": string,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "captured_at"?: string,"client_id": string,"created_at"?: string,"id"?: string,"processed_at"?: string | null,"proposal"?: Json | null,"raw_text": string,"source"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "ai_attempts"?: number,"ai_last_error"?: string | null,"ai_next_try_at"?: string | null,"captured_at"?: string,"client_id": string,"created_at"?: string,"id"?: string,"processed_at"?: string | null,"proposal"?: Json | null,"raw_text": string,"source"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "captured_at"?: string,"client_id"?: string,"created_at"?: string,"id"?: string,"processed_at"?: string | null,"proposal"?: Json | null,"raw_text"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "ai_attempts"?: number,"ai_last_error"?: string | null,"ai_next_try_at"?: string | null,"captured_at"?: string,"client_id"?: string,"created_at"?: string,"id"?: string,"processed_at"?: string | null,"proposal"?: Json | null,"raw_text"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -526,13 +583,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -768,7 +825,15 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "antola_snapshot":
+            "ai_recent_calls":
+{ Args: { "seconds"?: number,"ws": string }; Returns: number
+                           },
+"ai_spend":
+{ Args: { "p_from": string,"p_to"?: string,"ws": string }; Returns: {
+              "calls": number,"cost_micros": number,"feature": string,"input_tokens": number,"output_tokens": number
+            }[]
+                           },
+"antola_snapshot":
 { Args: { "p_hash": string }; Returns: Json
                            },
 "apply_workspace_policies":

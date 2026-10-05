@@ -71,3 +71,28 @@ export async function saveNotificationSettings(input: NotificationSettings): Pro
   revalidatePath("/ajustes");
   return { ok: true };
 }
+
+const aiSchema = z.object({
+  budget_eur: z.number().min(0).max(1000),
+  auto_apply: z.boolean(),
+  prices: z.array(z.object({ model: z.string().trim().min(1).max(80), input: z.number().min(0).max(1000), output: z.number().min(0).max(1000) })).max(10),
+});
+export type AiSettings = z.infer<typeof aiSchema>;
+
+/** Presupuesto mensual de IA, autoaplicación y precios por modelo (los precios reales los pone la persona). */
+export async function saveAiSettings(input: AiSettings): Promise<ActionResult> {
+  const p = aiSchema.safeParse(input);
+  if (!p.success) return { ok: false, error: p.error.issues[0]?.message ?? "Datos no válidos" };
+  const { supabase, userId, workspaceId } = await getContext();
+  const { error } = await supabase.from("profiles").update({ ai_monthly_budget_cents: Math.round(p.data.budget_eur * 100), ai_auto_apply: p.data.auto_apply }).eq("user_id", userId);
+  if (error) { console.error("[settings] ai:", error.message); return { ok: false, error: "No se pudo guardar" }; }
+  if (p.data.prices.length) {
+    const { error: e2 } = await supabase.from("ai_prices").upsert(
+      p.data.prices.map((x) => ({ workspace_id: workspaceId, user_id: userId, model: x.model, input_eur_per_mtok: x.input, output_eur_per_mtok: x.output })),
+      { onConflict: "workspace_id,model" },
+    );
+    if (e2) { console.error("[settings] ai prices:", e2.message); return { ok: false, error: "No se pudieron guardar los precios" }; }
+  }
+  revalidatePath("/ajustes");
+  return { ok: true };
+}

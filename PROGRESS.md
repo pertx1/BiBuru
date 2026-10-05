@@ -83,6 +83,19 @@
   fallo temporal, borrado de suscripciones caducadas y horas de silencio. Tests: 17 de planificación + 8 de SQL + conversión de hora local ↔ UTC con cambios de hora.
 - Pendiente de ti: generar claves (`npm run vapid`), `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` en Vercel y programar el cron (ver README).
 
+## Fase 6 — IA (Gemini)
+- Todo pasa por `runAi` (`src/lib/ai/run.ts`): presupuesto mensual (10 € por defecto, bloquea al 100 %, aviso push al 80 %),
+  límite de peticiones por minuto (`AI_MAX_RPM`, contado en BD), reintentos con espera ante 429/503 y registro de tokens/coste en `ai_usage`.
+- Proveedor abstracto (`AiProvider`): Gemini en producción y `fakeProvider` en pruebas (sin gastar nada).
+- Bandeja: cada captura se clasifica en segundo plano (`after()`); propuesta con Aceptar / Corregir / Descartar.
+  Gastos y pedidos **nunca** se aplican solos; tarea/nota/idea/evento con confianza ≥ 0,85 solo si activas «aplicar solo» (con Deshacer).
+- Chat (`/chat`) con herramientas (buscar, listar, crear/editar tareas, notas, eventos, recordatorios; gastos y pedidos como propuesta con confirmación).
+- Dictado por voz: audio WAV 16 kHz generado en el navegador, transcrito en servidor, no se guarda el audio. Botón en la captura rápida y en el chat.
+- Ajustes → Inteligencia artificial: consumo del mes por función, presupuesto, autoaplicar y precios por modelo (editables).
+- Cron `/api/cron/ai` (cada 2 min vía `configure_cron`) reintenta capturas pendientes de clasificar.
+- Tests: `src/lib/ai/*.test.ts` (precios, clasificación, `runAi` con BD en memoria y proveedor falso) y `tests/ai.test.ts` (RLS).
+- **Sin verificar con servicios reales**: no hay clave de Gemini en el entorno de desarrollo; nombres de modelo y precios por defecto son estimaciones (configurables).
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

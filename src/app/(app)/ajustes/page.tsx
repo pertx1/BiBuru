@@ -2,6 +2,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { InstallGuide } from "@/components/pwa/install-guide";
 import { NotificationSettingsForm } from "@/components/notifications/notification-settings";
 import { PushSetup } from "@/components/notifications/push-setup";
+import { AiSettingsForm } from "@/components/ai/ai-settings";
+import { BudgetBanner } from "@/components/ai/budget-banner";
+import { getBudget } from "@/lib/ai/run";
+import { getModelNames, hasGeminiKey } from "@/lib/ai/gemini";
+import { DEFAULT_PRICES } from "@/lib/ai/pricing";
+import { getContext } from "@/lib/context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +34,13 @@ export default async function AjustesPage() {
 
   const { data: devices } = await supabase.from("push_subscriptions").select("id, endpoint, user_agent, created_at, last_success_at").order("created_at");
   const p = profile;
+  const ctx = await getContext();
+  const budgetCents = p?.ai_monthly_budget_cents ?? 1000;
+  const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
+  const models = getModelNames();
+  const { data: saved } = await supabase.from("ai_prices").select("model, input_eur_per_mtok, output_eur_per_mtok");
+  const price = (model: string, d: { input: number; output: number }) => { const r = saved?.find((x) => x.model === model); return { model, input: r ? Number(r.input_eur_per_mtok) : d.input, output: r ? Number(r.output_eur_per_mtok) : d.output }; };
+  const prices = [price(models.fast, DEFAULT_PRICES.fast), ...(models.video !== models.fast ? [price(models.video, DEFAULT_PRICES.video)] : [])];
   return (
     <>
       <PageHeader title="Ajustes" />
@@ -52,6 +65,10 @@ export default async function AjustesPage() {
             }} />
           </Section>
         )}
+        <Section title="Inteligencia artificial">
+          <BudgetBanner />
+          <AiSettingsForm hasKey={hasGeminiKey()} budgetEur={budgetCents / 100} autoApply={p?.ai_auto_apply ?? false} spentMicros={budget.spentMicros} pct={budget.pct} byFeature={budget.byFeature} prices={prices} />
+        </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <form action={signOut}>

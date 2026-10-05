@@ -3,7 +3,9 @@
 import { CheckSquare, FileText, Link2, Mic, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
-import { acceptInboxAsNote, acceptInboxAsTask, discardInbox, restoreInbox } from "@/app/(app)/bandeja/actions";
+import { acceptInboxAsNote, acceptInboxAsTask, discardInbox, restoreInbox, retryClassification } from "@/app/(app)/bandeja/actions";
+import { ProposalCard, RetryAi } from "./proposal-card";
+import type { Proposal } from "@/lib/ai/classify";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { formatDate, todayISO } from "@/lib/dates";
@@ -20,7 +22,7 @@ function when(iso: string, today: string) {
   return day === today ? `hoy ${t}` : `${formatDate(day)} ${t}`;
 }
 
-export function InboxList({ items, today, nowTime }: { items: InboxItem[]; today: string; nowTime: string }) {
+export function InboxList({ items, today, nowTime, businesses = [], categories = [], aiEnabled = false }: { items: InboxItem[]; today: string; nowTime: string; businesses?: { id: string; name: string }[]; categories?: string[]; aiEnabled?: boolean }) {
   const router = useRouter();
   const toast = useToast();
   const [, start] = useTransition();
@@ -61,8 +63,12 @@ export function InboxList({ items, today, nowTime }: { items: InboxItem[]; today
             {!url && (due || q.recurrence) && (
               <p className="mt-2 text-xs text-muted">Como tarea: <span className="font-medium text-foreground">{q.title}</span>{due && <> · {due}</>}{q.recurrence && <> · {describeRecurrence(q.recurrence)}</>}</p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={() => act(item, "task")}><CheckSquare className="size-4" aria-hidden /> Tarea</Button>
+            {item.status === "proposed" && item.proposal && (
+              <ProposalCard id={item.id} text={item.raw_text} proposal={item.proposal as unknown as Proposal} businesses={businesses} categories={categories} />
+            )}
+            {item.status === "pending" && aiEnabled && !url && <RetryAi id={item.id} error={item.ai_last_error} onRetry={retryClassification} />}
+            <div className={item.status === "proposed" ? "mt-2 flex flex-wrap gap-2 opacity-80" : "mt-3 flex flex-wrap gap-2"}>
+              <Button variant={item.status === "proposed" ? "secondary" : "primary"} onClick={() => act(item, "task")}><CheckSquare className="size-4" aria-hidden /> Tarea</Button>
               <Button variant="secondary" onClick={() => act(item, "note")}><FileText className="size-4" aria-hidden /> Nota</Button>
               <Button variant="ghost" onClick={() => act(item, "discard")}><Trash2 className="size-4" aria-hidden /> Descartar</Button>
             </div>

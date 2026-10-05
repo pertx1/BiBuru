@@ -119,3 +119,10 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Zonas táctiles ≥ 44 px (`min-h-11`), inputs `text-base` en móvil (evita zoom de iOS),
   áreas seguras con `.pt-safe`/`.pb-safe`.
 - Commits pequeños y descriptivos. CI: lint, typecheck, test, test:db, build.
+
+## IA (Fase 6)
+- Toda llamada al modelo pasa por `runAi` (`src/lib/ai/run.ts`); nunca usar el SDK directamente desde páginas o acciones.
+- Presupuesto en micro-euros, tope mensual en `profiles.ai_monthly_budget_cents`; el gasto se calcula desde `ai_usage` (RPC `ai_spend`).
+- Gasto y pedidos solo se crean tras confirmación humana; la autoaplicación se limita a task/note/idea/event con confianza ≥ 0,85.
+- Pruebas con `fakeProvider`; `server-only` está aliasado a un stub en `vitest.config.mts`.
+- Si cambian modelos o precios de Gemini: variables `GEMINI_MODEL_*` y precios editables en Ajustes (tabla `ai_prices`).
