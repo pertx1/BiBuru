@@ -9,6 +9,7 @@ import { GoalDeadlineWidget, GoalRingWidget, GoalTrendWidget } from "./widgets/g
 import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasWidget, VideosCategoryWidget, VideosRecentWidget, VideosTopWidget } from "./widgets/notes-videos";
 import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./widgets/ai";
 import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
+import { PendingReceivablesWidget } from "./widgets/receivables";
 import type { WidgetProps } from "./types";
 
 /**
@@ -27,6 +28,7 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "videos-to-watch": VideosToWatchWidget,
   "expenses-category": ExpensesCategoryWidget,
   orders: OrdersWidget,
+  "pending-receivables": PendingReceivablesWidget,
   "business-compare": BusinessCompareWidget,
   "tasks-overdue": TasksOverdueWidget,
   "tasks-week": TasksWeekWidget,

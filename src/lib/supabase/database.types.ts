@@ -638,15 +638,40 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"orders": {
+                },"order_payments": {
                   Row: {
-                    "business_id": string,"channel": string | null,"cost_cents": number,"created_at": string,"customer": string | null,"external_id": string | null,"fts": unknown,"id": string,"notes": string | null,"order_date": string,"order_number": string | null,"status": string,"total_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
+                    "amount_cents": number,"created_at": string,"id": string,"method": string,"note": string | null,"order_id": string,"paid_on": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"channel"?: string | null,"cost_cents"?: number,"created_at"?: string,"customer"?: string | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"notes"?: string | null,"order_date"?: string,"order_number"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "amount_cents": number,"created_at"?: string,"id"?: string,"method"?: string,"note"?: string | null,"order_id": string,"paid_on": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"channel"?: string | null,"cost_cents"?: number,"created_at"?: string,"customer"?: string | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"notes"?: string | null,"order_date"?: string,"order_number"?: string | null,"status"?: string,"total_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "amount_cents"?: number,"created_at"?: string,"id"?: string,"method"?: string,"note"?: string | null,"order_id"?: string,"paid_on"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_payments_order_id_workspace_id_fkey"
+      columns: ["order_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "order_payments_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"orders": {
+                  Row: {
+                    "business_id": string,"channel": string | null,"cost_cents": number,"created_at": string,"customer": string | null,"due_cents": number | null,"external_id": string | null,"fts": unknown,"id": string,"notes": string | null,"order_date": string,"order_number": string | null,"paid_cents": number,"payment_reviewed": boolean,"status": string,"total_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"channel"?: string | null,"cost_cents"?: number,"created_at"?: string,"customer"?: string | null,"due_cents"?: never,"external_id"?: string | null,"fts"?: never,"id"?: string,"notes"?: string | null,"order_date"?: string,"order_number"?: string | null,"paid_cents"?: number,"payment_reviewed"?: boolean,"status"?: string,"total_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"channel"?: string | null,"cost_cents"?: number,"created_at"?: string,"customer"?: string | null,"due_cents"?: never,"external_id"?: string | null,"fts"?: never,"id"?: string,"notes"?: string | null,"order_date"?: string,"order_number"?: string | null,"paid_cents"?: number,"payment_reviewed"?: boolean,"status"?: string,"total_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1093,6 +1118,11 @@ isOneToOne: false
                            },
 "seed_default_expense_categories":
 { Args: { "uid": string,"ws": string }; Returns: undefined
+                           },
+"stats_collections":
+{ Args: { "p_business"?: string,"p_from": string,"p_to": string,"ws": string }; Returns: {
+              "collected_cents": number,"month": string,"pending_cents": number
+            }[]
                            },
 "stats_daily":
 { Args: { "p_business"?: string,"p_from": string,"p_to": string,"ws": string }; Returns: {
