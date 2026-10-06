@@ -19,3 +19,15 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Borrar un pedido borra sus cobros; «Deshacer» recupera el pedido pero no sus cobros (habría que apuntarlos otra vez).
 - El último filtro se recuerda en el propio móvil/ordenador (almacenamiento local), no en la cuenta.
 - El borrador del pedido nuevo se guarda en el propio dispositivo y solo cuando has escrito algo.
+
+## 2. Stock
+- Ya existía inventario de prendas (modelo + talla) y DTF (diseño + variante) en Producción, con la reserva de los pedidos pendientes. No lo dupliqué: le añadí el **stock mínimo** y lo uso tal cual. Para todo lo demás (materiales, productos terminados, negocios sin Producción) añadí «Materiales y productos» (`stock_items`).
+- Reservan stock los pedidos «Sin hacer» y «Sin llegar», igual que ya hacía Producción.
+- El vínculo de un artículo con los pedidos es opcional: por producto del catálogo o por nombre igual (sin mayúsculas ni acentos), y si quieres solo un color o una talla. Los pedidos no cambian.
+- Falta = lo que haga falta para cubrir los pedidos y quedar en el mínimo: `max(0, mínimo − (tienes − reservado))`. Un artículo a 0 sin pedidos ni mínimo no genera tarea.
+- No hay sistema de etiquetas en Tareas: la «etiqueta Stock» es una marca en la tarea (`tasks.stock_key`) que se ve como «Stock» en la lista.
+- Los pedidos no tienen fecha de entrega: la fecha límite es la del pedido más antiguo que espera el artículo + 3 días (nunca antes de hoy). Si solo está bajo el mínimo, una semana. Si mueves tú la fecha más tarde, se respeta salvo que entre un pedido más urgente.
+- Prioridad media en las tareas automáticas.
+- Las tareas se recalculan al guardar/cambiar/borrar pedidos, al tocar el stock y al abrir la pantalla Stock (sin cron nuevo, para no gastar invocaciones).
+- Completar a mano pregunta las unidades; «Completar sin registrar nada» también existe, pero si sigue faltando se abre otra tarea (una sola abierta por artículo).
+- Completar desde la notificación del móvil («Hecho») no pregunta unidades.

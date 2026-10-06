@@ -93,6 +93,7 @@ export const WIDGETS: WidgetMeta[] = [
   w("orders", "negocios", "Pedidos", "Pedidos pendientes de enviar o los últimos pedidos.", "list", ["m", "l"],
     [business(), { key: "show", label: "Mostrar", kind: "choice", options: [{ value: "pending", label: "Pendientes" }, { value: "latest", label: "Últimos" }] }], { show: "pending" }),
   w("pending-receivables", "negocios", "Pendiente de cobro", "Cuánto te deben, en cuántos pedidos y quién (de un negocio o de todos).", "number", ["m", "s", "l"], [business()]),
+  w("stock-missing", "negocios", "Stock que falta", "Lo que hay que reponer: pedidos pendientes sin cubrir o por debajo del mínimo.", "list", ["m", "s", "l"], [business()]),
   w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
   w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
   w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),

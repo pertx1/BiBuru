@@ -177,13 +177,13 @@ isOneToOne: false
                   ]
                 },"dtf_stocks": {
                   Row: {
-                    "business_id": string,"created_at": string,"id": string,"name": string,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"id": string,"min_quantity": number,"name": string,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"created_at"?: string,"id"?: string,"name": string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant": string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"id"?: string,"min_quantity"?: number,"name": string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant": string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"min_quantity"?: number,"name"?: string,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -869,6 +869,62 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"stock_items": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"match_color": string | null,"match_size": string | null,"min_quantity": number,"name": string,"product_id": string | null,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"match_color"?: string | null,"match_size"?: string | null,"min_quantity"?: number,"name": string,"product_id"?: string | null,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"match_color"?: string | null,"match_size"?: string | null,"min_quantity"?: number,"name"?: string,"product_id"?: string | null,"quantity"?: number,"updated_at"?: string,"user_id"?: string,"variant"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "stock_items_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_items_product_id_workspace_id_fkey"
+      columns: ["product_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"stock_movements": {
+                  Row: {
+                    "business_id": string,"created_at": string,"delta": number,"id": string,"item_key": string,"kind": string,"label": string,"moved_on": string,"reason": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"delta": number,"id"?: string,"item_key": string,"kind": string,"label": string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"delta"?: number,"id"?: string,"item_key"?: string,"kind"?: string,"label"?: string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "stock_movements_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_movements_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"taggings": {
                   Row: {
                     "created_at": string,"id": string,"item_id": string,"item_type": string,"tag_id": string,"updated_at": string,"user_id": string,"workspace_id": string
@@ -915,13 +971,13 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_date": string | null,"due_time": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"sort_order": number,"status": string,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_date": string | null,"due_time": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"sort_order": number,"status": string,"stock_key": string | null,"stock_missing": number | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -958,13 +1014,13 @@ isOneToOne: false
                   ]
                 },"tshirt_stocks": {
                   Row: {
-                    "business_id": string,"created_at": string,"id": string,"model": string,"quantity": number,"size": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"id": string,"min_quantity": number,"model": string,"quantity": number,"size": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"created_at"?: string,"id"?: string,"model": string,"quantity"?: number,"size": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"id"?: string,"min_quantity"?: number,"model": string,"quantity"?: number,"size": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"id"?: string,"model"?: string,"quantity"?: number,"size"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"min_quantity"?: number,"model"?: string,"quantity"?: number,"size"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

@@ -14,7 +14,7 @@ function fail(what: string, e: { message: string } | null): never {
   throw new Error(`No se pudo cargar: ${what}`);
 }
 
-async function loadBase(businessId: string) {
+export async function loadBase(businessId: string) {
   const { supabase, workspaceId } = await getContext();
   const [tshirts, designs, dtfs, shirtRules, designRules] = await Promise.all([
     supabase.from("tshirt_stocks").select("*").eq("workspace_id", workspaceId).eq("business_id", businessId),

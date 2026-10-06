@@ -10,6 +10,7 @@ const TABS = [
   { slug: "gastos", label: "Gastos" },
   { slug: "ingresos", label: "Ingresos" },
   { slug: "productos", label: "Productos" },
+  { slug: "stock", label: "Stock" },
   { slug: "estadisticas", label: "Estadísticas" },
   { slug: "tareas", label: "Tareas" },
   { slug: "objetivos", label: "Objetivos" },
@@ -19,7 +20,7 @@ export function BusinessTabs({ id, production }: { id: string; production?: bool
   const pathname = usePathname();
   return (
     <nav aria-label="Secciones del negocio" className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 md:mx-0 md:px-0">
-      {[...TABS.slice(0, 5), ...(production ? [{ slug: "produccion", label: "Producción" }] : []), ...TABS.slice(5)].map((t) => {
+      {[...TABS.slice(0, 6), ...(production ? [{ slug: "produccion", label: "Producción" }] : []), ...TABS.slice(6)].map((t) => {
         const href = `/negocios/${id}${t.slug ? `/${t.slug}` : ""}`;
         const active = t.slug === "" ? pathname === href : pathname.startsWith(href);
         return (

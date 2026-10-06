@@ -1,9 +1,13 @@
 "use client";
 
-import { Flag, ListChecks, Repeat } from "lucide-react";
+import { Boxes, Flag, ListChecks, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
+import { receiveForTask } from "@/app/(app)/negocios/stock-actions";
 import { toggleTask, undoComplete } from "@/app/(app)/tareas/actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import type { TaskWithSubs } from "@/lib/tasks/data";
 import { dueLabel, PRIORITY_COLORS } from "@/lib/tasks/format";
@@ -24,8 +28,13 @@ export function TaskList({
   const bizById = new Map(businesses.map((b) => [b.id, b]));
   const [hidden, hide] = useOptimistic<string[], string>([], (s, id) => [...s, id]);
 
+  const [receiving, setReceiving] = useState<TaskWithSubs | null>(null);
+  const [units, setUnits] = useState("");
+
   function toggle(t: TaskWithSubs) {
     const completing = t.status !== "done";
+    // Tarea «Reponer» de Stock: antes de cerrarla se pregunta cuántas unidades han entrado.
+    if (completing && t.stock_key) { setUnits(String(t.stock_missing ?? "")); setReceiving(t); return; }
     start(async () => {
       hide(t.id);
       const r = await toggleTask(t.id, completing);
@@ -63,6 +72,7 @@ export function TaskList({
                       <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
                         {due.text && <span className={cn(due.overdue && "font-medium text-danger", due.today && "font-medium text-accent")}>{due.text}</span>}
                         {biz && <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full" style={{ backgroundColor: biz.color }} aria-hidden />{biz.name}</span>}
+                        {t.stock_key && <span className="inline-flex items-center gap-0.5 rounded-full border border-border px-1.5 font-medium"><Boxes className="size-3" aria-hidden />Stock</span>}
                         {t.priority > 0 && <Flag className="size-3.5" style={{ color: PRIORITY_COLORS[t.priority] }} aria-label={`Prioridad ${t.priority}`} />}
                         {t.recurrence != null && <Repeat className="size-3.5" aria-label="Se repite" />}
                         {t.subtasks.length > 0 && <span className="inline-flex items-center gap-0.5"><ListChecks className="size-3.5" aria-hidden />{subDone}/{t.subtasks.length}</span>}
@@ -77,6 +87,25 @@ export function TaskList({
       </div>
       <TaskSheet task={editing} open={editing !== null} onClose={() => { setEditing(null); router.refresh(); }} businesses={businesses} goals={goals} today={today} defaultBusinessId={defaultBusinessId} />
       {showDone ? null : null}
+      <Sheet open={!!receiving} onClose={() => setReceiving(null)} title="¿Cuántas unidades han entrado?">
+        {receiving && (
+          <form className="flex flex-col gap-3" onSubmit={(e) => {
+            e.preventDefault();
+            const t = receiving;
+            start(async () => {
+              hide(t.id); setReceiving(null);
+              const r = await receiveForTask({ taskId: t.id, units: Math.max(0, parseInt(units, 10) || 0) });
+              toast({ message: r.ok ? "Entrada registrada y tarea hecha ✔" : r.error });
+              router.refresh();
+            });
+          }}>
+            <p className="text-sm text-muted">{receiving.title}. Se sumarán al stock y la tarea se cerrará. Si aún faltan, se abrirá otra con lo que quede.</p>
+            <Input inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} aria-label="Unidades que han entrado" autoFocus />
+            <Button type="submit">Registrar entrada y completar</Button>
+            <Button type="button" variant="secondary" onClick={() => { const t = receiving; setUnits("0"); start(async () => { hide(t.id); setReceiving(null); await receiveForTask({ taskId: t.id, units: 0 }); router.refresh(); }); }}>Completar sin registrar nada</Button>
+          </form>
+        )}
+      </Sheet>
     </>
   );
 }

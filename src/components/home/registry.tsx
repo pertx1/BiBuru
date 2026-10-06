@@ -10,6 +10,7 @@ import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasW
 import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./widgets/ai";
 import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
 import { PendingReceivablesWidget } from "./widgets/receivables";
+import { StockMissingWidget } from "./widgets/stock";
 import type { WidgetProps } from "./types";
 
 /**
@@ -29,6 +30,7 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "expenses-category": ExpensesCategoryWidget,
   orders: OrdersWidget,
   "pending-receivables": PendingReceivablesWidget,
+  "stock-missing": StockMissingWidget,
   "business-compare": BusinessCompareWidget,
   "tasks-overdue": TasksOverdueWidget,
   "tasks-week": TasksWeekWidget,
