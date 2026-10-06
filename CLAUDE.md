@@ -132,3 +132,4 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `saved_videos` / `video_categories` siguen la convención por espacio. `integrations` es la excepción deliberada: credencial personal, RLS por `user_id`, sin insert desde el cliente y sin permiso de lectura del token (`refresh_token_enc`); solo el servidor (clave de servicio) lo lee y descifra.
 - Los módulos de `src/lib/favorites/*` que usan servidor no se importan desde componentes de cliente (usar `labels.ts` para constantes compartidas).
 - Cualquier fetch a dominios externos desde enlaces del usuario se limita a dominios conocidos (anti-SSRF).
+- Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).

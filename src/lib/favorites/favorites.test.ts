@@ -73,3 +73,45 @@ describe("análisis", () => {
     expect(pickCategory("marketing digital", ex)).toEqual({ id: null, name: "Marketing digital" });
   });
 });
+
+describe("listas de YouTube por RSS", async () => {
+  const { parsePlaylistId, parseFeed, fetchPlaylistFeed, FeedError } = await import("./rss");
+  it.each([
+    ["https://www.youtube.com/playlist?list=PLabcdefghij123456", "PLabcdefghij123456"],
+    ["https://youtube.com/watch?v=dQw4w9WgXcQ&list=PLabcdefghij123456&index=2", "PLabcdefghij123456"],
+    ["https://m.youtube.com/playlist?list=PLabcdefghij123456&si=xyz", "PLabcdefghij123456"],
+    ["  PLabcdefghij123456 ", "PLabcdefghij123456"],
+  ])("acepta %s", (u, id) => expect(parsePlaylistId(u)).toBe(id));
+  it.each([
+    "https://www.youtube.com/playlist?list=LL", "https://www.youtube.com/playlist?list=WL", "https://evil.example/playlist?list=PLabcdefghij123456",
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "PL<script>", "", "no es un enlace",
+  ])("rechaza %s", (u) => expect(parsePlaylistId(u)).toBeNull());
+
+  const xml = `<?xml version="1.0"?><feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+<title>Ideas &amp; negocio</title><author><name>Oier</name></author>
+<entry><id>yt:video:dQw4w9WgXcQ</id><yt:videoId>dQw4w9WgXcQ</yt:videoId><title>Cómo vender &quot;más&quot; &#233;</title>
+<author><name>Canal Uno</name></author><published>2026-09-01T10:00:00+00:00</published>
+<media:group><media:thumbnail url="https://i1.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" width="480" height="360"/></media:group></entry>
+<entry><yt:videoId>malo</yt:videoId><title>x</title></entry>
+<entry><yt:videoId>abcdefghijk</yt:videoId><title>Sin autor</title><media:thumbnail url="https://evil.example/x.jpg"/></entry>
+</feed>`;
+  it("interpreta el feed", () => {
+    const f = parseFeed(xml);
+    expect(f.title).toBe("Ideas & negocio");
+    expect(f.entries).toEqual([
+      { id: "dQw4w9WgXcQ", title: 'Cómo vender "más" é', channel: "Canal Uno", publishedAt: "2026-09-01T10:00:00.000Z", thumbnail: "https://i1.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" },
+      { id: "abcdefghijk", title: "Sin autor", channel: null, publishedAt: null, thumbnail: null },
+    ]);
+  });
+  it("solo pide a youtube.com y traduce los errores", async () => {
+    const urls: string[] = [];
+    const ok = (async (u: string) => { urls.push(u); return new Response(xml, { status: 200 }); }) as unknown as typeof fetch;
+    expect((await fetchPlaylistFeed("PLabcdefghij123456", ok)).entries).toHaveLength(2);
+    expect(urls).toEqual(["https://www.youtube.com/feeds/videos.xml?playlist_id=PLabcdefghij123456"]);
+    const notFound = (async () => new Response("", { status: 404 })) as unknown as typeof fetch;
+    await expect(fetchPlaylistFeed("PLabcdefghij123456", notFound)).rejects.toThrow(/Privada/);
+    const down = (async () => { throw new Error("red"); }) as unknown as typeof fetch;
+    await expect(fetchPlaylistFeed("PLabcdefghij123456", down)).rejects.toBeInstanceOf(FeedError);
+    await expect(fetchPlaylistFeed("../../etc", ok)).rejects.toBeInstanceOf(FeedError);
+  });
+});

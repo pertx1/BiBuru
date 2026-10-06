@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { Video } from "lucide-react";
 import { z } from "zod";
 import { BudgetBanner } from "@/components/ai/budget-banner";
@@ -9,6 +10,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getContext } from "@/lib/context";
 import { listFavorites } from "@/lib/favorites/data";
+import { syncStaleFeeds } from "@/lib/favorites/service";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { STATUS_LABELS } from "@/lib/favorites/labels";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +29,8 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
     orden: sp.orden === "fecha" ? ("fecha" as const) : ("util" as const),
   };
   const { supabase, workspaceId } = await getContext();
+  // Respaldo del cron: las listas de YouTube con más de una hora sin revisar se miran tras enviar la página.
+  after(async () => { try { await syncStaleFeeds(createAdminClient(), { workspaceId, staleMinutes: 60, limit: 3 }); } catch (e) { console.error("[videos] feeds:", e instanceof Error ? e.message : e); } });
   const [{ videos, tags, byStatus, byCat, categories, costs }, biz] = await Promise.all([
     listFavorites(f),
     supabase.from("businesses").select("id, name").eq("workspace_id", workspaceId).eq("archived", false).order("name"),

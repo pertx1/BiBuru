@@ -33,6 +33,17 @@ d("Favoritos: permisos y reglas", () => {
   });
   afterAll(async () => { await db.end(); });
 
+  it("youtube_feeds: cada uno ve y toca solo las suyas; id validado y sin duplicados", async () => {
+    await q("insert into youtube_feeds (workspace_id,user_id,playlist_id) values ($1,$2,'PLaliceaaaaaaaaaa'),($3,$4,'PLbobbbbbbbbbbbbb')", [ids.aWs, ids.alice, ids.bWs, ids.bob]);
+    const mine = await as(ids.alice, (c) => c.query("select playlist_id from youtube_feeds"));
+    expect(mine.rows.map((r) => r.playlist_id)).toEqual(["PLaliceaaaaaaaaaa"]);
+    const del = await as(ids.alice, (c) => c.query("delete from youtube_feeds where playlist_id='PLbobbbbbbbbbbbbb'"));
+    expect(del.rowCount).toBe(0);
+    await expect(as(ids.alice, (c) => c.query("insert into youtube_feeds (workspace_id,user_id,playlist_id) values ($1,$2,'PLxxxxxxxxxxxxxxx')", [ids.bWs, ids.alice]))).rejects.toThrow();
+    await expect(as(ids.alice, (c) => c.query("insert into youtube_feeds (workspace_id,user_id,playlist_id) values ($1,$2,'PL<script>x')", [ids.aWs, ids.alice]))).rejects.toThrow();
+    await expect(as(ids.alice, (c) => c.query("insert into youtube_feeds (workspace_id,user_id,playlist_id) values ($1,$2,'PLaliceaaaaaaaaaa')", [ids.aWs, ids.alice]))).rejects.toThrow();
+  });
+
   it.each(["saved_videos", "video_categories"])("%s: aislamiento entre usuarios", async (t) => {
     const r = await as(ids.alice, (c) => c.query(`select workspace_id from ${t}`));
     expect(r.rows.length).toBeGreaterThan(0);

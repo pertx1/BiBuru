@@ -9,6 +9,7 @@ import { getModelNames, hasGeminiKey } from "@/lib/ai/gemini";
 import { DEFAULT_PRICES } from "@/lib/ai/pricing";
 import { getContext } from "@/lib/context";
 import { YoutubeSettings } from "@/components/favorites/youtube-settings";
+import { PlaylistFeeds } from "@/components/favorites/playlist-feeds";
 import { googleConfig } from "@/lib/favorites/youtube";
 import { KeyGenerator } from "@/components/account/key-generator";
 import { ProfityImport } from "@/components/account/profity-import";
@@ -42,6 +43,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
   const p = profile;
   const { data: integ } = await supabase.from("integrations").select("account_email, last_sync_at, last_sync_error, last_sync_added, sync_likes, sync_playlists").eq("provider", "google").maybeSingle();
   const ctx = await getContext();
+  const { data: feeds } = await supabase.from("youtube_feeds").select("id, title, last_checked_at, last_error, last_added").eq("workspace_id", ctx.workspaceId).order("created_at");
   const budgetCents = p?.ai_monthly_budget_cents ?? 1000;
   const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
   const models = getModelNames();
@@ -75,6 +77,9 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         <Section title="Inteligencia artificial">
           <BudgetBanner />
           <AiSettingsForm hasKey={hasGeminiKey()} budgetEur={budgetCents / 100} autoApply={p?.ai_auto_apply ?? false} spentMicros={budget.spentMicros} pct={budget.pct} byFeature={budget.byFeature} prices={prices} />
+        </Section>
+        <Section title="Listas de YouTube (sin Google Cloud)">
+          <PlaylistFeeds feeds={(feeds ?? []).map((f) => ({ id: f.id, title: f.title, lastCheckedAt: f.last_checked_at, lastError: f.last_error, lastAdded: f.last_added }))} />
         </Section>
         <Section title="YouTube y vídeos">
           <YoutubeSettings configured={!!googleConfig() && !!process.env.TOKEN_ENCRYPTION_KEY} longMinutes={p?.video_long_minutes ?? 20} flash={sp.google}

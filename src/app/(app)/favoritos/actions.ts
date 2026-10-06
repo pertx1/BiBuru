@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createNote, createTask, type Actor } from "@/lib/ai/actors";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { getContext } from "@/lib/context";
-import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, syncYoutube } from "@/lib/favorites/service";
+import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { parsePlaylistId } from "@/lib/favorites/rss";
 import { myPlaylists, refreshAccessToken } from "@/lib/favorites/youtube";
 import { decryptSecret } from "@/lib/favorites/crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -211,4 +212,56 @@ export async function saveVideoLongMinutes(minutes: number): Promise<ActionResul
   if (error) return { ok: false, error: "No se pudo guardar" };
   revalidatePath("/ajustes");
   return { ok: true };
+}
+
+// ------------------------------------------------------------------ listas de YouTube por RSS (sin Google Cloud)
+const MAX_FEEDS = 10;
+
+/** Tras comprobar una lista: analiza ya los primeros vídeos nuevos; el resto los recoge la cola. */
+function analyzeNew(a: Actor, ids: string[]) {
+  if (hasGeminiKey()) for (const id of ids.slice(0, 3)) analyzeSoon(a.userId, a.workspaceId, id);
+}
+
+export async function addPlaylistFeed(url: string): Promise<ActionResult & { added?: number }> {
+  const text = z.string().trim().min(10).max(2000).safeParse(url);
+  const playlistId = text.success ? parsePlaylistId(text.data) : null;
+  if (!playlistId) return { ok: false, error: "Pega el enlace de una lista de YouTube (el que lleva «list=»)." };
+  const a = await actorOf();
+  const { count } = await a.supabase.from("youtube_feeds").select("id", { count: "exact", head: true }).eq("workspace_id", a.workspaceId);
+  if ((count ?? 0) >= MAX_FEEDS) return { ok: false, error: `Como máximo ${MAX_FEEDS} listas.` };
+  const { data, error } = await a.supabase.from("youtube_feeds").insert({ workspace_id: a.workspaceId, user_id: a.userId, playlist_id: playlistId }).select("id, workspace_id, user_id, playlist_id, title").single();
+  if (error) return { ok: false, error: error.code === "23505" ? "Esa lista ya está añadida." : "No se pudo guardar la lista" };
+  const r = await syncPlaylistFeed(createAdminClient(), data as FeedRow);
+  analyzeNew(a, r.newIds);
+  refresh();
+  revalidatePath("/ajustes");
+  // La lista queda guardada aunque YouTube falle ahora: se reintentará sola.
+  return r.error ? { ok: false, error: `Lista guardada, pero: ${r.error}` } : { ok: true, added: r.added };
+}
+
+export async function removePlaylistFeed(id: string): Promise<ActionResult> {
+  if (!uuid.safeParse(id).success) return { ok: false, error: "Datos no válidos" };
+  const a = await actorOf();
+  const { error } = await a.supabase.from("youtube_feeds").delete().eq("id", id).eq("workspace_id", a.workspaceId);
+  if (error) return { ok: false, error: "No se pudo quitar" };
+  revalidatePath("/ajustes");
+  return { ok: true };
+}
+
+export async function checkPlaylistFeedsNow(): Promise<ActionResult & { added?: number }> {
+  const a = await actorOf();
+  const { data: feeds } = await a.supabase.from("youtube_feeds").select("id, workspace_id, user_id, playlist_id, title").eq("workspace_id", a.workspaceId).limit(MAX_FEEDS);
+  if (!feeds?.length) return { ok: false, error: "Añade primero una lista" };
+  const admin = createAdminClient();
+  let added = 0;
+  const errors: string[] = [];
+  for (const f of feeds) {
+    const r = await syncPlaylistFeed(admin, f);
+    added += r.added;
+    analyzeNew(a, r.newIds);
+    if (r.error) errors.push(`${f.title}: ${r.error}`);
+  }
+  refresh();
+  revalidatePath("/ajustes");
+  return errors.length ? { ok: false, error: errors.join(" · ").slice(0, 400) } : { ok: true, added };
 }

@@ -888,6 +888,25 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"youtube_feeds": {
+                  Row: {
+                    "created_at": string,"id": string,"last_added": number,"last_checked_at": string | null,"last_error": string | null,"playlist_id": string,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"last_added"?: number,"last_checked_at"?: string | null,"last_error"?: string | null,"playlist_id": string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"last_added"?: number,"last_checked_at"?: string | null,"last_error"?: string | null,"playlist_id"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "youtube_feeds_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {

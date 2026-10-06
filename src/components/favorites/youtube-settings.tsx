@@ -28,7 +28,7 @@ export function YoutubeSettings({ configured, status, longMinutes, flash }: {
   const [long, setLong] = useState(String(longMinutes));
   const act = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) => start(async () => { const r = await fn(); setMsg(r.ok ? ok : (r.error ?? "No se pudo")); router.refresh(); });
 
-  if (!configured) return <p className="text-sm text-muted">Para conectar YouTube hacen falta <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code> y <code>TOKEN_ENCRYPTION_KEY</code> en el servidor (pasos en el README). Mientras tanto puedes pegar enlaces a mano en Favoritos.</p>;
+  if (!configured) return <p className="text-sm text-muted">Conectar tu cuenta de Google (para traer tus «Me gusta») es opcional y necesita <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code> y <code>TOKEN_ENCRYPTION_KEY</code> en el servidor (pasos en el README). Sin eso puedes usar las listas de arriba o pegar enlaces en Favoritos.</p>;
 
   return (
     <div className="flex flex-col gap-3 text-sm" id="youtube">

@@ -9,6 +9,7 @@ import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
 import { buildVideoPrompt, parseVideoAnalysis, pickCategory, videoAnalysisJsonSchema } from "./analysis";
 import { decryptSecret } from "./crypto";
 import { resolveTiktokShort, tiktokOembed, youtubeOembed } from "./oembed";
+import { FeedError, fetchPlaylistFeed } from "./rss";
 import { classifyVideoUrl, firstUrl } from "./url";
 import { GoogleError, likedPage, playlistPage, refreshAccessToken, videoDetails, type YtVideo } from "./youtube";
 
@@ -233,4 +234,48 @@ export async function syncYoutube(admin: AdminClient, integration: { user_id: st
     return { ...result, error };
   }
   return result;
+}
+
+// ------------------------------------------------------------------ listas por RSS (sin Google Cloud)
+export type FeedRow = { id: string; workspace_id: string; user_id: string; playlist_id: string; title: string };
+export type FeedSyncResult = SyncResult & { newIds: string[] };
+
+/** Lee una lista pública por RSS y guarda en Favoritos los vídeos que aún no están. No lanza: deja el error en la fila. */
+export async function syncPlaylistFeed(admin: AdminClient, feed: FeedRow, f: typeof fetch = fetch): Promise<FeedSyncResult> {
+  const a: Actor = { supabase: admin, workspaceId: feed.workspace_id, userId: feed.user_id, timezone: "Europe/Madrid" };
+  const result: FeedSyncResult = { added: 0, skipped: 0, newIds: [] };
+  const now = new Date().toISOString();
+  try {
+    const { title, entries } = await fetchPlaylistFeed(feed.playlist_id, f);
+    const ids = entries.map((e) => e.id);
+    const known = new Set(ids.length ? ((await admin.from("saved_videos").select("external_id").eq("workspace_id", a.workspaceId).eq("source", "youtube").in("external_id", ids)).data ?? []).map((x) => x.external_id) : []);
+    for (const e of entries) {
+      if (known.has(e.id)) { result.skipped++; continue; }
+      const r = await addVideoByUrl(a, `https://www.youtube.com/watch?v=${e.id}`, { via: "youtube_playlist", originList: title ?? feed.title, meta: { title: e.title, channel: e.channel, thumbnail: e.thumbnail, publishedAt: e.publishedAt } });
+      if (r.ok && !r.duplicate) { result.added++; result.newIds.push(r.id); }
+    }
+    await admin.from("youtube_feeds").update({ last_checked_at: now, last_error: null, last_added: result.added, ...(title ? { title } : {}) }).eq("id", feed.id);
+  } catch (e) {
+    const error = e instanceof FeedError ? e.message : "No se pudo leer la lista. Se reintentará más tarde.";
+    if (!(e instanceof FeedError)) console.error("[videos] feed:", e instanceof Error ? e.message : e);
+    await admin.from("youtube_feeds").update({ last_checked_at: now, last_error: error }).eq("id", feed.id);
+    return { ...result, error };
+  }
+  return result;
+}
+
+/** Revisa las listas que llevan más de `staleMinutes` sin mirarse (desde el cron y al abrir Favoritos). */
+export async function syncStaleFeeds(admin: AdminClient, o: { workspaceId?: string; staleMinutes?: number; limit?: number } = {}) {
+  const cutoff = new Date(Date.now() - (o.staleMinutes ?? 60) * 60_000).toISOString();
+  let q = admin.from("youtube_feeds").select("id, workspace_id, user_id, playlist_id, title")
+    .or(`last_checked_at.is.null,last_checked_at.lt.${cutoff}`).order("last_checked_at", { ascending: true, nullsFirst: true }).limit(o.limit ?? 5);
+  if (o.workspaceId) q = q.eq("workspace_id", o.workspaceId);
+  const { data } = await q;
+  let added = 0, errors = 0;
+  for (const feed of data ?? []) {
+    const r = await syncPlaylistFeed(admin, feed);
+    added += r.added;
+    if (r.error) errors++;
+  }
+  return { feeds: data?.length ?? 0, added, errors };
 }
