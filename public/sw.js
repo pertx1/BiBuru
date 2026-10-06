@@ -4,7 +4,7 @@
  *   LEERLA sin conexión. Si no hay copia, página /offline. Las copias se borran al abrir /login (cerrar sesión o borrar cuenta).
  * - Nunca se cachean respuestas de la API ni acciones: escribir sin conexión solo se hace en la captura rápida (cola local).
  * Subir VERSION invalida las cachés antiguas. */
-const VERSION = "v3";
+const VERSION = "v4";
 const STATIC_CACHE = `biburu-static-${VERSION}`;
 const PAGES_CACHE = `biburu-pages-${VERSION}`;
 const MAX_PAGES = 30;

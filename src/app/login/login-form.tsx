@@ -23,10 +23,10 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
   const [upState, upAction, upPending] = useActionState<PasswordState, FormData>(signUpWithPassword, {});
 
   const tabs = (
-    <div role="tablist" aria-label="Forma de acceso" className="mb-1 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
+    <div role="tablist" aria-label="Forma de acceso" className="mb-1 grid grid-cols-3 gap-1 rounded-full bg-surface p-1">
       {TABS.map(([m, label]) => (
         <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
-          className={cn("min-h-11 rounded-lg px-1 text-xs font-medium md:min-h-9", mode === m ? "bg-surface shadow-sm" : "text-muted")}>{label}</button>
+          className={cn("min-h-11 rounded-full px-1 text-sm font-bold md:min-h-9", mode === m ? "bg-surface-2 shadow-sm" : "text-muted")}>{label}</button>
       ))}
     </div>
   );

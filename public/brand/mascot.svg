@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Biru, el cerebro de BiBuru">
+  <!-- Sombra en el suelo -->
+  <ellipse cx="100" cy="182" rx="56" ry="8" fill="#000" opacity="0.18"/>
+  <!-- Burbujas de pensamiento -->
+  <circle cx="160" cy="34" r="6" fill="#C9C3FF"/>
+  <circle cx="174" cy="20" r="8.5" fill="#E4E0FF"/>
+  <!-- Patitas -->
+  <g stroke="#5B2346" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M78 160 q-4 12 -14 16"/>
+    <path d="M122 160 q4 12 14 16"/>
+  </g>
+  <ellipse cx="62" cy="177" rx="10" ry="6" fill="#F08DB0" stroke="#5B2346" stroke-width="3.5"/>
+  <ellipse cx="138" cy="177" rx="10" ry="6" fill="#F08DB0" stroke="#5B2346" stroke-width="3.5"/>
+  <!-- Contorno del cerebro (círculos un poco más grandes, debajo del relleno) -->
+  <g fill="#5B2346">
+    <circle cx="66" cy="74" r="35.5"/><circle cx="102" cy="56" r="37.5"/><circle cx="138" cy="74" r="35.5"/>
+    <circle cx="154" cy="108" r="30.5"/><circle cx="122" cy="128" r="35.5"/><circle cx="80" cy="128" r="35.5"/>
+    <circle cx="46" cy="106" r="30.5"/><circle cx="100" cy="100" r="44"/>
+  </g>
+  <!-- Relleno -->
+  <g fill="#F7A9C6">
+    <circle cx="66" cy="74" r="32"/><circle cx="102" cy="56" r="34"/><circle cx="138" cy="74" r="32"/>
+    <circle cx="154" cy="108" r="27"/><circle cx="122" cy="128" r="32"/><circle cx="80" cy="128" r="32"/>
+    <circle cx="46" cy="106" r="27"/><circle cx="100" cy="100" r="41"/>
+  </g>
+  <!-- Brillo -->
+  <ellipse cx="70" cy="52" rx="16" ry="9" fill="#FFE3EE" opacity="0.9" transform="rotate(-24 70 52)"/>
+  <!-- Surcos -->
+  <g stroke="#D96E98" stroke-width="4" stroke-linecap="round" fill="none">
+    <path d="M102 26 q-10 14 0 26 q10 12 -2 24"/>
+    <path d="M52 80 q12 -6 20 4"/>
+    <path d="M138 52 q-12 4 -10 18"/>
+    <path d="M150 96 q-10 2 -10 12"/>
+    <path d="M40 116 q10 -4 14 4"/>
+  </g>
+  <!-- Mofletes -->
+  <ellipse cx="62" cy="134" rx="11" ry="7" fill="#FF6F9A" opacity="0.55"/>
+  <ellipse cx="138" cy="134" rx="11" ry="7" fill="#FF6F9A" opacity="0.55"/>
+  <!-- Gafas -->
+  <g stroke="#2A1730" stroke-width="4.5" fill="#FFFFFF">
+    <circle cx="80" cy="112" r="17"/>
+    <circle cx="120" cy="112" r="17"/>
+  </g>
+  <path d="M97 110 q3 -4 6 0" stroke="#2A1730" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <!-- Ojos -->
+  <circle cx="83" cy="114" r="7.5" fill="#2A1730"/>
+  <circle cx="117" cy="114" r="7.5" fill="#2A1730"/>
+  <circle cx="86" cy="111" r="2.6" fill="#fff"/>
+  <circle cx="120" cy="111" r="2.6" fill="#fff"/>
+  <!-- Sonrisa -->
+  <path d="M90 140 q10 9 20 0" stroke="#2A1730" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+</svg>

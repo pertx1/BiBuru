@@ -12,10 +12,9 @@ export default async function LoginPage({
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center gap-8 px-6 pt-safe pb-safe">
       <div className="flex flex-col gap-1">
-        <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-accent text-xl font-bold text-accent-foreground">
-          B
-        </div>
-        <h1 className="text-2xl font-semibold tracking-tight">BiBuru</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element -- SVG estático */}
+        <img src="/brand/mascot.svg" alt="" width={96} height={96} className="mb-2 size-24" />
+        <h1 className="text-[2.1rem] font-extrabold leading-tight tracking-tight">BiBuru</h1>
         <p className="text-sm text-muted">Tu segundo cerebro para negocios y día a día.</p>
       </div>
       {error === "perfil" ? (
