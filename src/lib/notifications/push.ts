@@ -3,7 +3,7 @@ import webpush from "web-push";
 import { getVapidEnv } from "@/lib/env";
 
 export type PushSub = { id: string; endpoint: string; p256dh: string; auth: string };
-export type PushPayload = { title: string; body: string; url: string; tag?: string; kind: string; refId?: string };
+export type PushPayload = { title: string; body: string; url: string; tag?: string; kind: string; refId?: string; image?: string };
 export type SendResult = { ok: true } | { ok: false; gone: boolean; status?: number };
 export type Sender = (sub: PushSub, payload: PushPayload) => Promise<SendResult>;
 

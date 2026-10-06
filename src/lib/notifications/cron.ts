@@ -2,9 +2,10 @@ import "server-only";
 import { addDays, nowLocal } from "@/lib/dates";
 import type { AdminClient } from "@/lib/supabase/admin";
 import {
-  eventOccurrences, inQuietHours, planDailyDigest, planEventReminders, planOverdueAlert, planTaskReminders, planWeeklyReview, type Prefs, type Push,
+  eventOccurrences, inQuietHours, planDailyDigest, planNewsPush, planEventReminders, planOverdueAlert, planTaskReminders, planWeeklyReview, type Prefs, type Push,
 } from "./planning";
 import type { PushPayload, PushSub, Sender } from "./push";
+import { notificationText, type DigestContent, type DigestStatus } from "@/lib/news/digest";
 
 export type CronSummary = { users: number; sent: number; failed: number; quiet: number; removedSubscriptions: number };
 
@@ -71,6 +72,19 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
       if (weekly) pushes.push(weekly);
     }
 
+    // Noticias del día: solo se consulta si ya es su hora y el resumen existe.
+    const newsProbe = planNewsPush(p, local, { day: local.date, ready: true, notified: false, title: "", body: "", image: null });
+    let newsDigestId: string | null = null;
+    if (newsProbe) {
+      const { data: d } = await admin.from("news_digests").select("id, status, content, notified_at").eq("user_id", p.user_id).eq("workspace_id", ws).eq("day", local.date).maybeSingle();
+      const pending = !d || (d.content as { pending?: boolean }).pending === true;
+      if (d && !pending) {
+        const t = notificationText(d.status as DigestStatus, d.content as unknown as DigestContent);
+        const n = planNewsPush(p, local, { day: local.date, ready: true, notified: !!d.notified_at, ...t });
+        if (n) { pushes.push(n); newsDigestId = d.id; }
+      }
+    }
+
     // ------- envío (con reclamación previa)
     const deliver = async (payload: PushPayload): Promise<boolean> => {
       const results = await Promise.all(userSubs.map(async (s) => ({ s, r: await send(s, payload) })));
@@ -86,7 +100,8 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
       const { data: claimed, error: cerr } = await admin.from("notification_log")
         .upsert({ user_id: p.user_id, dedupe_key: n.key, kind: n.kind }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }).select("id");
       if (cerr || !claimed || claimed.length === 0) continue; // ya enviado (o error: se reintenta en el siguiente minuto)
-      const ok = await deliver({ title: n.title, body: n.body, url: n.url, kind: n.kind, refId: n.refId, tag: n.key });
+      const ok = await deliver({ title: n.title, body: n.body, url: n.url, kind: n.kind, refId: n.refId, tag: n.key, image: n.image ?? undefined });
+      if (ok && n.kind === "news" && newsDigestId) await admin.from("news_digests").update({ notified_at: now.toISOString() }).eq("id", newsDigestId);
       if (ok) summary.sent++;
       else { summary.failed++; await admin.from("notification_log").delete().eq("id", claimed[0].id); }
     }

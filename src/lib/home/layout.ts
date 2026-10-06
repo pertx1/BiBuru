@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 export type WidgetSize = "s" | "m" | "l";
-export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "ia";
+export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "noticias" | "ia";
 export type PreviewKind = "finance" | "line" | "number" | "list" | "ring" | "bars" | "input" | "agenda" | "calendar" | "text";
 
 /** Ajustes editables de un widget (el formulario de ajustes se genera a partir de esto). */
@@ -30,7 +30,7 @@ export type WidgetMeta = {
 
 export const GROUP_LABELS: Record<WidgetGroup, string> = {
   negocios: "Negocios", tareas: "Tareas", calendario: "Calendario", objetivos: "Objetivos",
-  captura: "Captura y notas", favoritos: "Favoritos", ia: "IA",
+  captura: "Captura y notas", favoritos: "Favoritos", noticias: "Noticias", ia: "IA",
 };
 
 export const SIZE_LABELS: Record<WidgetSize, string> = { s: "Pequeño", m: "Mediano", l: "Grande" };
@@ -110,6 +110,9 @@ export const WIDGETS: WidgetMeta[] = [
   w("video-ideas", "favoritos", "Ideas sin convertir", "Ideas accionables de tus vídeos que aún no son tareas.", "list", ["m", "l"]),
   w("videos-recent", "favoritos", "Últimos guardados", "Los últimos vídeos que has guardado.", "list", ["m", "l", "s"]),
   w("videos-category", "favoritos", "Vídeos por categoría", "Cuántos vídeos tienes en cada categoría.", "bars", ["s", "m"], [{ key: "category", label: "Categoría", kind: "category", emptyLabel: "Todas (recuento)" }]),
+  w("news-today", "noticias", "Noticias de hoy", "El resumen de noticias útiles de hoy, con la foto de la principal.", "finance", ["m", "l"]),
+  w("news-idea", "noticias", "Idea del día", "Una acción para ganar más o escalar, sacada de las noticias de hoy.", "text", ["m", "l", "s"]),
+  w("news-business", "noticias", "Noticias de un negocio", "Las noticias de hoy que aplican a un negocio concreto.", "list", ["m", "l"], [business(false)]),
   w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
   w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
   w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),
@@ -132,7 +135,7 @@ export const layoutSchema = z.array(instanceSchema).max(MAX_WIDGETS);
 
 /** Disposición por defecto (el Resumen financiero siempre el primero). */
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-  "finance-summary", "tasks-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
+  "finance-summary", "tasks-today", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
 ].map((type, i) => {
   const m = WIDGET_BY_TYPE.get(type)!;
   return { id: `def-${i + 1}`, type, size: m.defaultSize, settings: { ...m.defaults } };

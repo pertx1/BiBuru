@@ -3,7 +3,7 @@
  * El botón + de captura en el centro es opcional (`show_capture_button`, apagado por defecto); con él caben 4 secciones.
  * Se guarda en `user_ui_prefs.mobile_tabs` (null = por defecto).
  */
-export type SectionKey = "inicio" | "tareas" | "negocios" | "calendario" | "objetivos" | "notas" | "favoritos" | "bandeja" | "chat" | "ajustes";
+export type SectionKey = "inicio" | "tareas" | "negocios" | "calendario" | "objetivos" | "noticias" | "notas" | "favoritos" | "bandeja" | "chat" | "ajustes";
 
 export const SECTIONS: { key: SectionKey; href: string; label: string; long: string }[] = [
   { key: "inicio", href: "/", label: "Inicio", long: "Inicio" },
@@ -11,6 +11,7 @@ export const SECTIONS: { key: SectionKey; href: string; label: string; long: str
   { key: "negocios", href: "/negocios", label: "Negocios", long: "Negocios" },
   { key: "calendario", href: "/calendario", label: "Calendario", long: "Calendario" },
   { key: "objetivos", href: "/objetivos", label: "Objetivos", long: "Objetivos" },
+  { key: "noticias", href: "/noticias", label: "Noticias", long: "Noticias" },
   { key: "notas", href: "/notas", label: "Notas", long: "Notas" },
   { key: "favoritos", href: "/favoritos", label: "Favoritos", long: "Favoritos" },
   { key: "bandeja", href: "/bandeja", label: "Bandeja", long: "Bandeja de entrada" },

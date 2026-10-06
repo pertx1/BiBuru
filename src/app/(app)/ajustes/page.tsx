@@ -11,6 +11,8 @@ import { getContext } from "@/lib/context";
 import { YoutubeSettings } from "@/components/favorites/youtube-settings";
 import { PlaylistFeeds } from "@/components/favorites/playlist-feeds";
 import { NavSettings } from "@/components/account/nav-settings";
+import { NewsSettings, type SourceView } from "@/components/news/news-settings";
+import { ensureNewsSetup } from "@/lib/news/service";
 import { getUiPrefs } from "@/lib/home/prefs";
 import { googleConfig } from "@/lib/favorites/youtube";
 import { KeyGenerator } from "@/components/account/key-generator";
@@ -45,6 +47,11 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
   const p = profile;
   const { data: integ } = await supabase.from("integrations").select("account_email, last_sync_at, last_sync_error, last_sync_added, sync_likes, sync_playlists").eq("provider", "google").maybeSingle();
   const ctx = await getContext();
+  await ensureNewsSetup(supabase, ctx.workspaceId, ctx.userId);
+  const [{ data: newsTopics }, { data: newsSources }] = await Promise.all([
+    supabase.from("news_topics").select("id, name, description, keywords, color, active").eq("workspace_id", ctx.workspaceId).order("sort_order"),
+    supabase.from("news_sources").select("id, kind, name, handle, topic_id, active, status, last_error, last_checked_at, preset").eq("workspace_id", ctx.workspaceId).order("created_at"),
+  ]);
   const { data: feeds } = await supabase.from("youtube_feeds").select("id, title, last_checked_at, last_error, last_added").eq("workspace_id", ctx.workspaceId).order("created_at");
   const budgetCents = p?.ai_monthly_budget_cents ?? 1000;
   const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
@@ -88,6 +95,9 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
             status={integ ? { email: integ.account_email, lastSyncAt: integ.last_sync_at, lastError: integ.last_sync_error, lastAdded: integ.last_sync_added, likes: integ.sync_likes, playlists: Array.isArray(integ.sync_playlists) ? (integ.sync_playlists as { id: string; title: string }[]) : [] } : null} />
         </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
+        <Section title="Noticias">
+          <NewsSettings settings={{ enabled: p?.news_enabled ?? true, time: (p?.news_time ?? "08:00").slice(0, 5), weekends: p?.news_weekends ?? true }} topics={newsTopics ?? []} sources={(newsSources ?? []) as SourceView[]} />
+        </Section>
         <Section title="Navegación"><NavSettings {...await getUiPrefs().then((u) => ({ tabs: u.tabs, showCapture: u.showCapture }))} /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>

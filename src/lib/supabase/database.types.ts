@@ -469,6 +469,100 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"news_digests": {
+                  Row: {
+                    "content": NonNullable<Json>,"cost_micros": number,"created_at": string,"day": string,"id": string,"manual_runs": number,"notified_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "content": NonNullable<Json>,"cost_micros"?: number,"created_at"?: string,"day": string,"id"?: string,"manual_runs"?: number,"notified_at"?: string | null,"status": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "content"?: NonNullable<Json>,"cost_micros"?: number,"created_at"?: string,"day"?: string,"id"?: string,"manual_runs"?: number,"notified_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "news_digests_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"news_items": {
+                  Row: {
+                    "author": string | null,"created_at": string,"digest_day": string | null,"feedback": string | null,"fetched_at": string,"fts": unknown,"id": string,"image_url": string | null,"outlet": string | null,"published_at": string | null,"score": number | null,"snippet": string | null,"source_id": string | null,"source_kind": string,"title": string,"title_key": string,"topic_id": string | null,"updated_at": string,"url": string,"url_hash": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "author"?: string | null,"created_at"?: string,"digest_day"?: string | null,"feedback"?: string | null,"fetched_at"?: string,"fts"?: never,"id"?: string,"image_url"?: string | null,"outlet"?: string | null,"published_at"?: string | null,"score"?: number | null,"snippet"?: string | null,"source_id"?: string | null,"source_kind": string,"title": string,"title_key": string,"topic_id"?: string | null,"updated_at"?: string,"url": string,"url_hash": string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "author"?: string | null,"created_at"?: string,"digest_day"?: string | null,"feedback"?: string | null,"fetched_at"?: string,"fts"?: never,"id"?: string,"image_url"?: string | null,"outlet"?: string | null,"published_at"?: string | null,"score"?: number | null,"snippet"?: string | null,"source_id"?: string | null,"source_kind"?: string,"title"?: string,"title_key"?: string,"topic_id"?: string | null,"updated_at"?: string,"url"?: string,"url_hash"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "news_items_source_id_workspace_id_fkey"
+      columns: ["source_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "news_sources"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "news_items_topic_id_workspace_id_fkey"
+      columns: ["topic_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "news_topics"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "news_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"news_sources": {
+                  Row: {
+                    "active": boolean,"created_at": string,"fail_count": number,"handle": string | null,"id": string,"kind": string,"lang": string,"last_checked_at": string | null,"last_error": string | null,"last_fetched_at": string | null,"name": string,"preset": boolean,"status": string,"topic_id": string | null,"updated_at": string,"url": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"fail_count"?: number,"handle"?: string | null,"id"?: string,"kind": string,"lang"?: string,"last_checked_at"?: string | null,"last_error"?: string | null,"last_fetched_at"?: string | null,"name": string,"preset"?: boolean,"status"?: string,"topic_id"?: string | null,"updated_at"?: string,"url": string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"fail_count"?: number,"handle"?: string | null,"id"?: string,"kind"?: string,"lang"?: string,"last_checked_at"?: string | null,"last_error"?: string | null,"last_fetched_at"?: string | null,"name"?: string,"preset"?: boolean,"status"?: string,"topic_id"?: string | null,"updated_at"?: string,"url"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "news_sources_topic_id_workspace_id_fkey"
+      columns: ["topic_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "news_topics"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "news_sources_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"news_topics": {
+                  Row: {
+                    "active": boolean,"color": string,"created_at": string,"description": string | null,"icon": string,"id": string,"keywords": (string)[],"name": string,"sort_order": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "active"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"keywords"?: (string)[],"name": string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "active"?: boolean,"color"?: string,"created_at"?: string,"description"?: string | null,"icon"?: string,"id"?: string,"keywords"?: (string)[],"name"?: string,"sort_order"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "news_topics_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notes": {
                   Row: {
                     "body": string,"business_id": string | null,"created_at": string,"folder_id": string | null,"fts": unknown,"id": string,"pinned": boolean,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
@@ -621,13 +715,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {

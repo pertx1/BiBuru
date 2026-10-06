@@ -149,3 +149,16 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   el resumen se genera una vez al día al abrir Inicio; la sugerencia solo al pulsar y se reutiliza 3 h. Nunca generar en el render del servidor.
 - Ajustes de widgets con elementos del usuario (objetivo, carpeta, categoría): `kind` "goal" | "folder" | "category", "" = automático;
   las listas se piden al abrir los ajustes (`loadWidgetOptions`), no en cada carga de Inicio.
+
+## Noticias
+- `src/lib/news/`: `feeds.ts` (RSS/Atom/YouTube/Google News/Mastodon + JSON público de Bluesky, og:image), `text.ts` (enlaces canónicos, clave de titular),
+  `select.ts` (24 h, duplicados entre medios/redes, ya publicadas, «No me interesa», descartes por palabras, reparto por tema), `digest.ts` (esquema JSON,
+  instrucciones, composición con nota ≥ 3 y máx. 10, sin IA = titulares por tema, aviso), `service.ts` (servidor: recogida, comprobación, generación, cron).
+- Solo titular, entradilla, enlace, medio/autor e imagen (dirección original, carga diferida). Nunca artículos completos. Sin X, Instagram ni TikTok; sin scraping.
+- Toda descarga de direcciones de usuario pasa por `src/lib/net/safe-fetch.ts` (solo IPs públicas, tiempo y tamaño máximos, redirecciones comprobadas).
+  `SAFE_FETCH_ALLOW_LOCAL=1` solo existe para `scripts/e2e/news.mjs` y se ignora en Vercel.
+- Idempotencia: `news_digests` único por usuario+espacio+día y se «reclama» (fila `pending`) antes de llamar a la IA; el aviso usa `notification_log`
+  (`news:<día>`) desde `/api/cron/reminders`, así respeta horas de silencio. «Generar ahora»: `manual_runs` ≤ 2 (restricción en BD).
+- Cron `biburu-news` cada 15 min (`/api/cron/news`): recoge 12 fuentes por pasada y genera desde 20 min antes de `profiles.news_time`.
+  Respaldo: abrir Noticias genera con `after()` si ya tocaba. Una llamada a Gemini por día y usuario (`feature = 'news'`, cuenta en el presupuesto).
+- Fuentes precargadas se crean «sin comprobar»; la primera recogida las marca `ok` o `down`. Las nuevas se comprueban antes de guardarse.

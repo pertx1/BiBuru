@@ -20,15 +20,19 @@ export type Prefs = {
   weekly_review_enabled: boolean;
   weekly_review_dow: number; // 0 = lunes
   weekly_review_time: string;
+  news_enabled?: boolean;
+  news_time?: string;
+  news_weekends?: boolean;
 };
 
 export type Push = {
   key: string;
-  kind: "task" | "event" | "digest" | "overdue" | "weekly";
+  kind: "task" | "event" | "digest" | "overdue" | "weekly" | "news";
   refId?: string;
   title: string;
   body: string;
   url: string;
+  image?: string | null;
 };
 
 const hm = (t: string) => t.slice(0, 5);
@@ -169,4 +173,16 @@ export function eventOccurrences(
     for (const d of dates) out.push({ id: e.id, title: e.title, date: d, startTime: e.all_day ? null : e.start_time ? hm(e.start_time) : null, location: e.location });
   }
   return out;
+}
+
+/**
+ * Aviso de noticias: a su hora (o en cuanto acaben las horas de silencio), una vez al día, solo si el resumen de hoy
+ * ya está generado. Fines de semana solo si se quiere. Clave única `news:<día>` (no se envía dos veces).
+ */
+export function planNewsPush(prefs: Prefs, now: Local, digest: { day: string; ready: boolean; notified: boolean; title: string; body: string; image: string | null } | null): Push | null {
+  if (!prefs.news_enabled || !digest || !digest.ready || digest.notified || digest.day !== now.date) return null;
+  const dow = (new Date(`${now.date}T12:00:00Z`).getUTCDay() + 6) % 7;
+  if (prefs.news_weekends === false && dow >= 5) return null;
+  if (minutesOf(now.time) < minutesOf(hm(prefs.news_time ?? "08:00"))) return null;
+  return { key: `news:${now.date}`, kind: "news", title: digest.title, body: digest.body, url: `/noticias?dia=${now.date}`, image: digest.image };
 }

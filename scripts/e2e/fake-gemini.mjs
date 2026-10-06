@@ -35,6 +35,15 @@ export function startFakeGemini(port = 9500) {
         const answered = last?.parts?.some((p) => p.functionResponse);
         out = answered ? reply([{ text: "Mañana tienes **1 tarea**: Comprar etiquetas para las camisetas (09:00)." }])
           : reply([{ functionCall: { name: "list_tasks", args: { from: today, to: today } } }]);
+      } else if (system.includes("editor de noticias")) {
+        // Noticias: puntúa las candidatas en orden (5, 4, 3, 2, 1…) y asigna el primer negocio a la primera.
+        const ids = [...userText.matchAll(/^(n\d+) \|/gm)].map((m) => m[1]);
+        const biz = userText.match(/^NEGOCIOS:\n- ([^:\n]+)/m)?.[1] ?? null;
+        out = reply([{ text: JSON.stringify({
+          top: ["Las ventas online de moda siguen creciendo.", "Shopify abarata sus comisiones para tiendas pequeñas.", "Hacienda confirma la cuota de autónomos de 2027."],
+          items: ids.map((id, i) => ({ id, score: Math.max(1, 5 - i), summary: `Resumen propio de la noticia ${id}, sin inventar cifras.`, action: `Revisa cómo afecta esto a tus precios (${id})`, business: i === 0 ? biz : null })),
+          idea: { text: "Prueba una colección cápsula con envío gratis este mes", why: "Las ventas online de moda crecen y los envíos se abaratan." },
+        }) }], [7000, 1500]);
       } else if (system.includes("resumen breve")) {
         out = reply([{ text: "- Empieza por pedir la sudadera negra XXL: va con un día de retraso.\n- A las 12:00 tienes la reunión con el diseñador.\n- Las ventas del mes van por delante del mes pasado.\n- Tienes 2 capturas por revisar en la bandeja." }], [900, 90]);
       } else if (system.includes("UNA sola acción")) {

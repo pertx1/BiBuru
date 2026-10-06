@@ -4,7 +4,7 @@
  *   LEERLA sin conexión. Si no hay copia, página /offline. Las copias se borran al abrir /login (cerrar sesión o borrar cuenta).
  * - Nunca se cachean respuestas de la API ni acciones: escribir sin conexión solo se hace en la captura rápida (cola local).
  * Subir VERSION invalida las cachés antiguas. */
-const VERSION = "v4";
+const VERSION = "v5";
 const STATIC_CACHE = `biburu-static-${VERSION}`;
 const PAGES_CACHE = `biburu-pages-${VERSION}`;
 const MAX_PAGES = 30;
@@ -74,6 +74,8 @@ self.addEventListener("push", (event) => {
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: data.tag || undefined,
+      // Foto grande: la muestran Android y el escritorio; el iPhone la ignora (se ve al abrir el resumen).
+      image: typeof data.image === "string" && data.image.startsWith("https://") ? data.image : undefined,
       data: { url: data.url || "/", kind: data.kind, refId: data.refId },
       actions: actionable ? [{ action: "done", title: "Hecho" }, { action: "snooze", title: "Posponer 1 h" }] : [],
     }),

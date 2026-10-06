@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Price = { model: string; input: number; output: number };
-const FEATURES: Record<string, string> = { classify: "Clasificar capturas", chat: "Chat", voice: "Dictado por voz", video: "Análisis de vídeo", video_light: "Análisis ligero de vídeo", brief: "Resumen y sugerencias de Inicio" };
+const FEATURES: Record<string, string> = { classify: "Clasificar capturas", chat: "Chat", voice: "Dictado por voz", video: "Análisis de vídeo", video_light: "Análisis ligero de vídeo", brief: "Resumen y sugerencias de Inicio", news: "Resumen de noticias" };
 const eur = (n: number) => n.toLocaleString("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 4 });
 
 /** Consumo del mes, presupuesto, autoaplicación y precios por modelo. */

@@ -40,6 +40,7 @@ set -a; . /tmp/vapid.env; set +a
 export GEMINI_API_KEY=test-gemini-key GEMINI_BASE_URL=http://localhost:9500 AI_MAX_RPM=60
 export GOOGLE_CLIENT_ID=test-client GOOGLE_CLIENT_SECRET=test-secret TOKEN_ENCRYPTION_KEY=$(node -e 'console.log(Buffer.alloc(32,5).toString("base64"))')
 export NODE_TLS_REJECT_UNAUTHORIZED=0   # el "servicio push" de pruebas usa un certificado autofirmado
+export SAFE_FETCH_ALLOW_LOCAL=1   # solo pruebas: permite los feeds falsos de scripts/e2e/news.mjs
 export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_dummykeydummykeydummy ALLOWED_EMAILS=yo@example.com
 npm run build >/tmp/build.log 2>&1 || { tail -20 /tmp/build.log; exit 1; }
 PORT=3100 nohup npm start > /tmp/next.log 2>&1 &

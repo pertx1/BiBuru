@@ -136,6 +136,20 @@
   Nueva función de IA `brief` (cuenta en el presupuesto). Probado con Gemini falso: la segunda visita no vuelve a llamar a la IA.
   anillo/evolución de objetivo, notas fijadas/últimas/carpeta, favoritos útiles/ideas/categorías, IA: preguntar, resumen del día cacheado, consumo, sugerencia).
 
+## Noticias (resumen diario útil para el negocio)
+- Sección «Noticias»: lo más importante (3 puntos), noticias con foto (la principal grande), resumen propio, medio con enlace, etiqueta Periódico/red,
+  negocio al que aplica, «Qué puedes hacer», «No contrastado» para redes sin medio que lo recoja, idea del día, filtros por negocio/tema/tipo,
+  histórico por días y buscador. Acciones: tarea (con la acción sugerida), nota, Útil y No me interesa (afinan los días siguientes). «Generar ahora» (2 al día).
+- Ajustes → Noticias: activar, hora (8:00), fines de semana, temas (crear, editar, ordenar, desactivar) y fuentes (añadir con comprobación, activar, quitar, ver caídas).
+- Fuentes: medios por RSS (13 precargadas: Expansión, Cinco Días, elEconomista, Xataka, Genbeta, Marketing4eCommerce, TechCrunch, The Verge y 5 búsquedas de Google News),
+  YouTube (canal por ID), Bluesky (API pública oficial), Mastodon (RSS de la cuenta), newsletters y blogs (Substack y autodescubrimiento). X descartado a petición.
+- Aviso push diario «Tus noticias de hoy» con titular principal, número y foto (Android/escritorio; el iPhone no muestra fotos en avisos de apps web).
+- Widgets: Noticias de hoy (en la disposición por defecto), Idea del día y Noticias de un negocio.
+- Probado de punta a punta en local con feeds, Gemini y servicio push falsos (`scripts/e2e/news.mjs`): duplicados, deportes y antiguas fuera, una sola IA,
+  un solo resumen y un solo aviso con dos ejecuciones del cron, og:image, sin presupuesto → titulares, límite de 2 «Generar ahora».
+- **Sin verificar con servicios reales**: que los feeds precargados respondan (el entorno de desarrollo no sale a internet; se comprueban solos en producción)
+  y que `pg_cron` esté activo en tu Supabase.
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

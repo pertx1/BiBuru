@@ -8,6 +8,7 @@ import { MonthCalendarWidget, NextEventWidget, WeekGlanceWidget } from "./widget
 import { GoalDeadlineWidget, GoalRingWidget, GoalTrendWidget } from "./widgets/goals2";
 import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasWidget, VideosCategoryWidget, VideosRecentWidget, VideosTopWidget } from "./widgets/notes-videos";
 import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./widgets/ai";
+import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
 import type { WidgetProps } from "./types";
 
 /**
@@ -44,6 +45,9 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "video-ideas": VideoIdeasWidget,
   "videos-recent": VideosRecentWidget,
   "videos-category": VideosCategoryWidget,
+  "news-today": NewsTodayWidget,
+  "news-idea": NewsIdeaWidget,
+  "news-business": NewsBusinessWidget,
   "ai-ask": AiAskWidget,
   "ai-brief": AiBriefWidget,
   "ai-usage": AiUsageWidget,
