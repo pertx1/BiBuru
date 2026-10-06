@@ -14,6 +14,11 @@
   --accent-foreground: #ffffff;
   --danger: #e5484d;
   --ring: rgb(108 92 231 / 0.45);
+  /* Gráficos (validados para daltonismo y contraste sobre cada superficie). */
+  --chart-income: #2563eb;
+  --chart-expense: #dc2626;
+  --good: #16a34a;
+  --bad: #dc2626;
 }
 
 .dark {
@@ -27,6 +32,10 @@
   --accent-foreground: #ffffff;
   --danger: #f0574b;
   --ring: rgb(123 108 246 / 0.55);
+  --chart-income: #3b82f6;
+  --chart-expense: #ef4444;
+  --good: #22c55e;
+  --bad: #f87171;
 }
 
 /* Esquinas grandes en todo (tarjetas 24 px, botones y campos 16 px). */
@@ -48,6 +57,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-danger: var(--danger);
   --color-ring: var(--ring);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-income: var(--chart-income);
+  --color-expense: var(--chart-expense);
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }

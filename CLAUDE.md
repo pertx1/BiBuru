@@ -21,7 +21,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `src/proxy.ts` refresca sesión y redirige a `/login` si no hay sesión o el
   correo no está en `ALLOWED_EMAILS`.
 - `src/lib/supabase/{server,client}.ts` clientes; `database.types.ts` tipos.
-- `supabase/migrations/*.sql` migraciones versionadas (única fuente de verdad del esquema). **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva. **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva.
+- `supabase/migrations/*.sql` migraciones versionadas (única fuente de verdad del esquema). **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva.
 - `public/sw.js` service worker (estáticos + página offline; nunca cachea datos).
 
 ## Autenticación (decisiones)
@@ -133,3 +133,13 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Los módulos de `src/lib/favorites/*` que usan servidor no se importan desde componentes de cliente (usar `labels.ts` para constantes compartidas).
 - Cualquier fetch a dominios externos desde enlaces del usuario se limita a dominios conocidos (anti-SSRF).
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
+
+## Inicio personalizable y navegación
+- Catálogo de widgets en `src/lib/home/layout.ts` (metadatos puros: grupo, tamaños, ajustes, vista previa, por defecto) y componentes en
+  `src/components/home/registry.tsx`. **Añadir un widget** = crear su componente (async, carga sus datos) + darlo de alta en `WIDGETS` y en el registro.
+- Disposición y barra en `user_ui_prefs` (por usuario + espacio; RLS `user_id = auth.uid()`, como `push_subscriptions`: son preferencias personales).
+  `null` = por defecto. Todo lo leído pasa por `normalizeLayout` / `normalizeTabs` (nunca confiar en el jsonb guardado).
+- Cada widget va envuelto en `WidgetBoundary` + `Suspense` (aislado). El periodo de Inicio va en la URL (`?periodo=&comparar=0`); `homeRange` da actual y anterior.
+- Cifras de negocio de Inicio: siempre `stats_totals` / `stats_monthly` / `stats_daily` (las mismas que Estadísticas). Colores de gráficos en tokens
+  `--chart-income` / `--chart-expense` / `--good` / `--bad` (validados para daltonismo en claro y oscuro).
+- Arrastrar: `@dnd-kit` con asa (`touch-none`) para que funcione con el dedo en iOS; el DnD nativo de HTML5 no sirve en táctil.

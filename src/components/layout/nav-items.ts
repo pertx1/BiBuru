@@ -3,6 +3,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { SECTION_BY_KEY, type SectionKey } from "@/lib/home/nav";
+
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
 /** Barra lateral de escritorio: todas las secciones. */
@@ -19,15 +21,19 @@ export const sidebarItems: NavItem[] = [
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ];
 
-/** Barra inferior de móvil (el botón de captura va en el centro). */
-export const tabsLeft: NavItem[] = [
-  { href: "/", label: "Inicio", icon: Home },
-  { href: "/tareas", label: "Tareas", icon: CheckSquare },
-];
-export const tabsRight: NavItem[] = [
-  { href: "/negocios", label: "Negocios", icon: Briefcase },
-  { href: "/mas", label: "Más", icon: MoreHorizontal },
-];
+/** Icono de cada sección (la barra inferior se elige en Ajustes → Navegación, ver `src/lib/home/nav.ts`). */
+export const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
+  inicio: Home, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target,
+  notas: NotebookText, favoritos: Video, bandeja: Inbox, chat: Sparkles, ajustes: Settings,
+};
+
+/** Pestañas de la barra inferior: las elegidas + «Más» siempre al final. */
+export function mobileTabItems(tabs: SectionKey[]): NavItem[] {
+  return [
+    ...tabs.map((k) => { const s = SECTION_BY_KEY.get(k)!; return { href: s.href, label: s.label, icon: SECTION_ICONS[k] }; }),
+    { href: "/mas", label: "Más", icon: MoreHorizontal },
+  ];
+}
 
 export function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);

@@ -10,6 +10,8 @@ import { DEFAULT_PRICES } from "@/lib/ai/pricing";
 import { getContext } from "@/lib/context";
 import { YoutubeSettings } from "@/components/favorites/youtube-settings";
 import { PlaylistFeeds } from "@/components/favorites/playlist-feeds";
+import { NavSettings } from "@/components/account/nav-settings";
+import { getUiPrefs } from "@/lib/home/prefs";
 import { googleConfig } from "@/lib/favorites/youtube";
 import { KeyGenerator } from "@/components/account/key-generator";
 import { ProfityImport } from "@/components/account/profity-import";
@@ -86,6 +88,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
             status={integ ? { email: integ.account_email, lastSyncAt: integ.last_sync_at, lastError: integ.last_sync_error, lastAdded: integ.last_sync_added, likes: integ.sync_likes, playlists: Array.isArray(integ.sync_playlists) ? (integ.sync_playlists as { id: string; title: string }[]) : [] } : null} />
         </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
+        <Section title="Navegación"><NavSettings tabs={(await getUiPrefs()).tabs} /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>
         <Section title="Importar desde PROFITY"><ProfityImport /></Section>

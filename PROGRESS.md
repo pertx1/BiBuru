@@ -116,6 +116,20 @@
 - Guía PDF final: `docs/BiBuru-Guia-Completa.pdf`.
 - **Pendiente / límites**: asistente de importación Excel/CSV dentro de la app (hoy: script con Codespaces); pruebas contra Supabase/Vercel/iPhone/Gemini/YouTube reales; edición sin conexión.
 
+## Inicio personalizable y barra configurable (tanda 1)
+- Inicio = rejilla de widgets (2 columnas en móvil, 4 en escritorio) sin banner: fila fina con fecha, lupa y «Editar»; selector de periodo común
+  (hoy, 7 días, 30 días, este mes, este año) con «Comparar» (periodo anterior «hasta hoy», como Shopify).
+- Modo edición: añadir (galería agrupada con vista previa), quitar (con Deshacer), mover arrastrando desde ⠿ (`@dnd-kit`, funciona con el dedo),
+  tamaño pequeño/mediano/grande y ajustes por widget. «Restablecer». Se guarda en `user_ui_prefs` (por usuario y espacio, RLS) y se ve igual en todos los dispositivos.
+- Widgets: Resumen financiero (grande, primero por defecto: totales de siempre + «este mes», área de ingresos/gastos de 3/6/12 meses), Ventas y
+  Beneficio y margen (tarjeta estilo Shopify: cifra, % con flecha, línea actual + discontinua anterior, tooltip), Tareas de hoy (se marcan),
+  Agenda de hoy (eventos y recordatorios), Captura rápida, Objetivos activos, Bandeja y Vídeos por ver.
+- Cada widget carga con su propio `Suspense` (esqueleto) y `WidgetBoundary` (si falla, aviso solo en su hueco). Nueva función SQL `stats_daily`.
+- Barra inferior: Ajustes → Navegación (hasta 4 secciones, arrastrar para ordenar, restablecer). «Más» y el botón + son fijos; «Más» lista lo demás.
+- Tests: normalización/guardado de disposición y barra, periodos, abreviaturas; en BD, RLS de `user_ui_prefs` y que el Resumen y la serie diaria cuadran con `stats_totals` (Estadísticas).
+- **Siguiente (tanda 2)**: resto de widgets (comparativa entre negocios, gastos por categoría, pedidos, 7 días, completadas, mini calendario, próximo evento,
+  anillo/evolución de objetivo, notas fijadas/últimas/carpeta, favoritos útiles/ideas/categorías, IA: preguntar, resumen del día cacheado, consumo, sugerencia).
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

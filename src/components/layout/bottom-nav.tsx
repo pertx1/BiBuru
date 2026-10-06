@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { Plus } from "lucide-react";
 import { useCapture } from "@/components/capture/capture-provider";
 import { cn } from "@/lib/utils";
-import { isActive, tabsLeft, tabsRight, type NavItem } from "./nav-items";
+import { splitTabs, type SectionKey } from "@/lib/home/nav";
+import { isActive, mobileTabItems, type NavItem } from "./nav-items";
 
 function Tab({ item, pathname, dot }: { item: NavItem; pathname: string; dot?: boolean }) {
   const active = isActive(pathname, item.href);
@@ -24,15 +25,18 @@ function Tab({ item, pathname, dot }: { item: NavItem; pathname: string; dot?: b
   );
 }
 
-export function BottomNav({ inboxCount }: { inboxCount: number }) {
+export function BottomNav({ inboxCount, tabs }: { inboxCount: number; tabs: SectionKey[] }) {
   const pathname = usePathname();
+  const { left: tabsLeft, right: tabsRight } = splitTabs(mobileTabItems(tabs));
+  // El punto de «hay capturas» va en Bandeja si está en la barra; si no, en «Más».
+  const dotOn = (href: string) => inboxCount > 0 && (href === "/bandeja" || (href === "/mas" && !tabs.includes("bandeja")));
   const capture = useCapture();
   return (
     <nav
       aria-label="Navegación principal"
       className="fixed inset-x-0 bottom-0 z-40 flex items-center border-t border-border bg-surface/95 pb-safe backdrop-blur md:hidden"
     >
-      {tabsLeft.map((i) => <Tab key={i.href} item={i} pathname={pathname} />)}
+      {tabsLeft.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
       <button
         type="button"
         onClick={capture.open}
@@ -42,7 +46,7 @@ export function BottomNav({ inboxCount }: { inboxCount: number }) {
         <Plus className="size-7" aria-hidden />
         {capture.pending > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white" aria-label={`${capture.pending} capturas sin enviar`}>{capture.pending}</span>}
       </button>
-      {tabsRight.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={i.href === "/mas" && inboxCount > 0} />)}
+      {tabsRight.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
     </nav>
   );
 }

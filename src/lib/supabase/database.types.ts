@@ -837,6 +837,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"user_ui_prefs": {
+                  Row: {
+                    "created_at": string,"home_widgets": Json | null,"mobile_tabs": (string)[] | null,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "user_ui_prefs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"video_categories": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"pinned": boolean,"updated_at": string,"user_id": string,"workspace_id": string
@@ -955,6 +974,11 @@ isOneToOne: false
                            },
 "seed_default_expense_categories":
 { Args: { "uid": string,"ws": string }; Returns: undefined
+                           },
+"stats_daily":
+{ Args: { "p_business"?: string,"p_from": string,"p_to": string,"ws": string }; Returns: {
+              "day": string,"expense_cents": number,"income_cents": number,"orders_count": number
+            }[]
                            },
 "stats_expenses_by_category":
 { Args: { "max_rows"?: number,"p_business"?: string,"p_from": string,"p_to": string,"ws": string }; Returns: {
