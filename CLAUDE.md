@@ -21,7 +21,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `src/proxy.ts` refresca sesión y redirige a `/login` si no hay sesión o el
   correo no está en `ALLOWED_EMAILS`.
 - `src/lib/supabase/{server,client}.ts` clientes; `database.types.ts` tipos.
-- `supabase/migrations/*.sql` migraciones versionadas (única fuente de verdad del esquema). **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva.
+- `supabase/migrations/*.sql` migraciones versionadas (única fuente de verdad del esquema). **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva. **Se aplican solas al desplegar en producción** (`scripts/migrate.mjs` en `npm run build`, con `POSTGRES_URL_NON_POOLING` de la integración Supabase–Vercel; registro en `biburu_meta.migrations`; también programa `configure_cron`). Nunca editar una migración ya aplicada: crear una nueva.
 - `public/sw.js` service worker (estáticos + página offline; nunca cachea datos).
 
 ## Autenticación (decisiones)
