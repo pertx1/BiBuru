@@ -35,4 +35,21 @@ d("Borrado de cuenta", () => {
     expect((await db.query("select count(*)::int n from public.tasks where workspace_id=$1", [wsB])).rows[0].n).toBe(1);
     expect((await db.query("select count(*)::int n from public.integrations where user_id=$1", [b])).rows[0].n).toBe(1);
   });
+
+  it("ensure_profile repara una cuenta sin perfil, solo la propia", async () => {
+    await db.query("alter table auth.users disable trigger on_auth_user_created");
+    const u = (await db.query("insert into auth.users (email) values ('sinperfil@x.com') returning id")).rows[0].id;
+    await db.query("alter table auth.users enable trigger on_auth_user_created");
+    await db.query("begin");
+    try {
+      await db.query("set local role authenticated");
+      await db.query("select set_config('request.jwt.claim.sub', $1, true)", [u]);
+      const ws = (await db.query("select public.ensure_profile() as ws")).rows[0].ws;
+      expect(ws).toBeTruthy();
+      expect((await db.query("select display_name from profiles")).rows).toEqual([{ display_name: "sinperfil" }]);
+      await expect(db.query("select public.ensure_profile_for($1)", [u])).rejects.toThrow(/permission denied/i);
+    } finally {
+      await db.query("rollback");
+    }
+  });
 });

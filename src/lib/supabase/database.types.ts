@@ -911,6 +911,12 @@ isOneToOne: false
 "configure_cron":
 { Args: { "app_url": string,"secret": string }; Returns: string
                            },
+"ensure_profile":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"ensure_profile_for":
+{ Args: { "uid": string }; Returns: string
+                           },
 "is_workspace_admin":
 { Args: { "ws": string }; Returns: boolean
                            },

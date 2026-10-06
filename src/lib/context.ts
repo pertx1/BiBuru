@@ -13,11 +13,13 @@ export const getContext = cache(async () => {
   const userId = data?.claims?.sub;
   if (!userId) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("default_workspace_id, timezone, display_name")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const load = () => supabase.from("profiles").select("default_workspace_id, timezone, display_name").eq("user_id", userId).maybeSingle();
+  let { data: profile } = await load();
+  if (!profile?.default_workspace_id) {
+    // Cuenta sin perfil (creada antes de aplicar las migraciones): se repara sola y se reintenta una vez.
+    await supabase.rpc("ensure_profile").then(() => undefined, () => undefined);
+    ({ data: profile } = await load());
+  }
   if (!profile?.default_workspace_id) redirect("/login?error=perfil");
 
   return {

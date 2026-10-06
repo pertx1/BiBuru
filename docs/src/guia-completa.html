@@ -26,7 +26,7 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 
 <h2>Índice</h2>
 <ol>
-<li>Llevar el código a GitHub (rama principal)</li><li>Crear la base de datos en Supabase</li><li>Crear las tablas (10 migraciones)</li><li>Configurar el acceso por correo</li><li>Publicar la web en Vercel</li><li>Decirle a Supabase tu dirección</li><li>Primera prueba (ordenador y iPhone)</li><li>Activar avisos y tareas programadas (cron)</li><li>Activar la IA (Gemini)</li><li>Conectar YouTube (Google Cloud)</li><li>Importar tus datos de PROFITY</li><li>Recorrido de pruebas por secciones</li><li>Uso diario, copias de seguridad y costes</li><li>Si algo falla</li><li>Checklist final</li>
+<li>Llevar el código a GitHub (rama principal)</li><li>Crear la base de datos en Supabase</li><li>Crear las tablas (11 migraciones)</li><li>Configurar el acceso por correo</li><li>Publicar la web en Vercel</li><li>Decirle a Supabase tu dirección</li><li>Primera prueba (ordenador y iPhone)</li><li>Activar avisos y tareas programadas (cron)</li><li>Activar la IA (Gemini)</li><li>Conectar YouTube (Google Cloud)</li><li>Importar tus datos de PROFITY</li><li>Recorrido de pruebas por secciones</li><li>Uso diario, copias de seguridad y costes</li><li>Si algo falla</li><li>Checklist final</li>
 </ol>
 
 <h2 class="pb">0 · Antes de empezar</h2>
@@ -78,9 +78,9 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 
 
 
-<h2 class="pb">3 · Crear las tablas (aplicar las 10 migraciones, en orden)</h2>
-<p>Una «migración» es un archivo con instrucciones SQL que crea tablas y reglas de seguridad. Son <b>10 archivos y hay que ejecutarlos en este orden, una sola vez cada uno</b>.</p>
-<table><tr><th>Orden</th><th>Archivo (carpeta <code>supabase/migrations</code>)</th><th>Qué crea</th></tr><tr><td>1</td><td><code>20261005000001_base.sql</code></td><td>Usuarios, espacios, perfiles</td></tr><tr><td>2</td><td><code>20261006000001_businesses.sql</code></td><td>Negocios, pedidos, gastos, ingresos, almacén de tickets</td></tr><tr><td>3</td><td><code>20261007000001_production.sql</code></td><td>Producción (camisetas, DTF, bolsa, facturas)</td></tr><tr><td>4</td><td><code>20261008000001_tasks_calendar_goals.sql</code></td><td>Tareas, calendario, objetivos</td></tr><tr><td>5</td><td><code>20261009000001_capture_notes_search.sql</code></td><td>Bandeja, notas, etiquetas, búsqueda</td></tr><tr><td>6</td><td><code>20261010000001_notifications.sql</code></td><td>Avisos y cron</td></tr><tr><td>7</td><td><code>20261011000001_ai.sql</code></td><td>IA: consumo, chat</td></tr><tr><td>8</td><td><code>20261011000002_ai_cron.sql</code></td><td>IA: cola programada</td></tr><tr><td>9</td><td><code>20261012000001_favorites.sql</code></td><td>Favoritos y YouTube</td></tr><tr><td>10</td><td><code>20261013000001_account_delete.sql</code></td><td>Borrado de cuenta</td></tr></table>
+<h2 class="pb">3 · Crear las tablas (aplicar las 11 migraciones, en orden)</h2>
+<p>Una «migración» es un archivo con instrucciones SQL que crea tablas y reglas de seguridad. Son <b>11 archivos y hay que ejecutarlos en este orden, una sola vez cada uno</b>.</p>
+<table><tr><th>Orden</th><th>Archivo (carpeta <code>supabase/migrations</code>)</th><th>Qué crea</th></tr><tr><td>1</td><td><code>20261005000001_base.sql</code></td><td>Usuarios, espacios, perfiles</td></tr><tr><td>2</td><td><code>20261006000001_businesses.sql</code></td><td>Negocios, pedidos, gastos, ingresos, almacén de tickets</td></tr><tr><td>3</td><td><code>20261007000001_production.sql</code></td><td>Producción (camisetas, DTF, bolsa, facturas)</td></tr><tr><td>4</td><td><code>20261008000001_tasks_calendar_goals.sql</code></td><td>Tareas, calendario, objetivos</td></tr><tr><td>5</td><td><code>20261009000001_capture_notes_search.sql</code></td><td>Bandeja, notas, etiquetas, búsqueda</td></tr><tr><td>6</td><td><code>20261010000001_notifications.sql</code></td><td>Avisos y cron</td></tr><tr><td>7</td><td><code>20261011000001_ai.sql</code></td><td>IA: consumo, chat</td></tr><tr><td>8</td><td><code>20261011000002_ai_cron.sql</code></td><td>IA: cola programada</td></tr><tr><td>9</td><td><code>20261012000001_favorites.sql</code></td><td>Favoritos y YouTube</td></tr><tr><td>10</td><td><code>20261013000001_account_delete.sql</code></td><td>Borrado de cuenta</td></tr><tr><td>11</td><td><code>20261014000001_ensure_profile.sql</code></td><td>Repara cuentas sin perfil</td></tr></table>
 <p>Repite estos pasos <b>para cada archivo</b>, empezando por el 1:</p>
 <ol>
 <li>En GitHub abre <code>https://github.com/pertx1/BiBuru/blob/main/supabase/migrations/NOMBRE-DEL-ARCHIVO.sql</code> (cambia el nombre).</li>
@@ -374,7 +374,7 @@ SUPABASE_SERVICE_ROLE_KEY=SERVICE_KEY de tu bloc</pre>Guarda con <b class="k">Ct
 <h2 class="pb">15 · Checklist final</h2>
 <ul>
 <li><span class="ck"></span>Código fusionado en <code>main</code> y desplegado en Vercel.</li>
-<li><span class="ck"></span>10 migraciones ejecutadas, tablas y bucket <code>receipts</code> visibles.</li>
+<li><span class="ck"></span>11 migraciones ejecutadas, tablas y bucket <code>receipts</code> visibles.</li>
 <li><span class="ck"></span>«Allow new users to sign up» activado y «Confirm email» desactivado; tu cuenta creada la primera; incógnito no deja entrar sin sesión.</li>
 <li><span class="ck"></span>Entras en el ordenador y en el iPhone (con código) y la app instalada se mantiene abierta.</li>
 <li><span class="ck"></span>Claves generadas y pegadas en Vercel; <code>configure_cron</code> ejecutado; aviso de prueba recibido con el móvil bloqueado.</li>
