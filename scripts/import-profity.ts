@@ -106,8 +106,12 @@ async function main() {
   const sb: SupabaseClient<Database> = createClient<Database>(need("NEXT_PUBLIC_SUPABASE_URL"), need("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
   const { data: users, error: uerr } = await sb.auth.admin.listUsers({ perPage: 1000 });
   if (uerr) throw uerr;
-  const user = users.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-  if (!user) throw new Error(`No existe el usuario ${email} en Supabase. Créalo primero (Authentication → Users).`);
+  // `--email auto`: si en BiBuru hay una sola cuenta, se usa esa (útil al importar desde el despliegue).
+  const user = email === "auto"
+    ? (users.users.length === 1 ? users.users[0] : undefined)
+    : users.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+  if (!user) throw new Error(email === "auto" ? `Hay ${users.users.length} cuentas en BiBuru: indica --email.` : `No existe el usuario ${email} en Supabase. Créalo primero (Authentication → Users).`);
+  console.log(`Destino: cuenta de BiBuru ${user.email}`);
   const { data: profile, error: perr } = await sb.from("profiles").select("default_workspace_id").eq("user_id", user.id).single();
   if (perr || !profile.default_workspace_id) throw new Error("El usuario no tiene perfil/workspace.");
   const ws = profile.default_workspace_id;
