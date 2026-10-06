@@ -95,14 +95,15 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 
 <h2 class="pb">4 · Configurar el acceso por correo</h2>
 
-<h3>4.1 Cerrar el registro público</h3>
+<h3>4.1 Permitir crear cuenta con contraseña (sin código del correo)</h3>
 <ol>
-<li><b class="k">Authentication</b> (icono de persona/candado, menú izquierdo).</li>
-<li>En el submenú, pulsa <b class="k">Sign In / Providers</b> (puede llamarse <b class="k">Providers</b> o <b class="k">Settings</b>).</li>
-<li>Busca <b>Allow new users to sign up</b> (en algunas versiones está en <b class="k">User Signups</b>) y <b>apágalo</b>.</li>
-<li>En <b>Email</b>, asegúrate de que está activado (<b class="k">Enable Email provider</b> ON) y <b>Confirm email</b> ON. Si ves <b>Email OTP Length</b>, déjalo en <code>6</code>.</li>
+<li><b class="k">Authentication</b> (icono de persona, menú izquierdo) → <b class="k">Sign In / Providers</b> (puede llamarse <b class="k">Providers</b> o <b class="k">Settings</b>).</li>
+<li>Activa <b>Allow new users to sign up</b> (en algunas versiones está en <b class="k">User Signups</b>).</li>
+<li>En <b>Email</b>: <b>Enable Email provider</b> ON y <b>Confirm email</b> <b>OFF</b> (apagado). Así la cuenta se crea al instante, sin código ni enlace. Si ves <b>Email OTP Length</b>, déjalo en <code>6</code> (se sigue usando para el acceso «Código por correo»).</li>
 <li>Pulsa <b class="k">Save</b>.</li>
 </ol>
+<div class="box warn"><b>Quién puede crear cuenta.</b> Por defecto, solo los correos de la variable <code>ALLOWED_EMAILS</code> de Vercel (tu correo). Cualquier otro correo puede intentar crearla en la pantalla, pero la app no le deja entrar. Para que <b>cualquier persona</b> pueda registrarse, añade en Vercel la variable <code>OPEN_SIGNUP</code> = <code>true</code> y redespliega (cada cuenta tendría su propio espacio, y su uso de IA contaría contra tu clave de Gemini: ponlo solo si quieres de verdad abrirlo).</div>
+<div class="box danger"><b>Crea tu cuenta tú primero.</b> Como ya no se verifica el correo, quien se registre antes con un correo se queda con él. Crea la tuya (paso 7.1) <b>nada más desplegar</b>, antes de compartir la dirección con nadie.</div>
 <h3>4.2 Poner el correo bonito (con enlace y código)</h3>
 <ol>
 <li><b class="k">Authentication → Email Templates</b> (puede estar dentro de <b class="k">Emails</b>).</li>
@@ -113,20 +114,8 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 </ol>
 <div class="box"><b>¿Por qué un código además del enlace?</b> En el iPhone, la app instalada y Safari son «mundos separados». Si pulsas el enlace del correo se abre Safari, no la app. Con el código de 6 dígitos entras directamente dentro de la app instalada.</div>
 
-<h3>4.3 Crear tu usuario</h3>
-<p>Como el registro está cerrado, tu usuario lo creas tú a mano una sola vez.</p>
-<ol>
-<li><b class="k">Authentication → Users</b>.</li>
-<li>Pulsa <b class="k">Add user</b> → <b class="k">Create new user</b>.</li>
-<li><b>Email</b>: <code>oiier.gsss@gmail.com</code>.</li>
-<li><b>Password</b>: escribe cualquier cosa larga y aleatoria (no la usarás nunca; entras con códigos). No hace falta guardarla.</li>
-<li>Marca la casilla <b class="k">Auto Confirm User</b>.</li>
-<li>Pulsa <b class="k">Create user</b>.</li>
-<li>Comprueba: <b class="k">Table Editor → profiles</b> debe tener <b>1 fila</b>, y <b class="k">workspaces</b> otra llamada «Personal». Si están vacías, avísame (significa que la migración no se ejecutó entera).</li>
-</ol>
-
-
-
+<h3>4.3 Tu usuario</h3>
+<p>Ya no hace falta crearlo a mano en Supabase: lo creas tú desde la pantalla de la app en el paso 7 (<b class="k">Crear cuenta</b>). Después comprueba en <b class="k">Table Editor → profiles</b> que hay <b>1 fila</b> y en <b class="k">workspaces</b> otra llamada «Personal».</p>
 <h2 class="pb">5 · Publicar la web en Vercel</h2>
 <h3>5.1 Cuenta</h3>
 <ol>
@@ -169,9 +158,8 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 <h2 class="pb">7 · Primera prueba</h2>
 <h3>7.1 Ordenador</h3>
 <ol>
-<li>Abre TU_URL en Chrome: aparece BiBuru con un recuadro de correo.</li>
-<li>Escribe <code>oiier.gsss@gmail.com</code> → <b class="k">Enviarme el acceso</b>.</li>
-<li>Abre el correo (mira Spam). Pulsa <b class="k">Entrar en BiBuru</b> o escribe el código de 6 dígitos en la web.</li>
+<li>Abre TU_URL en Chrome: aparece BiBuru con tres pestañas: <b class="k">Entrar</b>, <b class="k">Crear cuenta</b> y <b class="k">Código por correo</b>.</li>
+<li>Pulsa <b class="k">Crear cuenta</b>, escribe <code>oiier.gsss@gmail.com</code> y una contraseña de 8+ caracteres (dos veces) → <b class="k">Crear cuenta</b>. Entras directamente, sin correo. Guarda la contraseña en tu gestor de contraseñas.</li>
 <li>Debes ver «Hola, …» y la barra lateral con Inicio, Asistente, Bandeja, Tareas, Calendario, Negocios, Objetivos, Notas, Favoritos, Ajustes.</li>
 <li>Prueba de seguridad: ventana de incógnito con TU_URL → te lleva al acceso sin mostrar nada.</li>
 </ol>
@@ -179,8 +167,7 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 <ol>
 <li>Safari → TU_URL → botón <b>Compartir</b> (cuadrado con flecha) → <b class="k">Añadir a pantalla de inicio</b> → <b class="k">Añadir</b>.</li>
 <li><b>Cierra Safari</b> y abre BiBuru desde el icono nuevo (pantalla completa).</li>
-<li>Escribe tu correo → <b class="k">Enviarme el acceso</b>. En Mail abre el correo y <b>copia el código de 6 dígitos; no pulses el botón del correo</b> (abriría Safari, no la app).</li>
-<li>Vuelve a BiBuru, escribe el código → <b class="k">Entrar</b>. Si la app se reinició, pide otro correo y usa el código nuevo.</li>
+<li>En BiBuru, pestaña <b class="k">Entrar</b>: tu correo y tu contraseña. Sin correos ni códigos. (Si te olvidas de la contraseña, usa la pestaña <b class="k">Código por correo</b>: ahí sí, copia el código del correo, <b>sin pulsar el botón del correo</b>, que abriría Safari en vez de la app.)</li>
 </ol>
 <ul><li><span class="ck"></span>Pantalla completa, sin tapar por la isla ni por la barra inferior.</li><li><span class="ck"></span>Los campos no hacen zoom al tocarlos.</li><li><span class="ck"></span>Ajustes → <b>Instalar la app</b> dice «instalada ✔».</li><li><span class="ck"></span>Cierras del todo la app y la abres: sigues dentro.</li></ul>
 
@@ -368,7 +355,8 @@ SUPABASE_SERVICE_ROLE_KEY=SERVICE_KEY de tu bloc</pre>Guarda con <b class="k">Ct
 <tr><th>Síntoma</th><th>Causa probable → qué hacer</th></tr>
 <tr><td>El despliegue de Vercel falla en «Build»</td><td>Falta o está mal escrita una variable. Revisa los nombres del paso 5.3 y vuelve a desplegar. Si sigue, copia el final del registro rojo y mándamelo.</td></tr>
 <tr><td>«Redirect to /login» en bucle o «perfil»</td><td>La migración 1 no se ejecutó entera o el usuario se creó antes de ella. Mira <b class="k">Table Editor → profiles</b>: debe tener 1 fila. Si está vacía, bórralo en Authentication → Users, comprueba la migración 1 y créalo otra vez.</td></tr>
-<tr><td>El correo no llega</td><td>Mira Spam. El SMTP gratuito de Supabase es lento y limitado (pocos correos por hora): espera unos minutos y no pidas muchos seguidos. Comprueba que el usuario existe y «Site URL» es tu dirección.</td></tr>
+<tr><td>«Supabase todavía pide confirmar el correo» al crear la cuenta</td><td>Falta desactivar <b>Confirm email</b> (paso 4.1). Si la cuenta ya se creó a medias: Authentication → Users → ⋯ → <b class="k">Confirm user</b> (o bórrala) y repite.</td></tr>
+<tr><td>El correo no llega (acceso por código)</td><td>Mira Spam. El SMTP gratuito de Supabase es lento y limitado (pocos correos por hora): espera unos minutos y no pidas muchos seguidos. Comprueba que el usuario existe y «Site URL» es tu dirección.</td></tr>
 <tr><td>El enlace del correo abre localhost o da error</td><td>«Site URL» y «Redirect URLs» mal puestas (paso 6). En el iPhone, usa el <b>código</b> en lugar del enlace.</td></tr>
 <tr><td>«Invalid API key» / pantalla en blanco tras entrar</td><td>URL o clave de Supabase mal pegadas en Vercel (espacios, falta algún carácter). Corrige y redeploy.</td></tr>
 <tr><td>Los avisos no llegan</td><td>Comprueba en orden: (1) app instalada en la pantalla de inicio del iPhone; (2) «Enviar aviso de prueba» funciona; si no → variables VAPID y redeploy; (3) <code>select * from cron.job_run_details order by start_time desc limit 5;</code> con «succeeded»; si «failed», el <code>CRON_SECRET</code> de <code>configure_cron</code> no coincide con el de Vercel; (4) horas de silencio en Ajustes.</td></tr>
@@ -387,7 +375,7 @@ SUPABASE_SERVICE_ROLE_KEY=SERVICE_KEY de tu bloc</pre>Guarda con <b class="k">Ct
 <ul>
 <li><span class="ck"></span>Código fusionado en <code>main</code> y desplegado en Vercel.</li>
 <li><span class="ck"></span>10 migraciones ejecutadas, tablas y bucket <code>receipts</code> visibles.</li>
-<li><span class="ck"></span>Registro público desactivado; tu usuario creado; incógnito no deja entrar.</li>
+<li><span class="ck"></span>«Allow new users to sign up» activado y «Confirm email» desactivado; tu cuenta creada la primera; incógnito no deja entrar sin sesión.</li>
 <li><span class="ck"></span>Entras en el ordenador y en el iPhone (con código) y la app instalada se mantiene abierta.</li>
 <li><span class="ck"></span>Claves generadas y pegadas en Vercel; <code>configure_cron</code> ejecutado; aviso de prueba recibido con el móvil bloqueado.</li>
 <li><span class="ck"></span>(Opcional) Gemini: clasifica una captura, el chat responde, precios revisados.</li>

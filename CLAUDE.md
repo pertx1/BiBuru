@@ -29,7 +29,8 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   y Safari tienen almacenamiento separado: el enlace abre Safari, así que dentro de
   la PWA se entra con el código. El enlace usa `token_hash` + `verifyOtp` (sin PKCE)
   para funcionar aunque se abra en otro navegador que el que lo pidió.
-- Registro cerrado en tres capas: (1) Supabase con "Allow new users to sign up"
+- **Cuenta con contraseña (sin código del correo)**: pestañas Entrar / Crear cuenta / Código por correo (`src/app/login`). Requiere en Supabase «Allow new users to sign up» ON y «Confirm email» OFF. El acceso lo decide `hasAccess` (`src/lib/allowed-emails.ts`): lista `ALLOWED_EMAILS`, o cualquiera con `OPEN_SIGNUP=true`. Sin verificación de correo, el primero que registra un correo se lo queda: crear primero la cuenta propia.
+- Registro (modo lista) en tres capas: (1) Supabase con "Allow new users to sign up"
   desactivado (usuarios creados a mano), (2) `ALLOWED_EMAILS` en la acción de login,
   `/auth/confirm` y `proxy.ts`, (3) RLS. Lista vacía = no entra nadie.
 - **Abrir el registro más adelante**: activar "Allow new users to sign up" en Supabase,

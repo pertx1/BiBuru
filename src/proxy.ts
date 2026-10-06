@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isEmailAllowed } from "@/lib/allowed-emails";
+import { hasAccess } from "@/lib/allowed-emails";
 import { getPublicEnv } from "@/lib/env";
 
 const PUBLIC_PATHS = ["/login", "/auth/confirm", "/offline", "/api/antola", "/api/cron"];
@@ -31,7 +31,7 @@ export async function proxy(request: NextRequest) {
   // getClaims valida el JWT en local (rápido) y renueva el token si caduca.
   const { data } = await supabase.auth.getClaims();
   const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
-  const allowed = email !== null && isEmailAllowed(email, process.env.ALLOWED_EMAILS);
+  const allowed = email !== null && hasAccess(email);
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -20,3 +20,11 @@ export function isEmailAllowed(email: string, raw: string | undefined): boolean 
   const list = parseAllowedEmails(raw);
   return list.length > 0 && list.includes(normalizeEmail(email));
 }
+
+/**
+ * ¿Puede este correo usar la app? Con `OPEN_SIGNUP=true` cualquiera que cree una cuenta; si no, solo la lista
+ * `ALLOWED_EMAILS`. Un único punto de decisión para el acceso, el registro, el enlace del correo y el proxy.
+ */
+export function hasAccess(email: string, env: { allowed?: string; open?: string } = { allowed: process.env.ALLOWED_EMAILS, open: process.env.OPEN_SIGNUP }): boolean {
+  return env.open === "true" || isEmailAllowed(email, env.allowed);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEmailAllowed, parseAllowedEmails } from "./allowed-emails";
+import { hasAccess, isEmailAllowed, parseAllowedEmails } from "./allowed-emails";
 
 describe("ALLOWED_EMAILS", () => {
   it("separa por comas, espacios y punto y coma, y normaliza", () => {
@@ -19,5 +19,16 @@ describe("ALLOWED_EMAILS", () => {
   });
   it("no acepta coincidencias parciales", () => {
     expect(isEmailAllowed("yo@x.com.evil.com", "yo@x.com")).toBe(false);
+  });
+});
+
+describe("hasAccess", () => {
+  it("sin registro abierto, solo la lista", () => {
+    expect(hasAccess("yo@x.com", { allowed: "yo@x.com" })).toBe(true);
+    expect(hasAccess("otro@x.com", { allowed: "yo@x.com" })).toBe(false);
+    expect(hasAccess("otro@x.com", { allowed: "yo@x.com", open: "false" })).toBe(false);
+  });
+  it("con OPEN_SIGNUP=true entra cualquiera que cree cuenta", () => {
+    expect(hasAccess("otro@x.com", { allowed: "", open: "true" })).toBe(true);
   });
 });
