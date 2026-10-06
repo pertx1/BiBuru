@@ -4,11 +4,11 @@ import { revalidatePath } from "next/cache";
 import { generateHomeNote } from "@/lib/ai/home";
 import { getContext } from "@/lib/context";
 import { layoutSchema, normalizeLayout, type WidgetInstance } from "@/lib/home/layout";
-import { MAX_TABS, normalizeTabs, SECTION_BY_KEY, type SectionKey } from "@/lib/home/nav";
+import { MAX_TABS, maxTabs, normalizeTabs, SECTION_BY_KEY, type SectionKey } from "@/lib/home/nav";
 import type { Json } from "@/lib/supabase/database.types";
 import type { ActionResult } from "@/lib/schemas";
 
-type Patch = { home_widgets?: Json | null; mobile_tabs?: string[] | null };
+type Patch = { home_widgets?: Json | null; mobile_tabs?: string[] | null; show_capture_button?: boolean };
 
 /** Guarda (upsert) las preferencias propias en el espacio actual. RLS: solo las del propio usuario. */
 async function savePrefs(patch: Patch): Promise<ActionResult> {
@@ -33,18 +33,20 @@ export async function resetHomeLayout(): Promise<ActionResult> {
   return r;
 }
 
-/** Secciones de la barra inferior (máx. 4, en orden). «Más» y el botón de captura son fijos. */
-export async function saveMobileTabs(tabs: SectionKey[]): Promise<ActionResult> {
+/** Secciones de la barra inferior (en orden): máx. 5, o 4 si se muestra el botón +. «Más» es fijo. */
+export async function saveMobileTabs(tabs: SectionKey[], showCapture = false): Promise<ActionResult> {
+  const max = maxTabs(showCapture === true);
   if (!Array.isArray(tabs) || tabs.length < 1 || tabs.length > MAX_TABS || tabs.some((t) => !SECTION_BY_KEY.has(t)) || new Set(tabs).size !== tabs.length) {
-    return { ok: false, error: `Elige entre 1 y ${MAX_TABS} secciones` };
+    return { ok: false, error: `Elige entre 1 y ${max} secciones` };
   }
-  const r = await savePrefs({ mobile_tabs: normalizeTabs(tabs) });
+  // Con el botón + solo caben 4: si sobran, se quedan las primeras.
+  const r = await savePrefs({ mobile_tabs: normalizeTabs(tabs, max), show_capture_button: showCapture === true });
   if (r.ok) revalidatePath("/", "layout");
   return r;
 }
 
 export async function resetMobileTabs(): Promise<ActionResult> {
-  const r = await savePrefs({ mobile_tabs: null });
+  const r = await savePrefs({ mobile_tabs: null, show_capture_button: false });
   if (r.ok) revalidatePath("/", "layout");
   return r;
 }

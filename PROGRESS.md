@@ -127,6 +127,7 @@
 - Cada widget carga con su propio `Suspense` (esqueleto) y `WidgetBoundary` (si falla, aviso solo en su hueco). Nueva función SQL `stats_daily`.
 - Barra inferior: Ajustes → Navegación (hasta 4 secciones, arrastrar para ordenar, restablecer). «Más» y el botón + son fijos; «Más» lista lo demás.
 - Tests: normalización/guardado de disposición y barra, periodos, abreviaturas; en BD, RLS de `user_ui_prefs` y que el Resumen y la serie diaria cuadran con `stats_totals` (Estadísticas).
+- Barra sin el botón +: ahora caben 5 secciones + «Más». El + se puede volver a activar en Ajustes → Navegación (entonces caben 4).
 - **Tanda 2 (hecha)**: 24 widgets más (33 en total). Negocios: gastos por categoría, pedidos pendientes/últimos, comparativa entre negocios.
   Tareas: atrasadas, próximos 7 días, de un negocio, completadas esta semana (barras). Calendario: próximo evento con cuenta atrás, mini calendario del mes,
   semana de un vistazo. Objetivos: anillo de un objetivo, el más urgente, evolución (línea). Notas: fijadas, últimas, acceso a carpeta.

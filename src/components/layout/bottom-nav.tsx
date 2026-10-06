@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { splitTabs, type SectionKey } from "@/lib/home/nav";
 import { isActive, mobileTabItems, type NavItem } from "./nav-items";
 
-function Tab({ item, pathname, dot }: { item: NavItem; pathname: string; dot?: boolean }) {
+function Tab({ item, pathname, dot, pending }: { item: NavItem; pathname: string; dot?: boolean; pending?: number }) {
   const active = isActive(pathname, item.href);
   return (
     <Link
@@ -19,13 +19,15 @@ function Tab({ item, pathname, dot }: { item: NavItem; pathname: string; dot?: b
         active && "text-accent",
       )}
     >
-      <span className="relative"><item.icon className="size-5" aria-hidden />{dot && <span className="absolute -right-1 -top-0.5 size-2 rounded-full bg-accent" aria-label="Hay capturas por revisar" />}</span>
+      <span className="relative"><item.icon className="size-5" aria-hidden />{dot && <span className="absolute -right-1 -top-0.5 size-2 rounded-full bg-accent" aria-label="Hay capturas por revisar" />}
+        {!!pending && <span className="absolute -right-2.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" aria-label={`${pending} capturas sin enviar`}>{pending}</span>}</span>
       {item.label}
     </Link>
   );
 }
 
-export function BottomNav({ inboxCount, tabs }: { inboxCount: number; tabs: SectionKey[] }) {
+/** Barra inferior del móvil: las secciones elegidas en Ajustes → Navegación + «Más»; el botón + central solo si se activa allí. */
+export function BottomNav({ inboxCount, tabs, showCapture }: { inboxCount: number; tabs: SectionKey[]; showCapture: boolean }) {
   const pathname = usePathname();
   const { left: tabsLeft, right: tabsRight } = splitTabs(mobileTabItems(tabs));
   // El punto de «hay capturas» va en Bandeja si está en la barra; si no, en «Más».
@@ -36,8 +38,9 @@ export function BottomNav({ inboxCount, tabs }: { inboxCount: number; tabs: Sect
       aria-label="Navegación principal"
       className="fixed inset-x-0 bottom-0 z-40 flex items-center border-t border-border bg-surface/95 pb-safe backdrop-blur md:hidden"
     >
-      {tabsLeft.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
-      <button
+      {!showCapture && mobileTabItems(tabs).map((i, n) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} pending={n === 0 ? capture.pending : 0} />)}
+      {showCapture && tabsLeft.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
+      {showCapture && <button
         type="button"
         onClick={capture.open}
         aria-label="Captura rápida"
@@ -45,8 +48,8 @@ export function BottomNav({ inboxCount, tabs }: { inboxCount: number; tabs: Sect
       >
         <Plus className="size-7" aria-hidden />
         {capture.pending > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white" aria-label={`${capture.pending} capturas sin enviar`}>{capture.pending}</span>}
-      </button>
-      {tabsRight.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
+      </button>}
+      {showCapture && tabsRight.map((i) => <Tab key={i.href} item={i} pathname={pathname} dot={dotOn(i.href)} />)}
     </nav>
   );
 }

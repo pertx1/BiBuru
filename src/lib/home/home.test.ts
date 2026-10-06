@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { chartStart, pickTotals, shortEuros } from "./finance";
 import { DEFAULT_LAYOUT, cleanSettings, layoutSchema, newInstance, normalizeLayout, WIDGET_BY_TYPE } from "./layout";
-import { DEFAULT_TABS, moreSections, normalizeTabs, splitTabs } from "./nav";
+import { DEFAULT_TABS, maxTabs, moreSections, normalizeTabs, splitTabs } from "./nav";
 import { homeRange, pairSeries } from "./period";
 
 describe("disposición de Inicio", () => {
@@ -48,10 +48,12 @@ describe("disposición de Inicio", () => {
 });
 
 describe("barra inferior", () => {
-  it("normaliza: válidas, sin repetir, máximo 4; vacía = por defecto", () => {
+  it("normaliza: válidas, sin repetir, máximo 5 (4 con el botón +); vacía = por defecto", () => {
     expect(normalizeTabs(null)).toEqual(DEFAULT_TABS);
     expect(normalizeTabs([])).toEqual(DEFAULT_TABS);
-    expect(normalizeTabs(["notas", "notas", "hack", "tareas", "chat", "objetivos", "favoritos"])).toEqual(["notas", "tareas", "chat", "objetivos"]);
+    const raw = ["notas", "notas", "hack", "tareas", "chat", "objetivos", "favoritos", "bandeja"];
+    expect(normalizeTabs(raw)).toEqual(["notas", "tareas", "chat", "objetivos", "favoritos"]);
+    expect(normalizeTabs(raw, maxTabs(true))).toEqual(["notas", "tareas", "chat", "objetivos"]);
   });
   it("«Más» lleva lo que no está en la barra y siempre Ajustes", () => {
     const more = moreSections(["tareas", "negocios"]).map((s) => s.key);

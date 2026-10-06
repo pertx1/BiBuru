@@ -88,7 +88,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
             status={integ ? { email: integ.account_email, lastSyncAt: integ.last_sync_at, lastError: integ.last_sync_error, lastAdded: integ.last_sync_added, likes: integ.sync_likes, playlists: Array.isArray(integ.sync_playlists) ? (integ.sync_playlists as { id: string; title: string }[]) : [] } : null} />
         </Section>
         <Section title="Apariencia"><ThemeToggle /></Section>
-        <Section title="Navegación"><NavSettings tabs={(await getUiPrefs()).tabs} /></Section>
+        <Section title="Navegación"><NavSettings {...await getUiPrefs().then((u) => ({ tabs: u.tabs, showCapture: u.showCapture }))} /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>
         <Section title="Importar desde PROFITY"><ProfityImport /></Section>

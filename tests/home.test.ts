@@ -64,7 +64,9 @@ d("Inicio: preferencias por usuario y cifras del Resumen financiero", () => {
     await expect(as(ids.alice, (c) => c.query("insert into user_ui_prefs (user_id, workspace_id) values ($1,$2)", [ids.bob, ids.bWs]))).rejects.toThrow();
     await expect(as(ids.bob, (c) => c.query("insert into user_ui_prefs (workspace_id) values ($1)", [ids.aWs]))).rejects.toThrow();
     // Límites de tamaño.
-    await expect(q("update user_ui_prefs set mobile_tabs='{a,b,c,d,e}' where user_id=$1", [ids.alice])).rejects.toThrow();
+    await q("update user_ui_prefs set mobile_tabs='{a,b,c,d,e}' where user_id=$1", [ids.alice]); // 5 sí caben (sin botón +)
+    await expect(q("update user_ui_prefs set mobile_tabs='{a,b,c,d,e,f}' where user_id=$1", [ids.alice])).rejects.toThrow();
+    expect((await q("select show_capture_button from user_ui_prefs where user_id=$1", [ids.alice])).rows[0].show_capture_button).toBe(false); // + apagado por defecto
     await expect(q("update user_ui_prefs set home_widgets='{\"no\":\"lista\"}' where user_id=$1", [ids.alice])).rejects.toThrow();
     await q("delete from user_ui_prefs");
   });

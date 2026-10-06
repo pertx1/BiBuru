@@ -9,7 +9,7 @@ import { getUiPrefs } from "@/lib/home/prefs";
 import { DEFAULT_TABS } from "@/lib/home/nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [inboxCount, tabs] = await Promise.all([countInbox().catch(() => 0), getUiPrefs().then((p) => p.tabs).catch(() => DEFAULT_TABS)]);
+  const [inboxCount, nav] = await Promise.all([countInbox().catch(() => 0), getUiPrefs().catch(() => ({ tabs: DEFAULT_TABS, showCapture: false }))]);
   return (
     <ToastProvider>
     <CaptureProvider>
@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="min-w-0 flex-1 px-4 pt-safe pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 md:pb-8">
         <div className="mx-auto w-full max-w-5xl py-6">{children}</div>
       </main>
-      <BottomNav inboxCount={inboxCount} tabs={tabs} />
+      <BottomNav inboxCount={inboxCount} tabs={nav.tabs} showCapture={nav.showCapture} />
     </div>
     <SearchPalette />
     </CaptureProvider>

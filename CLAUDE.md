@@ -142,6 +142,8 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Cada widget va envuelto en `WidgetBoundary` + `Suspense` (aislado). El periodo de Inicio va en la URL (`?periodo=&comparar=0`); `homeRange` da actual y anterior.
 - Cifras de negocio de Inicio: siempre `stats_totals` / `stats_monthly` / `stats_daily` (las mismas que Estadísticas). Colores de gráficos en tokens
   `--chart-income` / `--chart-expense` / `--good` / `--bad` (validados para daltonismo en claro y oscuro).
+- Barra inferior: hasta 5 secciones + «Más» (fijo). El botón + de captura es opcional (`user_ui_prefs.show_capture_button`, apagado por
+  defecto; con él caben 4). Sin él, las capturas pendientes de enviar se marcan en la primera pestaña.
 - Arrastrar: `@dnd-kit` con asa (`touch-none`) para que funcione con el dedo en iOS; el DnD nativo de HTML5 no sirve en táctil.
 - IA en Inicio: `src/lib/ai/home.ts` (función `brief` en `ai_usage`). Textos cacheados en `ai_home_notes` (único por usuario+espacio+tipo+día):
   el resumen se genera una vez al día al abrir Inicio; la sugerencia solo al pulsar y se reutiliza 3 h. Nunca generar en el render del servidor.
