@@ -5,7 +5,26 @@ export type Database = {
   
   "public": {
           Tables: {
-            "ai_prices": {
+            "ai_home_notes": {
+                  Row: {
+                    "content": string,"created_at": string,"day": string,"id": string,"kind": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "content": string,"created_at"?: string,"day": string,"id"?: string,"kind": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "content"?: string,"created_at"?: string,"day"?: string,"id"?: string,"kind"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_home_notes_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ai_prices": {
                   Row: {
                     "created_at": string,"id": string,"input_eur_per_mtok": number,"model": string,"output_eur_per_mtok": number,"updated_at": string,"user_id": string,"workspace_id": string
                   }
@@ -671,13 +690,13 @@ isOneToOne: false
                   ]
                 },"saved_videos": {
                   Row: {
-                    "actions": NonNullable<Json>,"added_via": string,"analysis_attempts": number,"analysis_cost_micros": number,"analysis_error": string | null,"analysis_mode": string | null,"analysis_next_try_at": string | null,"analysis_status": string,"business_id": string | null,"business_reason": string | null,"category_id": string | null,"channel": string | null,"created_at": string,"duration_sec": number | null,"external_id": string | null,"fts": unknown,"id": string,"key_points": NonNullable<Json>,"notes": string | null,"origin_list": string | null,"published_at": string | null,"source": string,"status": string,"summary": string | null,"thumbnail_url": string | null,"title": string,"updated_at": string,"url": string,"user_id": string,"utility": number | null,"workspace_id": string
+                    "actions": NonNullable<Json>,"added_via": string,"analysis_attempts": number,"analysis_cost_micros": number,"analysis_error": string | null,"analysis_mode": string | null,"analysis_next_try_at": string | null,"analysis_status": string,"business_id": string | null,"business_reason": string | null,"category_id": string | null,"channel": string | null,"created_at": string,"duration_sec": number | null,"external_id": string | null,"fts": unknown,"id": string,"key_points": NonNullable<Json>,"notes": string | null,"origin_list": string | null,"published_at": string | null,"source": string,"status": string,"summary": string | null,"task_id": string | null,"thumbnail_url": string | null,"title": string,"updated_at": string,"url": string,"user_id": string,"utility": number | null,"workspace_id": string
                   }
                   Insert: {
-                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source": string,"status"?: string,"summary"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url": string,"user_id"?: string,"utility"?: number | null,"workspace_id": string
+                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source": string,"status"?: string,"summary"?: string | null,"task_id"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url": string,"user_id"?: string,"utility"?: number | null,"workspace_id": string
                   }
                   Update: {
-                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source"?: string,"status"?: string,"summary"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url"?: string,"user_id"?: string,"utility"?: number | null,"workspace_id"?: string
+                    "actions"?: NonNullable<Json>,"added_via"?: string,"analysis_attempts"?: number,"analysis_cost_micros"?: number,"analysis_error"?: string | null,"analysis_mode"?: string | null,"analysis_next_try_at"?: string | null,"analysis_status"?: string,"business_id"?: string | null,"business_reason"?: string | null,"category_id"?: string | null,"channel"?: string | null,"created_at"?: string,"duration_sec"?: number | null,"external_id"?: string | null,"fts"?: never,"id"?: string,"key_points"?: NonNullable<Json>,"notes"?: string | null,"origin_list"?: string | null,"published_at"?: string | null,"source"?: string,"status"?: string,"summary"?: string | null,"task_id"?: string | null,"thumbnail_url"?: string | null,"title"?: string,"updated_at"?: string,"url"?: string,"user_id"?: string,"utility"?: number | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -691,6 +710,12 @@ isOneToOne: false
       columns: ["category_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "video_categories"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "saved_videos_task_fk"
+      columns: ["task_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "saved_videos_workspace_id_fkey"

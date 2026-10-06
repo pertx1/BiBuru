@@ -8,7 +8,8 @@ import type { ChatMessage } from "./actions";
 
 export const metadata = { title: "Asistente" };
 
-export default async function ChatPage() {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const q = ((await searchParams).q ?? "").trim().slice(0, 1000);
   const { supabase, workspaceId, userId } = await getContext();
   const { data: last } = await supabase.from("chat_messages").select("conversation_id").eq("workspace_id", workspaceId).eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   const conversationId = last?.conversation_id ?? crypto.randomUUID();
@@ -23,7 +24,7 @@ export default async function ChatPage() {
     <>
       <PageHeader title="Asistente" subtitle="Pregunta por tus datos o dile qué apuntar. Los gastos y pedidos siempre te los pide confirmar." />
       <BudgetBanner />
-      <ChatView conversationId={conversationId} initial={messages} />
+      <ChatView conversationId={conversationId} initial={messages} autoSend={q || undefined} />
     </>
   );
 }

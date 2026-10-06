@@ -104,3 +104,26 @@ describe("Resumen financiero", () => {
     expect(chartStart("2026-10-31", 12)).toBe("2025-11-01");
   });
 });
+
+describe("catálogo completo (tanda 2)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { WIDGETS } = await import("./layout");
+  const registry = readFileSync("src/components/home/registry.tsx", "utf8");
+  it("cada widget del catálogo tiene componente registrado y tamaños coherentes", () => {
+    expect(WIDGETS.length).toBeGreaterThanOrEqual(33);
+    for (const m of WIDGETS) {
+      expect(registry, m.type).toMatch(new RegExp(`["']?${m.type}["']?:\\s*\\w+Widget`));
+      expect(m.sizes).toContain(m.defaultSize);
+      for (const f of m.fields) expect(m.defaults, `${m.type}.${f.key}`).toHaveProperty(f.key);
+    }
+    expect(new Set(WIDGETS.map((m) => m.type)).size).toBe(WIDGETS.length);
+  });
+  it("ajustes de objetivo/carpeta/categoría: id válido o vacío (automático)", () => {
+    const ring = WIDGET_BY_TYPE.get("goal-ring")!;
+    expect(cleanSettings(ring, {})).toEqual({ goal: "" });
+    expect(cleanSettings(ring, { goal: "11111111-1111-1111-1111-111111111111" })).toEqual({ goal: "11111111-1111-1111-1111-111111111111" });
+    expect(cleanSettings(ring, { goal: "drop table" })).toEqual({ goal: "" });
+    expect(cleanSettings(WIDGET_BY_TYPE.get("tasks-business")!, { business: "all" })).toEqual({ business: "" }); // ese widget exige un negocio
+    expect(cleanSettings(WIDGET_BY_TYPE.get("orders")!, {})).toEqual({ business: "all", show: "pending" });
+  });
+});

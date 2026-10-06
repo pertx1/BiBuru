@@ -4,8 +4,8 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Maximize2, Plus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
-import { useState, useTransition, type ReactNode } from "react";
-import { resetHomeLayout, saveHomeLayout } from "@/app/(app)/home-actions";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { loadWidgetOptions, resetHomeLayout, saveHomeLayout, type WidgetOptions } from "@/app/(app)/home-actions";
 import { SearchButton } from "@/components/search/search-button";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -142,6 +142,9 @@ function SettingsForm({ w, businesses, onSave }: { w: WidgetInstance; businesses
   const meta = WIDGET_BY_TYPE.get(w.type)!;
   const [size, setSize] = useState<WidgetSize>(w.size);
   const [settings, setSettings] = useState(w.settings);
+  const needsOptions = meta.fields.some((f) => f.kind === "goal" || f.kind === "folder" || f.kind === "category");
+  const [options, setOptions] = useState<WidgetOptions | null>(null);
+  useEffect(() => { if (needsOptions) loadWidgetOptions().then(setOptions).catch(() => setOptions({ goals: [], folders: [], categories: [] })); }, [needsOptions]);
   const select = "min-h-11 w-full rounded-lg border border-border bg-background px-3 text-base md:text-sm";
   return (
     <form className="flex flex-col gap-4 p-4" onSubmit={(e) => { e.preventDefault(); onSave({ size, settings }); }}>
@@ -161,8 +164,13 @@ function SettingsForm({ w, businesses, onSave }: { w: WidgetInstance; businesses
         <label key={f.key} className="flex flex-col gap-1 text-sm font-medium">{f.label}
           <select className={select} value={settings[f.key] ?? ""} onChange={(e) => setSettings({ ...settings, [f.key]: e.target.value })}>
             {f.kind === "business"
-              ? <>{f.allowAll && <option value="all">Todos los negocios</option>}{businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</>
-              : f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              ? <>{f.allowAll ? <option value="all">Todos los negocios</option> : <option value="">Elige un negocio</option>}{businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</>
+              : f.kind === "choice"
+                ? f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)
+                : <>
+                    <option value="">{options ? f.emptyLabel : "Cargando…"}</option>
+                    {(options?.[f.kind === "goal" ? "goals" : f.kind === "folder" ? "folders" : "categories"] ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                  </>}
           </select>
         </label>
       ))}

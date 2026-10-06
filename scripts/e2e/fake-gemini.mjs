@@ -35,6 +35,10 @@ export function startFakeGemini(port = 9500) {
         const answered = last?.parts?.some((p) => p.functionResponse);
         out = answered ? reply([{ text: "Mañana tienes **1 tarea**: Comprar etiquetas para las camisetas (09:00)." }])
           : reply([{ functionCall: { name: "list_tasks", args: { from: today, to: today } } }]);
+      } else if (system.includes("resumen breve")) {
+        out = reply([{ text: "- Empieza por pedir la sudadera negra XXL: va con un día de retraso.\n- A las 12:00 tienes la reunión con el diseñador.\n- Las ventas del mes van por delante del mes pasado.\n- Tienes 2 capturas por revisar en la bandeja." }], [900, 90]);
+      } else if (system.includes("UNA sola acción")) {
+        out = reply([{ text: "Pide ahora la sudadera negra XXL: es lo único atrasado y desbloquea el pedido pendiente." }], [900, 40]);
       } else out = reply([{ text: "ok" }]);
       res.end(JSON.stringify(out));
     });

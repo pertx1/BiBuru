@@ -10,7 +10,7 @@ import { VoiceButton } from "./voice-button";
 
 const SUGGESTIONS = ["¿Qué tengo mañana?", "¿Cuánto beneficio llevo este mes en cada negocio?", "Apunta un gasto de 35 € en transfers", "Recuérdame el viernes a las 9 pedir presupuesto", "Guarda esta idea: pack de verano con tote bag"];
 
-export function ChatView({ conversationId: initialId, initial }: { conversationId: string; initial: ChatMessage[] }) {
+export function ChatView({ conversationId: initialId, initial, autoSend }: { conversationId: string; initial: ChatMessage[]; autoSend?: string }) {
   const [conversationId, setConversationId] = useState(initialId);
   const [messages, setMessages] = useState(initial);
   const [text, setText] = useState("");
@@ -19,6 +19,14 @@ export function ChatView({ conversationId: initialId, initial }: { conversationI
   const [busy, setBusy] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, pending]);
+  // Pregunta que llega desde Inicio (?q=): se envía una sola vez y se limpia la dirección para no repetirla al recargar.
+  const autoSent = useRef(false);
+  useEffect(() => {
+    if (!autoSend || autoSent.current) return;
+    autoSent.current = true;
+    window.history.replaceState(null, "", "/chat");
+    send(autoSend);
+  });
 
   function send(value: string) {
     const v = value.trim();

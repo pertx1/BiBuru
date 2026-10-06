@@ -7,12 +7,14 @@ import { z } from "zod";
 
 export type WidgetSize = "s" | "m" | "l";
 export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "ia";
-export type PreviewKind = "finance" | "line" | "number" | "list" | "ring" | "bars" | "input" | "agenda";
+export type PreviewKind = "finance" | "line" | "number" | "list" | "ring" | "bars" | "input" | "agenda" | "calendar" | "text";
 
 /** Ajustes editables de un widget (el formulario de ajustes se genera a partir de esto). */
 export type SettingField =
   | { key: string; label: string; kind: "business"; allowAll: boolean }
-  | { key: string; label: string; kind: "choice"; options: { value: string; label: string }[] };
+  | { key: string; label: string; kind: "choice"; options: { value: string; label: string }[] }
+  /** Elemento del usuario (objetivo, carpeta, categoría de vídeos). "" = automático / sin elegir. */
+  | { key: string; label: string; kind: "goal" | "folder" | "category"; emptyLabel: string };
 
 export type WidgetMeta = {
   type: string;
@@ -34,6 +36,9 @@ export const GROUP_LABELS: Record<WidgetGroup, string> = {
 export const SIZE_LABELS: Record<WidgetSize, string> = { s: "Pequeño", m: "Mediano", l: "Grande" };
 
 const business = (allowAll = true): SettingField => ({ key: "business", label: "Negocio", kind: "business", allowAll });
+const goal = (emptyLabel: string): SettingField => ({ key: "goal", label: "Objetivo", kind: "goal", emptyLabel });
+const w = (type: string, group: WidgetGroup, title: string, description: string, preview: PreviewKind, sizes: WidgetSize[], fields: SettingField[] = [], defaults: Record<string, string> = {}): WidgetMeta =>
+  ({ type, group, title, description, preview, sizes, defaultSize: sizes[0], fields, defaults: Object.fromEntries(fields.map((f) => [f.key, defaults[f.key] ?? (f.kind === "business" && f.allowAll ? "all" : "")])) });
 
 export const WIDGETS: WidgetMeta[] = [
   {
@@ -83,6 +88,32 @@ export const WIDGETS: WidgetMeta[] = [
     description: "Los últimos vídeos guardados que aún no has visto.",
     sizes: ["s", "m"], defaultSize: "s", fields: [], defaults: {},
   },
+  // ---------------------------------------------------------------- tanda 2
+  w("expenses-category", "negocios", "Gastos por categoría", "En qué se va el dinero en el periodo elegido arriba.", "bars", ["m", "l"], [business()]),
+  w("orders", "negocios", "Pedidos", "Pedidos pendientes de enviar o los últimos pedidos.", "list", ["m", "l"],
+    [business(), { key: "show", label: "Mostrar", kind: "choice", options: [{ value: "pending", label: "Pendientes" }, { value: "latest", label: "Últimos" }] }], { show: "pending" }),
+  w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
+  w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
+  w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),
+  w("tasks-business", "tareas", "Tareas de un negocio", "Tareas abiertas de un negocio concreto.", "list", ["m", "l"], [business(false)]),
+  w("tasks-done-week", "tareas", "Completadas esta semana", "Cuántas tareas has terminado cada día (de lunes a domingo).", "bars", ["s", "m"]),
+  w("next-event", "calendario", "Próximo evento", "El siguiente evento con cuenta atrás.", "agenda", ["s", "m"]),
+  w("month-calendar", "calendario", "Calendario del mes", "Mini calendario con los días que tienen algo.", "calendar", ["m", "l"]),
+  w("week-glance", "calendario", "Semana de un vistazo", "Eventos y tareas de lunes a domingo.", "calendar", ["m", "l"]),
+  w("goal-ring", "objetivos", "Progreso de un objetivo", "Anillo con el avance de un objetivo.", "ring", ["s", "m"], [goal("El más avanzado")]),
+  w("goal-deadline", "objetivos", "Objetivo más urgente", "El objetivo activo con la fecha límite más cercana.", "ring", ["s", "m"]),
+  w("goal-trend", "objetivos", "Evolución de un objetivo", "Línea con el histórico de un objetivo.", "line", ["m", "l"], [goal("El primero activo")]),
+  w("notes-pinned", "captura", "Notas fijadas", "Tus notas fijadas, a mano.", "list", ["m", "l", "s"]),
+  w("notes-recent", "captura", "Últimas notas", "Las notas editadas más recientemente.", "list", ["m", "l", "s"]),
+  w("folder-shortcut", "captura", "Carpeta", "Acceso directo a una carpeta de notas.", "number", ["s", "m"], [{ key: "folder", label: "Carpeta", kind: "folder", emptyLabel: "Elige una carpeta" }]),
+  w("videos-top", "favoritos", "Más útiles", "Vídeos con utilidad 4–5 que aún no has archivado.", "list", ["m", "l", "s"]),
+  w("video-ideas", "favoritos", "Ideas sin convertir", "Ideas accionables de tus vídeos que aún no son tareas.", "list", ["m", "l"]),
+  w("videos-recent", "favoritos", "Últimos guardados", "Los últimos vídeos que has guardado.", "list", ["m", "l", "s"]),
+  w("videos-category", "favoritos", "Vídeos por categoría", "Cuántos vídeos tienes en cada categoría.", "bars", ["s", "m"], [{ key: "category", label: "Categoría", kind: "category", emptyLabel: "Todas (recuento)" }]),
+  w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
+  w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
+  w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),
+  w("ai-suggest", "ia", "¿Qué hago ahora?", "La IA te sugiere la siguiente acción (al pulsar; se reutiliza unas horas).", "text", ["m", "l"]),
 ];
 
 export const WIDGET_BY_TYPE = new Map(WIDGETS.map((w) => [w.type, w]));
@@ -115,6 +146,7 @@ export function cleanSettings(meta: WidgetMeta, raw: Record<string, unknown> | u
     let ok = typeof v === "string";
     if (ok && f.kind === "choice") ok = f.options.some((o) => o.value === v);
     if (ok && f.kind === "business") ok = (v === "all" && f.allowAll) || /^[0-9a-f-]{36}$/i.test(v as string);
+    if (ok && (f.kind === "goal" || f.kind === "folder" || f.kind === "category")) ok = v === "" || /^[0-9a-f-]{36}$/i.test(v as string);
     out[f.key] = ok ? (v as string) : (meta.defaults[f.key] ?? "");
   }
   return out;

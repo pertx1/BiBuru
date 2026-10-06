@@ -22,7 +22,7 @@ async function KpiWidget({ w, ctx, metric }: WidgetProps & { metric: "sales" | "
   const compact = w.size === "s";
   return (
     <section className="flex h-full min-w-0 flex-col rounded-xl border border-border bg-surface p-4">
-      <Link href={biz ? `/negocios/${biz.id}` : "/negocios"} className="block" aria-label={`${title}: abrir estadísticas`}>
+      <Link href={biz ? `/negocios/${biz.id}/estadisticas` : "/negocios"} className="block" aria-label={`${title}: abrir estadísticas`}>
         <h2 className="flex items-center gap-1.5 truncate text-[13px] font-medium text-muted">
           {biz && <span className="size-2 shrink-0 rounded-full" style={{ background: biz.color }} aria-hidden />}
           {title}{biz ? ` · ${biz.name}` : ""}

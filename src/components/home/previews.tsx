@@ -28,6 +28,10 @@ export function WidgetPreview({ kind }: { kind: PreviewKind }) {
       return <div className={`${box} flex flex-col justify-center gap-2`}>{[70, 40].map((w) => <span key={w} className="h-2 rounded-full bg-surface"><span className="block h-2 rounded-full bg-accent" style={{ width: `${w}%` }} /></span>)}</div>;
     case "ring":
       return <div className={`${box} flex items-center justify-center`}><svg viewBox="0 0 36 36" className="size-12" aria-hidden><circle cx="18" cy="18" r="14" fill="none" stroke="var(--surface)" strokeWidth="5" /><circle cx="18" cy="18" r="14" fill="none" stroke="var(--accent)" strokeWidth="5" strokeDasharray="60 100" strokeLinecap="round" transform="rotate(-90 18 18)" /></svg></div>;
+    case "calendar":
+      return <div className={`${box} grid grid-cols-7 gap-1`}>{Array.from({ length: 14 }, (_, i) => <span key={i} className={`h-2.5 rounded-sm ${i === 9 ? "bg-accent" : "bg-surface"}`} />)}</div>;
+    case "text":
+      return <div className={`${box} flex flex-col gap-1.5`}><span className="flex items-center gap-1 text-[10px] text-accent">✦<span className="h-2 w-16 rounded bg-accent/40" /></span>{[90, 75, 60].map((w) => <span key={w} className="h-2 rounded bg-surface" style={{ width: `${w}%` }} />)}</div>;
     case "input":
       return <div className={`${box} flex items-center`}><span className="flex h-8 w-full items-center gap-2 rounded-full bg-surface px-3"><span className="text-accent">+</span><span className="h-2 flex-1 rounded bg-surface-2" /></span></div>;
   }

@@ -4,7 +4,7 @@
  */
 import { addMonths, startOfMonth } from "@/lib/dates";
 
-export type Feature = "classify" | "chat" | "voice" | "video" | "video_light";
+export type Feature = "classify" | "chat" | "voice" | "video" | "video_light" | "brief";
 export type Price = { input: number; output: number }; // € por millón de tokens
 
 /**

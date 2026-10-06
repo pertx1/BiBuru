@@ -83,6 +83,26 @@ d("Inicio: preferencias por usuario y cifras del Resumen financiero", () => {
     expect({ inc: series.rows.reduce((s, r) => s + r.inc, 0), exp: series.rows.reduce((s, r) => s + r.exp, 0) }).toEqual(tramo.rows[0]);
   });
 
+  it("textos de IA de Inicio: uno por día y tipo, solo los propios; «brief» cuenta en el consumo", async () => {
+    await q("insert into ai_home_notes (user_id, workspace_id, kind, day, content) values ($1,$2,'brief','2026-10-06','- Hola'),($3,$4,'brief','2026-10-06','- Bob')", [ids.alice, ids.aWs, ids.bob, ids.bWs]);
+    await expect(q("insert into ai_home_notes (user_id, workspace_id, kind, day, content) values ($1,$2,'brief','2026-10-06','otra')", [ids.alice, ids.aWs])).rejects.toThrow();
+    const mine = await as(ids.alice, (c) => c.query("select content from ai_home_notes"));
+    expect(mine.rows).toEqual([{ content: "- Hola" }]);
+    expect((await as(ids.alice, (c) => c.query("update ai_home_notes set content='x' where user_id=$1", [ids.bob]))).rowCount).toBe(0);
+    await expect(as(ids.alice, (c) => c.query("insert into ai_home_notes (user_id, workspace_id, kind, day, content) values ($1,$2,'brief','2026-10-07','x')", [ids.bob, ids.bWs]))).rejects.toThrow();
+    await q("insert into ai_usage (workspace_id, user_id, feature, model, ok) values ($1,$2,'brief','gemini',true)", [ids.aWs, ids.alice]);
+    await q("delete from ai_home_notes"); await q("delete from ai_usage");
+  });
+
+  it("vídeo convertido en tarea: guarda la tarea y, si se borra la tarea, el vídeo vuelve a «sin convertir»", async () => {
+    const t = (await q("insert into tasks (workspace_id,user_id,title) values ($1,$2,'Aplicar: vídeo') returning id", [ids.aWs, ids.alice])).rows[0].id;
+    const v = (await q("insert into saved_videos (workspace_id,user_id,source,url,title,task_id) values ($1,$2,'other','https://x.test/v','V',$3) returning id", [ids.aWs, ids.alice, t])).rows[0].id;
+    const bt = (await q("insert into tasks (workspace_id,user_id,title) values ($1,$2,'De Bob') returning id", [ids.bWs, ids.bob])).rows[0].id;
+    await expect(q("update saved_videos set task_id=$1 where id=$2", [bt, v])).rejects.toThrow(); // tarea de otro espacio: no
+    await q("delete from tasks where id=$1", [t]);
+    expect((await q("select task_id, workspace_id from saved_videos where id=$1", [v])).rows[0]).toEqual({ task_id: null, workspace_id: ids.aWs });
+  });
+
   it("serie diaria: un punto por día y la misma suma que los totales; otro usuario no ve nada", async () => {
     const days = await as(ids.alice, (c) => c.query("select day::text, income_cents::int inc, expense_cents::int exp, orders_count::int n from stats_daily($1,'2026-09-30','2026-10-06')", [ids.aWs]));
     expect(days.rows).toHaveLength(7);

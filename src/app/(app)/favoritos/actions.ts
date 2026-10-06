@@ -97,6 +97,8 @@ export async function videoToTask(id: string): Promise<ActionResult & { href?: s
   const actions = Array.isArray(v.actions) ? (v.actions as string[]) : [];
   try {
     const c = await createTask(a, { title: `Aplicar: ${v.title}`.slice(0, 200), business: v.business_id, notes: [v.url, ...actions.map((x) => `- ${x}`)].join("\n") });
+    await a.supabase.from("saved_videos").update({ task_id: c.id }).eq("id", id).eq("workspace_id", a.workspaceId); // ya no sale en «Ideas sin convertir»
+    refresh();
     return { ok: true, id: c.id, href: c.href };
   } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "No se pudo crear la tarea" }; }
 }
