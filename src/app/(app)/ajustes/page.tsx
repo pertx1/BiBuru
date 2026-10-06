@@ -11,6 +11,7 @@ import { getContext } from "@/lib/context";
 import { YoutubeSettings } from "@/components/favorites/youtube-settings";
 import { googleConfig } from "@/lib/favorites/youtube";
 import { KeyGenerator } from "@/components/account/key-generator";
+import { ProfityImport } from "@/components/account/profity-import";
 import { DataSettings } from "@/components/account/data-settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>
+        <Section title="Importar desde PROFITY"><ProfityImport /></Section>
         <Section title="Tus datos"><DataSettings email={auth.user?.email ?? ""} /></Section>
         <form action={signOut}>
           <Button type="submit" variant="secondary">Cerrar sesión</Button>

@@ -150,3 +150,64 @@ export async function generateSetupKeys(): Promise<ActionResult & { keys?: Recor
     },
   };
 }
+
+export type ProfityPreview = {
+  email: string | null; exportedAt: string | null; warnings: string[]; vinted: number;
+  totals: { label: string; count: number; amount: string }[];
+};
+
+async function profityPlanFrom(text: string, separateVinted: boolean) {
+  const { parseProfityJson } = await import("@/lib/profity-json");
+  const { buildPlan } = await import("@/lib/profity-import");
+  if (text.length > 3_900_000) return { error: "El archivo es demasiado grande (máximo 3,9 MB)." } as const;
+  const r = parseProfityJson(text);
+  if (!r.ok) return { error: r.error } as const;
+  return { parsed: r.data, plan: buildPlan(r.data.source, { separateVinted }) } as const;
+}
+
+/** Paso 1: lee el JSON de PROFITY y enseña qué se va a importar (no escribe nada). */
+export async function previewProfityImport(text: string): Promise<ActionResult & { preview?: ProfityPreview }> {
+  await getContext();
+  const r = await profityPlanFrom(String(text ?? ""), true);
+  if ("error" in r) return { ok: false, error: r.error! };
+  const { expectedTotals } = await import("@/lib/profity-import");
+  const t = expectedTotals(r.plan);
+  const eur = (c: number) => (c / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+  return {
+    ok: true,
+    preview: {
+      email: r.parsed.email, exportedAt: r.parsed.exportedAt, warnings: r.plan.warnings,
+      vinted: r.plan.expenses.filter((e) => e.biz === "vinted").length + r.plan.incomes.filter((i) => i.biz === "vinted").length,
+      totals: [
+        { label: "Pedidos", count: t.orders.count, amount: eur(t.orders.totalCents) },
+        { label: "Gastos", count: t.expenses.count, amount: eur(t.expenses.totalCents) },
+        { label: "Ingresos", count: t.incomes.count, amount: eur(t.incomes.totalCents) },
+        { label: "Stock de prendas", count: t.tshirtStocks.count, amount: `${t.tshirtStocks.totalCents} uds` },
+        { label: "Stock DTF", count: t.dtfStocks.count, amount: `${t.dtfStocks.totalCents} uds` },
+        { label: "Facturas", count: t.invoices.count, amount: "" },
+      ],
+    },
+  };
+}
+
+const importNames = z.object({ main: z.string().trim().min(1).max(60), vinted: z.string().trim().max(60), separateVinted: z.boolean() });
+
+/** Paso 2: importa (repetible sin duplicar) y devuelve la conciliación origen ↔ destino. */
+export async function runProfityImport(text: string, names: z.infer<typeof importNames>): Promise<ActionResult & { rows?: import("@/lib/profity-apply").ReconRow[]; allOk?: boolean; summary?: string }> {
+  const n = importNames.safeParse(names);
+  if (!n.success) return { ok: false, error: "Indica el nombre del negocio." };
+  const { supabase, workspaceId, userId } = await getContext();
+  const r = await profityPlanFrom(String(text ?? ""), n.data.separateVinted);
+  if ("error" in r) return { ok: false, error: r.error! };
+  try {
+    const { applyProfityPlan } = await import("@/lib/profity-apply");
+    const vintedName = n.data.separateVinted ? (n.data.vinted || "Vinted") : "";
+    const res = await applyProfityPlan(supabase, { workspaceId, userId }, r.plan, { main: n.data.main, vinted: vintedName });
+    revalidatePath("/", "layout");
+    const im = res.imported;
+    return { ok: true, rows: res.rows, allOk: res.ok, summary: `Importados ${im.orders} pedidos, ${im.expenses} gastos y ${im.incomes} ingresos nuevos (ya estaban ${im.ordersExisting}, ${im.expensesExisting} y ${im.incomesExisting}).` };
+  } catch (e) {
+    console.error("[profity] import:", e instanceof Error ? e.message : e);
+    return { ok: false, error: `No se pudo completar la importación: ${e instanceof Error ? e.message.slice(0, 200) : "error desconocido"}. Puedes repetirla: no duplica.` };
+  }
+}

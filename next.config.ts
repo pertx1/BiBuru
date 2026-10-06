@@ -33,6 +33,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // La importación de PROFITY (JSON) envía el archivo a una acción del servidor. Vercel admite como mucho 4,5 MB.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
