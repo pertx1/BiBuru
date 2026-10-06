@@ -65,7 +65,7 @@ export function StockScreen({ businessId, lines, items, production, products, mo
             <h2 className="text-sm font-semibold">{GROUP_LABEL[g]}</h2>
             {g === "articulos"
               ? <Button variant="secondary" className="shrink-0 whitespace-nowrap" onClick={() => setEditing("new")}><Plus className="size-4" aria-hidden /> Añadir artículo</Button>
-              : <Link href={`/negocios/${businessId}/produccion`} className="text-xs text-accent">Catálogo en Producción</Link>}
+              : <Link href={`/negocios/${businessId}/produccion`} className="inline-flex min-h-11 items-center text-xs text-accent">Catálogo en Producción</Link>}
           </div>
           {rows.length === 0 ? (
             <p className="text-sm text-muted">{production ? "Bolsas, etiquetas, productos terminados… lo que quieras controlar además de prendas y DTF." : "Añade lo que quieras controlar: camisetas por talla y color, materiales, productos terminados…"} Si su nombre coincide con el producto de los pedidos (o lo vinculas), los pedidos pendientes lo reservan solos.</p>

@@ -31,3 +31,8 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Las tareas se recalculan al guardar/cambiar/borrar pedidos, al tocar el stock y al abrir la pantalla Stock (sin cron nuevo, para no gastar invocaciones).
 - Completar a mano pregunta las unidades; «Completar sin registrar nada» también existe, pero si sigue faltando se abre otra tarea (una sola abierta por artículo).
 - Completar desde la notificación del móvil («Hecho») no pregunta unidades.
+
+## 3. Móvil
+- Revisión con Chromium emulando iPhone porque WebKit no se puede descargar aquí. El test `npm run test:mobile` necesita la app local levantada (no va en CI).
+- Tamaños de 44 px solo en móvil (`md:` mantiene el tamaño de escritorio) para no cambiar la composición en el ordenador.
+- Deslizar: derecha = hecha, izquierda = mañana (la opción de posponer más usada). Solo en Tareas.

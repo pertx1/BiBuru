@@ -20,7 +20,7 @@ export function CategoriesManager({ categories, counts }: { categories: VideoCat
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-2"><Settings2 className="size-4" aria-hidden /> Categorías</button>
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 md:min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm hover:bg-surface-2"><Settings2 className="size-4" aria-hidden /> Categorías</button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Categorías de vídeos">
         <div className="flex flex-col gap-3 text-sm">
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) { run(() => createCategory(name), "Categoría creada"); setName(""); } }}>

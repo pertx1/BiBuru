@@ -111,8 +111,8 @@ export function DebtsView({ businessId, debtors, aging, collections }: {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-baseline justify-between gap-3"><span className="truncate font-medium">{d.customer}</span><span className="shrink-0 font-semibold tabular-nums text-bad">{formatEUR(d.dueCents)}</span></p>
                   <p className="text-xs text-muted">{d.orders.length} {d.orders.length === 1 ? "pedido" : "pedidos"} · el más antiguo {days(d.oldestDays)}</p>
-                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                    {d.orders.slice(0, 6).map((o) => <Link key={o.id} href={`?abrir=${o.id}`} className="text-accent">{o.order_number ? `nº ${o.order_number}` : formatDate(o.order_date)} · {formatEUR(o.due_cents)}</Link>)}
+                  <p className="mt-1 flex flex-wrap gap-x-3 text-xs">
+                    {d.orders.slice(0, 6).map((o) => <Link key={o.id} href={`?abrir=${o.id}`} className="inline-flex min-h-11 items-center text-accent">{o.order_number ? `nº ${o.order_number}` : formatDate(o.order_date)} · {formatEUR(o.due_cents)}</Link>)}
                     {d.orders.length > 6 && <span className="text-muted">y {d.orders.length - 6} más</span>}
                   </p>
                 </div>

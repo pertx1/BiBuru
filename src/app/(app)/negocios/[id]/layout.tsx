@@ -13,7 +13,7 @@ export default async function BusinessLayout({ children, params }: { children: R
   if (!business) notFound();
   return (
     <>
-      <Link href="/negocios" className="mb-3 inline-block text-sm text-muted hover:text-foreground">← Negocios</Link>
+      <Link href="/negocios" className="mb-1 inline-flex min-h-11 items-center text-sm text-muted hover:text-foreground">← Negocios</Link>
       <header className="mb-4 flex flex-wrap items-center gap-3">
         <BusinessIcon name={business.icon} color={business.color} className="size-11" />
         <div className="min-w-0 flex-1">

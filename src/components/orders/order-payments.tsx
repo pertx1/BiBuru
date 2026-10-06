@@ -29,7 +29,7 @@ export function PaymentForm({ order, today, onDone }: { order: OrderLite; today:
       <label className="flex flex-col gap-1 text-xs text-muted">Fecha<Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></label>
       <label className="col-span-2 flex flex-col gap-1 text-xs text-muted">Método
         <div className="flex flex-wrap gap-1.5">{PAYMENT_METHODS.map((m) => (
-          <button key={m} type="button" onClick={() => setMethod(m)} aria-pressed={method === m} className={cn("min-h-10 rounded-full border px-3 text-sm", method === m ? "border-accent bg-accent/15 font-semibold text-foreground" : "border-border text-muted")}>{METHOD_LABEL[m]}</button>
+          <button key={m} type="button" onClick={() => setMethod(m)} aria-pressed={method === m} className={cn("min-h-11 md:min-h-10 rounded-full border px-3 text-sm", method === m ? "border-accent bg-accent/15 font-semibold text-foreground" : "border-border text-muted")}>{METHOD_LABEL[m]}</button>
         ))}</div>
       </label>
       <label className="col-span-2 flex flex-col gap-1 text-xs text-muted">Nota (opcional)<Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} /></label>

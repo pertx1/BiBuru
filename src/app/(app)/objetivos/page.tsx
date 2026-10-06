@@ -23,7 +23,7 @@ export default async function ObjetivosPage({ searchParams }: { searchParams: Pr
         <nav aria-label="Estado" className="flex gap-1.5">
           {[["", "Activos"], ["cerrados", "Cumplidos y archivados"]].map(([k, l]) => (
             <Link key={k} href={k ? `/objetivos?v=${k}` : "/objetivos"} aria-current={(k === "cerrados") === closed ? "page" : undefined}
-              className={cn("flex min-h-10 items-center rounded-full border border-border px-3.5 text-sm", (k === "cerrados") === closed ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
+              className={cn("flex min-h-11 items-center rounded-full border border-border px-3.5 text-sm md:min-h-10", (k === "cerrados") === closed ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
           ))}
         </nav>
       </div>

@@ -42,7 +42,7 @@ export function RulesView({ businessId, designs, shirtRules, designRules, antola
         <ul className="mb-3 divide-y divide-border">
           {shirtRules.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-1.5 text-sm"><span>Prenda <strong>{r.shirt_color}</strong> → DTF <strong>{r.dtf_color}</strong></span>
-              <button type="button" aria-label="Eliminar regla" className="flex size-10 items-center justify-center text-muted hover:text-danger" onClick={() => { run(() => deleteRule("shirt", r.id)); toast({ message: "Regla eliminada", actionLabel: "Deshacer", onAction: () => run(() => saveShirtRule({ businessId, shirtColor: r.shirt_color, dtfColor: r.dtf_color })) }); }}><Trash2 className="size-4" aria-hidden /></button></li>
+              <button type="button" aria-label="Eliminar regla" className="flex size-11 md:size-10 items-center justify-center text-muted hover:text-danger" onClick={() => { run(() => deleteRule("shirt", r.id)); toast({ message: "Regla eliminada", actionLabel: "Deshacer", onAction: () => run(() => saveShirtRule({ businessId, shirtColor: r.shirt_color, dtfColor: r.dtf_color })) }); }}><Trash2 className="size-4" aria-hidden /></button></li>
           ))}
           {shirtRules.length === 0 && <li className="py-1.5 text-sm text-muted">Sin reglas propias.</li>}
         </ul>
@@ -57,7 +57,7 @@ export function RulesView({ businessId, designs, shirtRules, designRules, antola
         <ul className="mb-3 divide-y divide-border">
           {designRules.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-2 py-1.5 text-sm"><span><strong>{r.design}</strong> → DTF <strong>{r.dtf_color}</strong></span>
-              <button type="button" aria-label="Eliminar regla" className="flex size-10 items-center justify-center text-muted hover:text-danger" onClick={() => { run(() => deleteRule("design", r.id)); toast({ message: "Regla eliminada", actionLabel: "Deshacer", onAction: () => run(() => saveDesignRule({ businessId, design: r.design, dtfColor: r.dtf_color })) }); }}><Trash2 className="size-4" aria-hidden /></button></li>
+              <button type="button" aria-label="Eliminar regla" className="flex size-11 md:size-10 items-center justify-center text-muted hover:text-danger" onClick={() => { run(() => deleteRule("design", r.id)); toast({ message: "Regla eliminada", actionLabel: "Deshacer", onAction: () => run(() => saveDesignRule({ businessId, design: r.design, dtfColor: r.dtf_color })) }); }}><Trash2 className="size-4" aria-hidden /></button></li>
           ))}
           {designRules.length === 0 && <li className="py-1.5 text-sm text-muted">Sin reglas por diseño.</li>}
         </ul>

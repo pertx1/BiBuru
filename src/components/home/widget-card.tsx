@@ -9,7 +9,7 @@ export function WidgetCard({ title, href, children, className }: { title: string
     <section className={cn("flex h-full min-w-0 flex-col rounded-xl border border-border bg-surface p-4", className)}>
       <header className="mb-2 flex items-center justify-between gap-2">
         <h2 className="truncate text-[13px] font-medium text-muted">{title}</h2>
-        {href && <Link href={href} className="-m-2 flex min-h-9 min-w-9 items-center justify-center text-muted hover:text-foreground" aria-label={`Abrir ${title}`}><ChevronRight className="size-4" aria-hidden /></Link>}
+        {href && <Link href={href} className="-m-2 flex min-h-11 md:min-h-9 min-w-11 md:min-w-9 items-center justify-center text-muted hover:text-foreground" aria-label={`Abrir ${title}`}><ChevronRight className="size-4" aria-hidden /></Link>}
       </header>
       {children}
     </section>

@@ -33,7 +33,7 @@ export async function FinanceSummaryWidget({ w, ctx }: WidgetProps) {
       </div>
       <div className="rounded-xl border border-border bg-surface p-4">
         {/* El gráfico no es un enlace: tocarlo muestra el detalle del mes. Las estadísticas se abren desde el título. */}
-        <Link href={biz ? `/negocios/${biz.id}/estadisticas` : "/negocios"} className="mb-3 flex min-h-9 items-center justify-between gap-2 font-semibold">
+        <Link href={biz ? `/negocios/${biz.id}/estadisticas` : "/negocios"} className="mb-3 flex min-h-11 md:min-h-9 items-center justify-between gap-2 font-semibold">
           <span>Últimos {months} meses{biz ? ` · ${biz.name}` : ""}</span><ChevronRight className="size-4 text-muted" aria-hidden />
         </Link>
         <FinanceChartLazy data={series} />

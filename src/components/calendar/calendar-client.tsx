@@ -179,7 +179,7 @@ export function CalendarClient({
         <nav aria-label="Vista" className="flex gap-1">
           {([["mes", "Mes"], ["semana", "Semana"], ["agenda", "Agenda"]] as const).map(([v, l]) => (
             <Link key={v} href={href(v, focus)} aria-current={v === view ? "page" : undefined}
-              className={cn("flex min-h-10 items-center rounded-full border border-border px-3.5 text-sm", v === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
+              className={cn("flex min-h-11 md:min-h-10 items-center rounded-full border border-border px-3.5 text-sm", v === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
           ))}
         </nav>
         <Button onClick={() => newEvent({ start_date: focus < today && view !== "mes" ? today : (view === "mes" && focus.slice(0, 7) !== today.slice(0, 7) ? focus : today) })}><Plus className="size-4" aria-hidden /> Evento</Button>

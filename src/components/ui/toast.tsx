@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast.actionLabel && (
               <button
                 type="button"
-                className="min-h-9 font-semibold underline underline-offset-2"
+                className="min-h-11 md:min-h-9 font-semibold underline underline-offset-2"
                 onClick={() => {
                   toast.onAction?.();
                   setToast(null);

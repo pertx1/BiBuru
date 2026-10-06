@@ -48,7 +48,7 @@ export function YoutubeSettings({ configured, status, longMinutes, flash }: {
           <div>
             <p className="mb-1 font-medium">Listas a sincronizar</p>
             {chosen.length === 0 && <p className="text-xs text-muted">Ninguna elegida.</p>}
-            <ul>{chosen.map((l) => <li key={l.id} className="flex items-center justify-between py-1"><span>{l.title}</span><button type="button" className="min-h-9 px-2 text-xs text-muted hover:text-danger" onClick={() => { const n = chosen.filter((x) => x.id !== l.id); setChosen(n); act(() => saveSyncSettings({ sync_likes: likes, sync_playlists: n }), "Guardado"); }}>Quitar</button></li>)}</ul>
+            <ul>{chosen.map((l) => <li key={l.id} className="flex items-center justify-between py-1"><span>{l.title}</span><button type="button" className="min-h-11 md:min-h-9 px-2 text-xs text-muted hover:text-danger" onClick={() => { const n = chosen.filter((x) => x.id !== l.id); setChosen(n); act(() => saveSyncSettings({ sync_likes: likes, sync_playlists: n }), "Guardado"); }}>Quitar</button></li>)}</ul>
             <Button type="button" variant="secondary" disabled={pending} onClick={() => start(async () => { const r = await loadPlaylists(); if (r.ok) setAvailable(r.playlists ?? []); else setMsg(r.error ?? "No se pudieron leer tus listas"); })}>Elegir listas…</Button>
             {available && (
               <ul className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border">

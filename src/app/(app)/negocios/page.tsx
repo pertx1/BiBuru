@@ -23,7 +23,7 @@ export default async function NegociosPage({ searchParams }: { searchParams: Pro
       <PageHeader title="Negocios" subtitle="Todos tus negocios de un vistazo." />
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <BusinessFormButton />
-        <Link href={showArchived ? "/negocios" : "/negocios?archivados=1"} className="text-sm text-muted underline underline-offset-2">
+        <Link href={showArchived ? "/negocios" : "/negocios?archivados=1"} className="inline-flex min-h-11 items-center text-sm text-muted underline underline-offset-2">
           {showArchived ? "Ocultar archivados" : "Ver archivados"}
         </Link>
       </div>

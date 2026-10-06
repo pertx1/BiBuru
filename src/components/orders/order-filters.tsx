@@ -77,11 +77,11 @@ export function OrderFilters({ businessId, customers, channels, products }: { bu
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           {chips.map((c) => (
-            <button key={c.key} type="button" onClick={() => dropChip(c.drop)} className="inline-flex min-h-9 items-center gap-1 rounded-full border border-border bg-surface-2 px-3 text-xs font-medium" aria-label={`Quitar filtro ${c.label}`}>
+            <button key={c.key} type="button" onClick={() => dropChip(c.drop)} className="inline-flex min-h-11 md:min-h-9 items-center gap-1 rounded-full border border-border bg-surface-2 px-3 text-xs font-medium" aria-label={`Quitar filtro ${c.label}`}>
               {c.label} <X className="size-3.5" aria-hidden />
             </button>
           ))}
-          <button type="button" onClick={() => { setQ(""); apply({}); }} className="min-h-9 px-2 text-xs font-semibold text-accent">Limpiar todo</button>
+          <button type="button" onClick={() => { setQ(""); apply({}); }} className="min-h-11 md:min-h-9 px-2 text-xs font-semibold text-accent">Limpiar todo</button>
         </div>
       )}
 
@@ -130,7 +130,7 @@ function DateFields({ current }: { current: Values }) {
       <div className="flex flex-wrap gap-1.5">
         {[["", "Todas"], ["hoy", "Hoy"], ["semana", "Esta semana"], ["mes", "Este mes"], ["rango", "Rango"]].map(([k, l]) => (
           <button key={k} type="button" aria-pressed={preset === k} onClick={() => setPreset(k)}
-            className={cn("min-h-10 rounded-full border px-3 text-sm", preset === k ? "border-accent bg-accent/15 font-semibold" : "border-border text-muted")}>{l}</button>
+            className={cn("min-h-11 md:min-h-10 rounded-full border px-3 text-sm", preset === k ? "border-accent bg-accent/15 font-semibold" : "border-border text-muted")}>{l}</button>
         ))}
       </div>
       {preset === "rango" && (

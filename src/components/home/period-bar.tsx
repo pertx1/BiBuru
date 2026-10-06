@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /** Selector de periodo común de Inicio (afecta a los widgets de negocio) y «Comparar con el anterior». Sin JS: enlaces. */
 export function PeriodBar({ period, compare }: { period: HomePeriodKey; compare: boolean }) {
   const href = (p: HomePeriodKey, c: boolean) => `/?periodo=${p}${c ? "" : "&comparar=0"}`;
-  const chip = "flex min-h-10 shrink-0 items-center rounded-full border px-3.5 text-sm";
+  const chip = "flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-sm md:min-h-10";
   return (
     <nav aria-label="Periodo de los widgets de negocio" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0 [scrollbar-width:none]">
       {HOME_PERIODS.map((p) => (

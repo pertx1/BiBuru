@@ -75,7 +75,7 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
       {!debtsView && (
         <div className="flex items-center justify-between text-sm">
           {orders.length >= limit ? <Link href={`?${more}`} scroll={false} className="text-accent">Ver más pedidos</Link> : <span className="text-muted">{orders.length} pedidos</span>}
-          <a href={`/api/export/pedidos?negocio=${id}`} className="inline-flex min-h-10 items-center gap-1.5 text-muted hover:text-foreground"><Download className="size-4" aria-hidden /> Exportar CSV</a>
+          <a href={`/api/export/pedidos?negocio=${id}`} className="inline-flex min-h-11 md:min-h-10 items-center gap-1.5 text-muted hover:text-foreground"><Download className="size-4" aria-hidden /> Exportar CSV</a>
         </div>
       )}
     </div>

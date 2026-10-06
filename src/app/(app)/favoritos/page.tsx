@@ -41,7 +41,7 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
     for (const [k, v] of Object.entries(m)) if (v && !(k === "estado" && v === "por_ver") && !(k === "orden" && v === "util")) p.set(k, v);
     return `/favoritos${p.size ? `?${p}` : ""}`;
   };
-  const chip = (active: boolean) => cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm", active ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface hover:bg-surface-2");
+  const chip = (active: boolean) => cn("inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm md:min-h-9", active ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface hover:bg-surface-2");
   const businesses = biz.data ?? [];
   const opened = uuid.safeParse(sp.abrir).success ? sp.abrir! : null;
 

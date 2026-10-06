@@ -4,7 +4,8 @@ import { Boxes, Flag, ListChecks, Repeat } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 import { receiveForTask } from "@/app/(app)/negocios/stock-actions";
-import { toggleTask, undoComplete } from "@/app/(app)/tareas/actions";
+import { setTaskDue, snoozeTask, toggleTask, undoComplete } from "@/app/(app)/tareas/actions";
+import { SwipeRow } from "@/components/ui/swipe-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
@@ -48,6 +49,19 @@ export function TaskList({
     });
   }
 
+  /** Deslizar a la izquierda: posponer a mañana (con «Deshacer»). */
+  function postpone(t: TaskWithSubs) {
+    start(async () => {
+      hide(t.id);
+      const r = await snoozeTask(t.id, "manana");
+      if (r.ok && r.previous) {
+        const prev = r.previous;
+        toast({ message: "Pospuesta a mañana", actionLabel: "Deshacer", onAction: () => void setTaskDue(t.id, prev).then(() => router.refresh()) });
+      }
+      router.refresh();
+    });
+  }
+
   const total = groups.reduce((n, g) => n + g.tasks.length, 0);
   if (total === 0) return <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">{emptyText}</p>;
 
@@ -63,7 +77,7 @@ export function TaskList({
                 const biz = t.business_id ? bizById.get(t.business_id) : undefined;
                 const subDone = t.subtasks.filter((s) => s.status === "done").length;
                 return (
-                  <li key={t.id} className="flex items-stretch">
+                  <SwipeRow key={t.id} onRight={() => toggle(t)} onLeft={t.status === "done" ? undefined : () => postpone(t)} rightLabel={t.status === "done" ? "Reabrir" : "Hecha ✔"} leftLabel="Mañana →">
                     <label className="flex w-12 shrink-0 cursor-pointer items-center justify-center" aria-label={`Marcar «${t.title}»`}>
                       <input type="checkbox" checked={t.status === "done"} onChange={() => toggle(t)} className="size-5 accent-[var(--accent)]" />
                     </label>
@@ -78,7 +92,7 @@ export function TaskList({
                         {t.subtasks.length > 0 && <span className="inline-flex items-center gap-0.5"><ListChecks className="size-3.5" aria-hidden />{subDone}/{t.subtasks.length}</span>}
                       </span>
                     </button>
-                  </li>
+                  </SwipeRow>
                 );
               })}
             </ul>

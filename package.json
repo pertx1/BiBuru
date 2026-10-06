@@ -13,7 +13,8 @@
     "db:types": "bash scripts/gen-types.sh",
     "import:profity": "tsx scripts/import-profity.ts",
     "import:profity:dry": "tsx scripts/import-profity.ts --dry-run",
-    "vapid": "node scripts/generate-vapid.mjs"
+    "vapid": "node scripts/generate-vapid.mjs",
+    "test:mobile": "STRICT=1 node scripts/e2e/mobile-audit.mjs"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

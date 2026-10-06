@@ -39,7 +39,7 @@ export default async function TareasPage({ searchParams }: { searchParams: Promi
           <nav aria-label="Vistas" className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
             {TASK_VIEWS.map((x) => (
               <Link key={x} href={`/tareas?v=${x}`} aria-current={x === view ? "page" : undefined}
-                className={cn("flex min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm", x === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{LABELS[x]}</Link>
+                className={cn("flex min-h-11 md:min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm", x === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{LABELS[x]}</Link>
             ))}
           </nav>
           <NewTaskButton businesses={bizOptions} goals={goalOptions} today={now.date} />

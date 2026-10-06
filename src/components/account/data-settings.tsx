@@ -23,7 +23,7 @@ export function DataSettings({ email }: { email: string }) {
         <div className="flex flex-wrap gap-2">{SETS.map(([k, l]) => <a key={k} href={`/api/export?formato=csv&conjunto=${k}`} download className={link}>{l}</a>)}</div>
       </div>
       <details className="rounded-xl border border-danger/40 p-3">
-        <summary className="min-h-9 cursor-pointer font-medium text-danger">Borrar mi cuenta y todos mis datos</summary>
+        <summary className="min-h-11 md:min-h-9 cursor-pointer font-medium text-danger">Borrar mi cuenta y todos mis datos</summary>
         <form className="mt-3 flex flex-col gap-2" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await deleteAccount(confirm); // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- navegación completa: el service worker borra las copias sin conexión al abrir /login
  if (r.ok) window.location.assign("/login"); else setMsg(r.error); }); }}>
           <p className="text-muted">Se borra todo para siempre: negocios, pedidos, gastos, notas, tareas, vídeos y tickets. <strong>No se puede deshacer.</strong> Descarga antes una copia. Escribe <strong>{email}</strong> para confirmar.</p>

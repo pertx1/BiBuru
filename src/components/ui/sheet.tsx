@@ -35,6 +35,13 @@ export function Sheet({
       onClick={(e) => {
         if (e.target === ref.current) onClose(); // clic en el fondo
       }}
+      onFocus={(e) => {
+        // Con el teclado del móvil abierto, el campo enfocado se lleva al centro para que no quede tapado.
+        const el = e.target;
+        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+          setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+        }
+      }}
       className={cn(
         variant === "panel"
           ? "m-0 h-dvh max-h-dvh w-full max-w-none overflow-y-auto border-0 bg-surface p-0 pt-[env(safe-area-inset-top)] text-foreground shadow-xl backdrop:bg-black/40 md:ml-auto md:h-dvh md:w-[min(42rem,100vw)] md:border-l md:border-border md:pt-0"

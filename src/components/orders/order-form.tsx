@@ -124,7 +124,7 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
   return (
     <form ref={formRef} action={submit} onChange={(e) => { dirty.current = true; saveDraft(e.currentTarget); }} className="flex flex-col gap-4">
       {draft && <p className="flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm">Borrador recuperado.
-        <button type="button" className="min-h-10 text-xs font-semibold underline" onClick={onDiscard}>Descartar</button></p>}
+        <button type="button" className="min-h-11 md:min-h-10 text-xs font-semibold underline" onClick={onDiscard}>Descartar</button></p>}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Fecha" htmlFor="o-date"><Input id="o-date" name="order_date" type="date" defaultValue={v("order_date", order?.order_date ?? today)} required /></Field>
         <Field label="Estado" htmlFor="o-status">
@@ -155,7 +155,7 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
               <Input inputMode="decimal" value={l.unit_cost} onChange={(e) => setLine(l.key, { unit_cost: e.target.value })} placeholder="0,00" />
             </label>
             {lines.length > 1 && (
-              <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} className="col-span-6 flex min-h-10 items-center justify-center gap-1 text-xs text-muted hover:text-danger">
+              <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} className="col-span-6 flex min-h-11 md:min-h-10 items-center justify-center gap-1 text-xs text-muted hover:text-danger">
                 <Trash2 className="size-3.5" aria-hidden /> Quitar línea
               </button>
             )}

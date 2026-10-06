@@ -73,7 +73,7 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
                 <select
                   aria-label="Estado del pedido" value={o.status}
                   onChange={(e) => start(async () => { await setOrderStatus(o.id, e.target.value); router.refresh(); })}
-                  className="min-h-11 shrink-0 rounded-lg border bg-surface px-2 text-xs font-medium md:min-h-10"
+                  className="min-h-11 shrink-0 rounded-lg border bg-surface px-2 text-base font-medium md:min-h-10 md:text-xs"
                   style={{ borderColor: ORDER_STATUS_COLOR[o.status as OrderStatus], color: ORDER_STATUS_COLOR[o.status as OrderStatus] }}
                 >
                   {ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}

@@ -56,9 +56,9 @@ export function NewsSettings({ settings, topics, sources }: { settings: { enable
           {topics.map((t, i) => (
             <li key={t.id} className={cn("flex items-center gap-2 px-3 py-2", !t.active && "opacity-50")}>
               <span className="size-3 shrink-0 rounded-full" style={{ background: t.color }} aria-hidden />
-              <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setEditing(t)}><span className="block truncate font-medium">{t.name}</span><span className="block truncate text-xs text-muted">{t.keywords.slice(0, 6).join(", ")}</span></button>
-              <button type="button" className="size-9 disabled:opacity-30" disabled={i === 0 || pending} onClick={() => move(i, -1)} aria-label={`Subir ${t.name}`}><ArrowUp className="mx-auto size-4" /></button>
-              <button type="button" className="size-9 disabled:opacity-30" disabled={i === topics.length - 1 || pending} onClick={() => move(i, 1)} aria-label={`Bajar ${t.name}`}><ArrowDown className="mx-auto size-4" /></button>
+              <button type="button" className="min-h-11 min-w-0 flex-1 text-left" onClick={() => setEditing(t)}><span className="block truncate font-medium">{t.name}</span><span className="block truncate text-xs text-muted">{t.keywords.slice(0, 6).join(", ")}</span></button>
+              <button type="button" className="size-11 disabled:opacity-30 md:size-9" disabled={i === 0 || pending} onClick={() => move(i, -1)} aria-label={`Subir ${t.name}`}><ArrowUp className="mx-auto size-4" /></button>
+              <button type="button" className="size-11 disabled:opacity-30 md:size-9" disabled={i === topics.length - 1 || pending} onClick={() => move(i, 1)} aria-label={`Bajar ${t.name}`}><ArrowDown className="mx-auto size-4" /></button>
             </li>
           ))}
         </ul>
@@ -91,9 +91,9 @@ export function NewsSettings({ settings, topics, sources }: { settings: { enable
                   <span className="block truncate font-medium">{src.name}</span>
                   <span className="block truncate text-xs text-muted">{KIND_LABELS[src.kind]}{topics.find((t) => t.id === src.topic_id) ? ` · ${topics.find((t) => t.id === src.topic_id)!.name}` : ""}{src.status === "down" && src.last_error ? ` · ${src.last_error}` : ""}</span>
                 </span>
-                <button type="button" className="size-9" disabled={pending} onClick={() => act(() => checkNewsSource(src.id), "Fuente comprobada")} aria-label={`Comprobar ${src.name}`}><RefreshCw className="mx-auto size-4" /></button>
+                <button type="button" className="size-11 md:size-9" disabled={pending} onClick={() => act(() => checkNewsSource(src.id), "Fuente comprobada")} aria-label={`Comprobar ${src.name}`}><RefreshCw className="mx-auto size-4" /></button>
                 <input type="checkbox" className="size-5" checked={src.active} disabled={pending} onChange={(e) => act(() => updateNewsSource(src.id, { active: e.target.checked }), e.target.checked ? "Activada" : "Desactivada")} aria-label={`Activar ${src.name}`} />
-                <button type="button" className="size-9 text-muted hover:text-danger" disabled={pending} onClick={() => { if (confirm(`¿Quitar «${src.name}»?`)) act(() => deleteNewsSource(src.id), "Fuente quitada"); }} aria-label={`Quitar ${src.name}`}><Trash2 className="mx-auto size-4" /></button>
+                <button type="button" className="size-11 text-muted hover:text-danger md:size-9" disabled={pending} onClick={() => { if (confirm(`¿Quitar «${src.name}»?`)) act(() => deleteNewsSource(src.id), "Fuente quitada"); }} aria-label={`Quitar ${src.name}`}><Trash2 className="mx-auto size-4" /></button>
               </li>
             );
           })}

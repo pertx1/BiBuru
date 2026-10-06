@@ -88,7 +88,7 @@ export function RetryAi({ id, error, onRetry }: { id: string; error: string | nu
   return (
     <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
       {error ? `La IA no pudo clasificarla (${error.slice(0, 60)}).` : "Sin clasificar por la IA."}
-      <button type="button" disabled={pending} onClick={() => start(async () => { const r = await onRetry(id); setMsg(r.ok ? null : (r.error ?? "Error")); router.refresh(); })} className="inline-flex min-h-9 items-center gap-1 text-accent underline"><RotateCcw className="size-3" aria-hidden /> Reintentar</button>
+      <button type="button" disabled={pending} onClick={() => start(async () => { const r = await onRetry(id); setMsg(r.ok ? null : (r.error ?? "Error")); router.refresh(); })} className="inline-flex min-h-11 md:min-h-9 items-center gap-1 text-accent underline"><RotateCcw className="size-3" aria-hidden /> Reintentar</button>
       {msg && <span role="alert" className="text-danger">{msg}</span>}
     </p>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CollapsibleFilters } from "@/components/ui/collapsible-filters";
 import { Download } from "lucide-react";
 import { ExpensesView } from "@/components/expenses/expenses-view";
 import { getContext } from "@/lib/context";
@@ -23,6 +24,7 @@ export default async function GastosPage({ params, searchParams }: { params: Pro
 
   return (
     <div className="flex flex-col gap-4">
+      <CollapsibleFilters active={!!(sp.q || category || from || to)}>
       <form method="get" className="grid grid-cols-2 gap-2 md:grid-cols-5">
         <input name="q" defaultValue={sp.q} placeholder="Buscar concepto o proveedor" aria-label="Buscar" className="col-span-2 min-h-11 rounded-lg border border-border bg-surface px-3 text-base md:min-h-9 md:text-sm" />
         <select name="categoria" defaultValue={category ?? ""} aria-label="Categoría" className="min-h-11 rounded-lg border border-border bg-surface px-3 text-base md:min-h-9 md:text-sm">
@@ -33,10 +35,11 @@ export default async function GastosPage({ params, searchParams }: { params: Pro
         <input type="date" name="hasta" defaultValue={to} aria-label="Hasta" className="min-h-11 rounded-lg border border-border bg-surface px-2 text-base md:min-h-9 md:text-sm" />
         <button type="submit" className="col-span-2 min-h-11 rounded-lg border border-border bg-surface text-sm font-medium hover:bg-surface-2 md:col-span-5 md:min-h-9 md:w-32">Filtrar</button>
       </form>
+      </CollapsibleFilters>
       <ExpensesView businessId={id} workspaceId={workspaceId} expenses={expenses} categories={categories} today={todayISO()} openExpense={openExpense} />
       <div className="flex items-center justify-between text-sm">
         {expenses.length >= limit ? <Link href={`?${more.toString()}`} className="text-accent">Ver más gastos</Link> : <span className="text-muted">{expenses.length} gastos</span>}
-        <a href={`/api/export/gastos?negocio=${id}`} className="inline-flex min-h-10 items-center gap-1.5 text-muted hover:text-foreground"><Download className="size-4" aria-hidden /> Exportar CSV</a>
+        <a href={`/api/export/gastos?negocio=${id}`} className="inline-flex min-h-11 md:min-h-10 items-center gap-1.5 text-muted hover:text-foreground"><Download className="size-4" aria-hidden /> Exportar CSV</a>
       </div>
     </div>
   );
