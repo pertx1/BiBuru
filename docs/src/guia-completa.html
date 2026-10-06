@@ -102,7 +102,7 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 <li>En <b>Email</b>: <b>Enable Email provider</b> ON y <b>Confirm email</b> <b>OFF</b> (apagado). Así la cuenta se crea al instante, sin código ni enlace. Si ves <b>Email OTP Length</b>, déjalo en <code>6</code> (se sigue usando para el acceso «Código por correo»).</li>
 <li>Pulsa <b class="k">Save</b>.</li>
 </ol>
-<div class="box warn"><b>Quién puede crear cuenta.</b> Por defecto, solo los correos de la variable <code>ALLOWED_EMAILS</code> de Vercel (tu correo). Cualquier otro correo puede intentar crearla en la pantalla, pero la app no le deja entrar. Para que <b>cualquier persona</b> pueda registrarse, añade en Vercel la variable <code>OPEN_SIGNUP</code> = <code>true</code> y redespliega (cada cuenta tendría su propio espacio, y su uso de IA contaría contra tu clave de Gemini: ponlo solo si quieres de verdad abrirlo).</div>
+<div class="box warn"><b>Quién puede crear cuenta.</b> <b>Cualquier persona</b>: BiBuru viene con el registro abierto y cada cuenta tiene su propio espacio, aislado del resto. Cuidado con la IA: todas las cuentas usan <b>tu</b> clave de Gemini, y cada una tiene su propio tope mensual (10 € por defecto). Si no quieres ese riesgo, no pongas <code>GEMINI_API_KEY</code>, o añade en Vercel <code>OPEN_SIGNUP</code> = <code>false</code> (y tu correo en <code>ALLOWED_EMAILS</code>) para cerrar el registro y redesplegar.</div>
 <div class="box danger"><b>Crea tu cuenta tú primero.</b> Como ya no se verifica el correo, quien se registre antes con un correo se queda con él. Crea la tuya (paso 7.1) <b>nada más desplegar</b>, antes de compartir la dirección con nadie.</div>
 <h3>4.2 Poner el correo bonito (con enlace y código)</h3>
 <ol>
@@ -136,7 +136,7 @@ b.k{background:#efede6;border:1px solid #cfcbbd;border-radius:3pt;padding:0 4pt;
 <table><tr><th>Key (nombre exacto)</th><th>Value (qué pegar)</th></tr>
 <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>La <b>SUPABASE_URL</b> de «mi bloc» (<code>https://….supabase.co</code>), sin barra final.</td></tr>
 <tr><td><code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code></td><td>La <b>PUBLISHABLE_KEY</b> (<code>sb_publishable_…</code>). Si solo tienes la antigua, usa en su lugar el nombre <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> con la clave <code>eyJ…</code>.</td></tr>
-<tr><td><code>ALLOWED_EMAILS</code></td><td><code>oiier.gsss@gmail.com</code></td></tr></table>
+<tr><td><code>ALLOWED_EMAILS</code></td><td><code>oiier.gsss@gmail.com</code> (solo se usa si cierras el registro con <code>OPEN_SIGNUP=false</code>; puedes dejarla así)</td></tr></table>
 <div class="box warn">Cuidado con espacios al principio o al final al pegar y con errores en el nombre (mayúsculas y guiones bajos exactos). El 90 % de los fallos vienen de aquí.</div>
 <ol>
 <li>Pulsa <b class="k">Deploy</b>. Espera 1–3 minutos hasta ver <b>«Congratulations!»</b>.</li>

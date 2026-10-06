@@ -22,9 +22,10 @@ export function isEmailAllowed(email: string, raw: string | undefined): boolean 
 }
 
 /**
- * ¿Puede este correo usar la app? Con `OPEN_SIGNUP=true` cualquiera que cree una cuenta; si no, solo la lista
- * `ALLOWED_EMAILS`. Un único punto de decisión para el acceso, el registro, el enlace del correo y el proxy.
+ * ¿Puede este correo usar la app? Registro ABIERTO por defecto: cualquiera que cree una cuenta. Con `OPEN_SIGNUP=false`
+ * vuelve el modo cerrado: solo los correos de `ALLOWED_EMAILS`. Un único punto de decisión para el acceso, el registro,
+ * el enlace del correo y el proxy.
  */
 export function hasAccess(email: string, env: { allowed?: string; open?: string } = { allowed: process.env.ALLOWED_EMAILS, open: process.env.OPEN_SIGNUP }): boolean {
-  return env.open === "true" || isEmailAllowed(email, env.allowed);
+  return env.open !== "false" || isEmailAllowed(email, env.allowed);
 }

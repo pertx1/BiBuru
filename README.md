@@ -8,7 +8,7 @@ La guía paso a paso (para no técnicos) está en `docs/BiBuru-Guia-Completa.pdf
 1. **Supabase** (gratis): crea un proyecto → copia *Project URL* y la clave *publishable*.
 2. **Migraciones** (10 archivos): pega el contenido de cada archivo de `supabase/migrations` (en orden)
    en Supabase → SQL Editor → Run. (Alternativa con CLI: `npx supabase link` y `npx supabase db push`.)
-3. **Auth**: activa "Allow new users to sign up" y desactiva "Confirm email" (cuenta con contraseña sin código; solo entran los correos de `ALLOWED_EMAILS`, o todos con `OPEN_SIGNUP=true`), crea tu cuenta en la pantalla de la app y pega la plantilla
+3. **Auth**: activa "Allow new users to sign up" y desactiva "Confirm email" (cuenta con contraseña sin código; registro abierto a cualquiera; `OPEN_SIGNUP=false` + `ALLOWED_EMAILS` lo cierra), crea tu cuenta en la pantalla de la app y pega la plantilla
    `supabase/templates/magic-link.html` y en *URL Configuration* pon tu URL de Vercel.
 4. **Vercel** (Hobby): importa el repo y define `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `ALLOWED_EMAILS`.

@@ -23,12 +23,13 @@ describe("ALLOWED_EMAILS", () => {
 });
 
 describe("hasAccess", () => {
-  it("sin registro abierto, solo la lista", () => {
-    expect(hasAccess("yo@x.com", { allowed: "yo@x.com" })).toBe(true);
-    expect(hasAccess("otro@x.com", { allowed: "yo@x.com" })).toBe(false);
-    expect(hasAccess("otro@x.com", { allowed: "yo@x.com", open: "false" })).toBe(false);
+  it("por defecto el registro está abierto", () => {
+    expect(hasAccess("cualquiera@x.com", {})).toBe(true);
+    expect(hasAccess("cualquiera@x.com", { allowed: "yo@x.com", open: "true" })).toBe(true);
   });
-  it("con OPEN_SIGNUP=true entra cualquiera que cree cuenta", () => {
-    expect(hasAccess("otro@x.com", { allowed: "", open: "true" })).toBe(true);
+  it("con OPEN_SIGNUP=false solo entra la lista", () => {
+    expect(hasAccess("yo@x.com", { allowed: "yo@x.com", open: "false" })).toBe(true);
+    expect(hasAccess("otro@x.com", { allowed: "yo@x.com", open: "false" })).toBe(false);
+    expect(hasAccess("otro@x.com", { open: "false" })).toBe(false);
   });
 });
