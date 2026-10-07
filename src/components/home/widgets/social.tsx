@@ -35,7 +35,7 @@ export async function SocialFollowersWidget({ ctx }: WidgetProps) {
 }
 
 /** «Mejor publicación de la semana» (por interacciones). */
-export async function SocialBestPostWidget(_: WidgetProps) {
+export async function SocialBestPostWidget() {
   const { supabase, workspaceId } = await getContext();
   const { data } = await supabase.from("social_media").select("id, caption, permalink, thumbnail_url, posted_at, reach, views, interactions, likes, comments")
     .eq("workspace_id", workspaceId).gte("posted_at", new Date(Date.parse(new Date().toISOString()) - 7 * 86400_000).toISOString()).limit(200);
