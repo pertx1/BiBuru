@@ -12,7 +12,7 @@ const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadíst
 const PLAT = { instagram: "Instagram", tiktok: "TikTok" } as const;
 
 /** Cuentas conectadas: estado del token (aviso si caduca), negocio, actualizar y desconectar; botones para conectar. */
-export function SocialAccounts({ accounts, businesses, configured, result, nowMs }: { nowMs: number; accounts: Acc[]; businesses: { id: string; name: string }[]; configured: { instagram: boolean; tiktok: boolean }; result: { instagram?: string; tiktok?: string } }) {
+export function SocialAccounts({ accounts, businesses, configured, result, nowMs, audited = false }: { audited?: boolean; nowMs: number; accounts: Acc[]; businesses: { id: string; name: string }[]; configured: { instagram: boolean; tiktok: boolean }; result: { instagram?: string; tiktok?: string } }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
@@ -40,6 +40,7 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
                     {a.status === "expired" ? "La conexión ha caducado." : a.status === "error" ? a.last_error ?? "Error de conexión." : `La conexión caduca en ${left} días; se renueva sola si la app sigue en uso.`}
                     <a href={`/api/${a.platform}/connect`} className="ml-1 underline">Reconectar</a></p>
                 )}
+                {a.platform === "tiktok" && <p className="text-xs text-muted">{audited ? "App auditada por TikTok: publicación directa y pública." : "App sin auditar: lo que se publique por API quedaría privado, así que se envía como borrador a tu TikTok (lo publicas tú) o te aviso a la hora."}</p>}
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-2 text-xs text-muted">Negocio
                     <select defaultValue={a.business_id ?? ""} disabled={pending} onChange={(e) => run(() => setSocialAccountBusiness(a.id, e.target.value || null), "Guardado")} className="min-h-11 rounded-lg border border-border bg-surface px-2 text-base text-foreground md:min-h-9 md:text-sm">

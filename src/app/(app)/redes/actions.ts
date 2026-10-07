@@ -181,3 +181,15 @@ export async function refreshSocialStats(accountId: string): Promise<ActionResul
   refresh();
   return { ok: true };
 }
+
+/** Publicación asistida: la persona confirma que ya lo publicó en TikTok. */
+export async function markAssistedDone(targetId: string): Promise<ActionResult> {
+  if (!uuid.safeParse(targetId).success) return { ok: false, error: "Datos no válidos" };
+  const { supabase, workspaceId } = await getContext();
+  const { data: t } = await supabase.from("social_post_targets").update({ status: "publicada", published_at: new Date().toISOString(), error: null }).eq("id", targetId).eq("workspace_id", workspaceId).eq("mode", "assisted").select("post_id").maybeSingle();
+  if (!t) return { ok: false, error: "No encontrado" };
+  const { data: all } = await supabase.from("social_post_targets").select("status").eq("post_id", t.post_id);
+  if ((all ?? []).every((x) => ["publicada", "enviada", "avisada"].includes(x.status))) await supabase.from("social_posts").update({ status: "publicada" }).eq("id", t.post_id).eq("workspace_id", workspaceId);
+  refresh();
+  return { ok: true };
+}

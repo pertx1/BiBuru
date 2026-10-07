@@ -946,13 +946,13 @@ isOneToOne: false
                   ]
                 },"social_daily": {
                   Row: {
-                    "account_id": string,"comments": number | null,"created_at": string,"day": string,"followers": number | null,"id": string,"interactions": number | null,"likes": number | null,"profile_views": number | null,"reach": number | null,"saves": number | null,"shares": number | null,"updated_at": string,"views": number | null,"workspace_id": string
+                    "account_id": string,"comments": number | null,"created_at": string,"day": string,"followers": number | null,"id": string,"interactions": number | null,"interactions_total": number | null,"likes": number | null,"profile_views": number | null,"reach": number | null,"saves": number | null,"shares": number | null,"updated_at": string,"views": number | null,"views_total": number | null,"workspace_id": string
                   }
                   Insert: {
-                    "account_id": string,"comments"?: number | null,"created_at"?: string,"day": string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"workspace_id": string
+                    "account_id": string,"comments"?: number | null,"created_at"?: string,"day": string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"interactions_total"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"views_total"?: number | null,"workspace_id": string
                   }
                   Update: {
-                    "account_id"?: string,"comments"?: number | null,"created_at"?: string,"day"?: string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"workspace_id"?: string
+                    "account_id"?: string,"comments"?: number | null,"created_at"?: string,"day"?: string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"interactions_total"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"views_total"?: number | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {

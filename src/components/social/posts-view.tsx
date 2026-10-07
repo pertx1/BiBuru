@@ -20,7 +20,7 @@ type Acc = { id: string; platform: string; username: string | null; status: stri
 
 export const POST_STATUS: Record<string, { label: string; cls: string }> = {
   borrador: { label: "Borrador", cls: "border-border text-muted" }, programada: { label: "Programada", cls: "border-accent/50 text-accent" },
-  publicando: { label: "Publicando", cls: "border-amber-500/50 text-amber-600 dark:text-amber-400" }, publicada: { label: "Publicada", cls: "border-good/50 text-good" }, error: { label: "Error", cls: "border-bad/50 text-bad" },
+  publicando: { label: "Publicando", cls: "border-amber-500/50 text-amber-600 dark:text-amber-400" }, publicada: { label: "Hecha", cls: "border-good/50 text-good" }, error: { label: "Error", cls: "border-bad/50 text-bad" },
 };
 const TARGET: Record<string, string> = { pendiente: "Pendiente", publicando: "Publicando…", publicada: "Publicada", enviada: "Enviada a TikTok (borrador)", avisada: "Aviso enviado", error: "Error" };
 const MODE: Record<string, string> = { direct: "publicación directa", draft: "se envía a TikTok como borrador para terminarlo allí", assisted: "te aviso a la hora con el vídeo y el texto listos" };
@@ -71,7 +71,7 @@ export function PostsView({ posts, accounts, businesses, today, openId, used, li
       <section><h2 className="mb-2 text-sm font-semibold">Próximas y borradores</h2>
         {upcoming.length ? <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{upcoming.map((p) => <Row key={p.id} p={p} />)}</ul> : <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">Nada programado. Pulsa «Nueva publicación» o «Usar como idea» en un vídeo de Favoritos.</p>}
       </section>
-      {done.length > 0 && <section><h2 className="mb-2 text-sm font-semibold">Publicadas</h2><ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{done.slice(0, 30).map((p) => <Row key={p.id} p={p} />)}</ul></section>}
+      {done.length > 0 && <section><h2 className="mb-2 text-sm font-semibold">Hechas</h2><ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{done.slice(0, 30).map((p) => <Row key={p.id} p={p} />)}</ul></section>}
       {current && <PostEditor key={current.id} post={current} accounts={accounts} businesses={businesses} today={today} onClose={() => { setOpen(null); router.refresh(); }} />}
     </div>
   );

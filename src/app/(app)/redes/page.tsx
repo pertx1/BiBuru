@@ -28,7 +28,7 @@ export default async function RedesPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader title="Redes" subtitle="Instagram y TikTok de tus negocios: estadísticas y publicaciones programadas." />
-      <SocialAccounts accounts={accounts} businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} configured={cfg} nowMs={new Date(`${today}T12:00:00Z`).getTime()} result={{ instagram: sp.instagram, tiktok: sp.tiktok }} />
+      <SocialAccounts accounts={accounts} businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} configured={cfg} audited={process.env.TIKTOK_DIRECT_POST_AUDITED === "1"} nowMs={new Date(`${today}T12:00:00Z`).getTime()} result={{ instagram: sp.instagram, tiktok: sp.tiktok }} />
       <nav className="mb-4 mt-5 flex gap-1 border-b border-border" aria-label="Secciones de Redes">{tab("estadisticas", "Estadísticas")}{tab("publicaciones", "Publicaciones")}</nav>
       {view === "estadisticas" ? (
         current ? <SocialStats account={current} accounts={accounts} days={days} {...await accountStats(current.id, from, to, prevFrom)} to={to} prevFrom={prevFrom} />

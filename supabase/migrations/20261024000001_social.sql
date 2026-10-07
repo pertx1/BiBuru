@@ -51,6 +51,8 @@ create table public.social_daily (
   views         integer check (views is null or views >= 0),
   interactions  integer check (interactions is null or interactions >= 0),
   likes         integer, comments integer, shares integer, saves integer, profile_views integer,
+  -- TikTok no da datos por día: se guardan los acumulados de sus vídeos y el día = diferencia con la foto anterior.
+  views_total   bigint, interactions_total bigint,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   unique (account_id, day),

@@ -136,8 +136,12 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
       const { data: acc } = await admin.from("social_accounts").select(ACC_FIELDS).eq("id", t.account_id).maybeSingle();
       if (!acc) continue;
       out.steps++;
-      if (acc.platform === "instagram") await stepInstagram(admin, t, acc, post, files ?? [], now);
-      else if (hooks.tiktokTarget) await hooks.tiktokTarget(admin, t, acc, post, files ?? []);
+      try {
+        if (acc.platform === "instagram") await stepInstagram(admin, t, acc, post, files ?? [], now);
+        else if (hooks.tiktokTarget) await hooks.tiktokTarget(admin, t, acc, post, files ?? []);
+      } catch (e) { // un fallo inesperado (p. ej. token ilegible) no para las demás
+        await admin.from("social_post_targets").update({ status: "error", error: (e instanceof Error ? e.message : "Error").slice(0, 500) }).eq("id", t.id);
+      }
     }
     const { data: after } = await admin.from("social_post_targets").select("status").eq("post_id", post.id);
     const st = overallStatus(after ?? []);
@@ -147,11 +151,14 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
   // 2) Foto diaria (una cuenta por pasada para no pasar del tiempo máximo).
   const yesterday = addDays(nowLocal(now, "Europe/Madrid").date, -1);
   const { data: snap } = await admin.from("social_accounts").select(ACC_FIELDS).neq("status", "expired").or(`last_snapshot_on.is.null,last_snapshot_on.lt.${yesterday}`).limit(2);
-  for (const acc of snap ?? []) { await snapshotAccount(admin, acc, now); out.snapshots++; }
+  for (const acc of snap ?? []) {
+    try { await snapshotAccount(admin, acc, now); out.snapshots++; }
+    catch (e) { await markError(admin, acc, e); await admin.from("social_accounts").update({ last_snapshot_on: yesterday }).eq("id", acc.id); }
+  }
   // 3) Renovar tokens que caducan pronto aunque no toque foto.
   const soon = new Date(now.getTime() + 10 * 86400_000).toISOString();
   const { data: expiring } = await admin.from("social_accounts").select(ACC_FIELDS).neq("status", "expired").lt("token_expires_at", soon).limit(3);
-  for (const acc of expiring ?? []) await socialToken(admin, acc, now);
+  for (const acc of expiring ?? []) await socialToken(admin, acc, now).catch((e) => markError(admin, acc, e));
   // 4) Borrar archivos de publicaciones ya publicadas hace más de KEEP_FILES_DAYS días.
   const cutoff = new Date(now.getTime() - KEEP_FILES_DAYS * 86400_000).toISOString();
   const { data: old } = await admin.from("social_post_files").select("id, path, social_posts!inner(status, scheduled_at)").is("deleted_at", null)

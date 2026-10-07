@@ -72,3 +72,15 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Arrastrar en el Calendario cambia solo el día (la hora se mantiene). En el móvil: mantener pulsado el asa ⋮⋮ en la vista Semana o Agenda.
 - «Usar como idea» crea un borrador con el resumen, las ideas y tus notas del vídeo.
 - Arreglo general: los avisos (toasts) quedaban ocultos detrás de las hojas abiertas; ahora salen encima.
+
+## 7. TikTok de negocio
+- APIs oficiales: Login Kit (token de acceso de 24 h + renovación de 365 días, ambos cifrados), Display API (perfil y vídeos) y Content Posting API.
+- **Sin auditoría** TikTok obliga a que lo publicado por API sea privado (SELF_ONLY). Por eso, por defecto, BiBuru **no pide** `video.publish` y usa el mejor modo que sí sale público:
+  1. **Directa**: solo si pones `TIKTOK_DIRECT_POST_AUDITED=1` en Vercel cuando TikTok apruebe la auditoría (y vuelves a conectar la cuenta).
+  2. **Borrador**: con `video.upload` el vídeo llega a tu bandeja de TikTok y lo publicas tú desde la app (sale público).
+  3. **Asistida**: si no hay permiso de subida, a la hora te llega un aviso; al tocarlo ves el vídeo para compartir/guardar y el texto para copiar.
+- El estado general de una publicación dice «Hecha» (no «publicada») y cada red dice exactamente qué pasó: «Publicada», «Enviada a TikTok (borrador)» o «Aviso enviado».
+- TikTok no da estadísticas por día: guardo cada día los acumulados de sus vídeos (visualizaciones e interacciones) y el dato del día es la diferencia con la foto anterior. El primer día no hay diferencia (sale «—»). TikTok no da «alcance».
+- Subida de archivo en un solo trozo (archivos de 50 MB como mucho): no hace falta verificar un dominio en TikTok (sí haría falta para «PULL_FROM_URL»).
+- El aviso de publicación asistida no respeta las horas de silencio: lo has programado tú a esa hora.
+- Un fallo con una cuenta (token roto…) ya no para el cron de las demás.
