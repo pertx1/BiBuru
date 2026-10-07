@@ -8,8 +8,8 @@ export const METHOD_LABEL: Record<PaymentMethod, string> = { bizum: "Bizum", efe
 export type PayStatus = "unreviewed" | "pending" | "partial" | "paid" | "cancelled";
 export const PAY_LABEL: Record<PayStatus, string> = { unreviewed: "Sin revisar", pending: "Pendiente", partial: "Pago parcial", paid: "Pagado", cancelled: "—" };
 export const PAY_CLASS: Record<PayStatus, string> = {
-  unreviewed: "border-border text-muted", pending: "border-bad/50 text-bad", partial: "border-amber-500/60 text-amber-600 dark:text-amber-400",
-  paid: "border-good/50 text-good", cancelled: "border-border text-muted",
+  unreviewed: "bg-fill text-muted", pending: "bg-bad/10 text-bad", partial: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  paid: "bg-good/10 text-good", cancelled: "bg-fill text-muted",
 };
 
 export type PayFields = { status: string; payment_reviewed: boolean; total_cents: number; paid_cents: number };

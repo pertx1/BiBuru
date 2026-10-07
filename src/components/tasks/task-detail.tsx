@@ -10,7 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import type { Subtask } from "@/lib/tasks/data";
 import { cn } from "@/lib/utils";
 
-const quick = "min-h-12 justify-center text-[15px] font-semibold";
+const quick = "min-h-12 justify-center gap-1.5 whitespace-nowrap px-3 text-[15px] font-semibold";
 
 /** Acciones rápidas del detalle (destino de la notificación): Hecho / Marcar pendiente, Mañana, Posponer 15 min y 1 h. */
 export function TaskQuickActions({ id, done }: { id: string; done: boolean }) {

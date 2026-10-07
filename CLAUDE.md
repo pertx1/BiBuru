@@ -207,6 +207,14 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - TikTok sin auditoría = privado: por defecto no se pide `video.publish`; modo con `tiktokModeFor` (directa solo con `TIKTOK_DIRECT_POST_AUDITED=1`).
 - Las publicaciones salen en el Calendario (`postsToItems`) y se arrastran con `@dnd-kit` (asa `touch-none`, pulsación larga en táctil).
 
+## Diseño (estilo Apple)
+- Tokens en `globals.css`:
+  - `--fill`/`--fill-strong` son los rellenos de controles; `--accent-text` es el acento usado como texto en oscuro.
+  - `.glass` es el material translucido, solo para la barra inferior.
+  - Reglas globales sin capa: tarjetas sin borde y chips/campos con relleno. No hace falta repetir estilos en cada pantalla.
+- Botones en cápsula (`Button`); campos con `bg-fill` sin borde; claro/oscuro según el sistema (`defaultTheme="system"`).
+- Contrastes calculados en `docs/DECISIONES.md` › «Diseño estilo Apple». Un color nuevo para texto debe pasar 4,5:1 en claro y en oscuro.
+
 ## Móvil
 - `npm run test:mobile` (con la app local levantada, ver `scripts/e2e/README.md`) falla si alguna pantalla tiene scroll horizontal; informa de zonas < 44 px y letra < 16 px.
 - Zonas de 44 px solo en móvil (`min-h-11 md:min-h-…`). Gestos: `SwipeRow` (tareas) y `PullToRefresh` (layout).
