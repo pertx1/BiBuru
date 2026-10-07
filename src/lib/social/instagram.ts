@@ -227,7 +227,7 @@ export async function igHideComment(token: string, commentId: string, hide: bool
 }
 /** Suscribe la cuenta a los avisos en tiempo real (mensajes, comentarios y menciones). Si falla, queda la sincronización cada hora. */
 export async function igSubscribeWebhooks(token: string, f: Fetch = fetch): Promise<boolean> {
-  const fields = igMode() === "facebook" ? "messages,feed" : "messages,comments,mentions";
+  const fields = igMode() === "facebook" ? "messages,feed" : "messages,comments";
   const j = await post(igApi(`/me/subscribed_apps`), token, { subscribed_fields: fields }, f).catch(() => null);
   return !!j && (j.success === true || j.success === "true");
 }
