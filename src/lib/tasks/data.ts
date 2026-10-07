@@ -2,7 +2,7 @@ import "server-only";
 import { getContext } from "@/lib/context";
 import { addDays, endOfMonth, nowLocal, startOfMonth } from "@/lib/dates";
 import type { Database } from "@/lib/supabase/database.types";
-import { expandEvents, tasksToItems, type CalItem } from "./calendar";
+import { expandEvents, postsToItems, tasksToItems, type CalItem } from "./calendar";
 import { type GoalLike, type Live } from "./goals";
 
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
@@ -78,14 +78,20 @@ export async function countOpenTasks() {
 /** Eventos (expandidos) y tareas con fecha dentro de un rango, para el calendario. */
 export async function getCalendarItems(from: string, to: string): Promise<CalItem[]> {
   const { supabase, workspaceId } = await getContext();
-  const [events, tasks] = await Promise.all([
+  const { timezone } = await getContext();
+  const [events, tasks, posts] = await Promise.all([
     // Los no recurrentes que tocan el rango y todos los recurrentes que ya empezaron.
     supabase.from("events").select("*").eq("workspace_id", workspaceId).lte("start_date", to).or(`end_date.gte.${from},recurrence.not.is.null`).limit(2000),
     supabase.from("tasks").select("id,title,due_date,due_time,business_id,priority,status").eq("workspace_id", workspaceId).is("parent_id", null).gte("due_date", from).lte("due_date", to).limit(2000),
+    // Calendario de contenido (Redes). Si la tabla aún no existe (vista previa sin migración), simplemente no salen.
+    supabase.from("social_posts").select("id,title,caption,scheduled_at,status,business_id").eq("workspace_id", workspaceId).neq("status", "borrador")
+      .gte("scheduled_at", new Date(Date.parse(`${from}T00:00:00Z`) - 86400_000).toISOString())
+      .lte("scheduled_at", new Date(Date.parse(`${to}T23:59:59Z`) + 86400_000).toISOString()).limit(500),
   ]);
   if (events.error) fail("eventos", events.error);
   if (tasks.error) fail("tareas del calendario", tasks.error);
-  return [...expandEvents(events.data, from, to), ...tasksToItems(tasks.data)];
+  const postItems = postsToItems(posts.data ?? [], timezone).filter((i) => i.date >= from && i.date <= to);
+  return [...expandEvents(events.data, from, to), ...tasksToItems(tasks.data), ...postItems];
 }
 
 export async function getEvent(id: string): Promise<EventRow | null> {

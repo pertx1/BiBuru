@@ -919,6 +919,168 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"social_accounts": {
+                  Row: {
+                    "access_token_enc": string,"account_type": string | null,"avatar_url": string | null,"business_id": string | null,"created_at": string,"display_name": string | null,"external_id": string,"id": string,"last_error": string | null,"last_media_sync_at": string | null,"last_snapshot_on": string | null,"platform": string,"refresh_expires_at": string | null,"refresh_token_enc": string | null,"scopes": string | null,"status": string,"token_expires_at": string | null,"updated_at": string,"user_id": string,"username": string | null,"workspace_id": string
+                  }
+                  Insert: {
+                    "access_token_enc": string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id": string,"id"?: string,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"platform": string,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"workspace_id": string
+                  }
+                  Update: {
+                    "access_token_enc"?: string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id"?: string,"id"?: string,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"platform"?: string,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_accounts_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_accounts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_daily": {
+                  Row: {
+                    "account_id": string,"comments": number | null,"created_at": string,"day": string,"followers": number | null,"id": string,"interactions": number | null,"likes": number | null,"profile_views": number | null,"reach": number | null,"saves": number | null,"shares": number | null,"updated_at": string,"views": number | null,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"comments"?: number | null,"created_at"?: string,"day": string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"workspace_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"comments"?: number | null,"created_at"?: string,"day"?: string,"followers"?: number | null,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"profile_views"?: number | null,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"updated_at"?: string,"views"?: number | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_daily_account_id_workspace_id_fkey"
+      columns: ["account_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_daily_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_media": {
+                  Row: {
+                    "account_id": string,"caption": string | null,"comments": number | null,"created_at": string,"external_id": string,"id": string,"interactions": number | null,"likes": number | null,"media_type": string | null,"permalink": string | null,"posted_at": string,"reach": number | null,"saves": number | null,"shares": number | null,"thumbnail_url": string | null,"updated_at": string,"views": number | null,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"caption"?: string | null,"comments"?: number | null,"created_at"?: string,"external_id": string,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"media_type"?: string | null,"permalink"?: string | null,"posted_at": string,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"thumbnail_url"?: string | null,"updated_at"?: string,"views"?: number | null,"workspace_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"caption"?: string | null,"comments"?: number | null,"created_at"?: string,"external_id"?: string,"id"?: string,"interactions"?: number | null,"likes"?: number | null,"media_type"?: string | null,"permalink"?: string | null,"posted_at"?: string,"reach"?: number | null,"saves"?: number | null,"shares"?: number | null,"thumbnail_url"?: string | null,"updated_at"?: string,"views"?: number | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_media_account_id_workspace_id_fkey"
+      columns: ["account_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_media_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_post_files": {
+                  Row: {
+                    "created_at": string,"deleted_at": string | null,"id": string,"mime": string,"path": string,"position": number,"post_id": string,"size_bytes": number,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"mime": string,"path": string,"position"?: number,"post_id": string,"size_bytes": number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"mime"?: string,"path"?: string,"position"?: number,"post_id"?: string,"size_bytes"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_post_files_post_id_workspace_id_fkey"
+      columns: ["post_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_posts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_post_files_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_post_targets": {
+                  Row: {
+                    "account_id": string,"attempts": number,"container_id": string | null,"created_at": string,"error": string | null,"external_id": string | null,"id": string,"mode": string,"next_try_at": string | null,"permalink": string | null,"post_id": string,"privacy": string | null,"published_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id": string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id"?: string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_post_targets_account_id_workspace_id_fkey"
+      columns: ["account_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_post_targets_post_id_workspace_id_fkey"
+      columns: ["post_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_posts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_post_targets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_posts": {
+                  Row: {
+                    "business_id": string | null,"caption": string,"created_at": string,"hashtags": string,"id": string,"media_kind": string,"notes": string | null,"scheduled_at": string | null,"source_video_id": string | null,"status": string,"title": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id"?: string | null,"caption"?: string,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string | null,"caption"?: string,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_posts_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_posts_source_video_id_workspace_id_fkey"
+      columns: ["source_video_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "saved_videos"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_posts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"stock_items": {
                   Row: {
                     "business_id": string,"created_at": string,"id": string,"match_color": string | null,"match_size": string | null,"min_quantity": number,"name": string,"product_id": string | null,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string

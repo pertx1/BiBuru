@@ -9,7 +9,7 @@ export type EventRow = {
 export type TaskCalRow = { id: string; title: string; due_date: string | null; due_time: string | null; business_id: string | null; priority: number; status: string };
 
 export type CalItem = {
-  key: string; kind: "event" | "task"; id: string; title: string;
+  key: string; kind: "event" | "task" | "post"; id: string; title: string;
   date: string; endDate: string; startTime: string | null; endTime: string | null; allDay: boolean;
   businessId: string | null; location: string | null; recurring: boolean; done: boolean; priority: number;
 };
@@ -42,6 +42,21 @@ export function tasksToItems(tasks: TaskCalRow[]): CalItem[] {
     startTime: hm(t.due_time), endTime: null, allDay: !t.due_time, businessId: t.business_id, location: null,
     recurring: false, done: t.status === "done", priority: t.priority,
   }));
+}
+
+export type PostCalRow = { id: string; title: string | null; caption: string; scheduled_at: string | null; status: string; business_id: string | null };
+
+/** Publicaciones programadas de Redes (calendario de contenido): fecha y hora en la zona dada. */
+export function postsToItems(posts: PostCalRow[], tz = "Europe/Madrid"): CalItem[] {
+  return posts.filter((p) => p.scheduled_at).map((p) => {
+    const d = new Date(p.scheduled_at!);
+    const date = d.toLocaleDateString("sv-SE", { timeZone: tz });
+    const time = d.toLocaleTimeString("es-ES", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+    return {
+      key: `p:${p.id}`, kind: "post" as const, id: p.id, title: `📣 ${p.title || p.caption.slice(0, 50) || "Publicación"}`, date, endDate: date,
+      startTime: time, endTime: null, allDay: false, businessId: p.business_id, location: null, recurring: false, done: p.status === "publicada", priority: 0,
+    };
+  });
 }
 
 /** Elementos que ocupan el día `day`, ordenados: todo el día primero, luego por hora. */

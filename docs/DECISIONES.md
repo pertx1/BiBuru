@@ -57,3 +57,18 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - «Responder en Outlook» abre el mensaje en Outlook (el enlace que da Microsoft).
 - La IA solo ve un correo si activas «Usar la IA con mis correos» y pulsas «Resumir con IA» en ese correo (nunca automáticamente).
 - Aviso de correo nuevo apagado por defecto y por cuenta; respeta tus horas de silencio; si llegan más de 3 a la vez, uno agrupado.
+
+## 6. Instagram
+- «Instagram API con inicio de sesión de Instagram» (graph.instagram.com), no la de Facebook: no hace falta página de Facebook. Sirve para cuentas de **empresa o creador**. En modo desarrollo funciona para las cuentas que añadas como «Instagram tester» de tu app (acceso estándar, sin revisión de Meta).
+- Permisos: `instagram_business_basic`, `instagram_business_content_publish`, `instagram_business_manage_insights`. No se piden mensajes ni comentarios.
+- Token de 60 días, cifrado; se renueva solo cuando le quedan menos de 10 días. Aviso en Redes desde 7 días antes de caducar.
+- Las cuentas y sus estadísticas son del espacio (las ve quien comparta el espacio contigo); el token nadie lo puede leer desde la app.
+- Métricas: `views` en lugar de `impressions` (Meta la retiró en 2025). Seguidores diarios: Instagram solo los da con 100+ seguidores; por eso además guardo el total de seguidores en la foto diaria.
+- Foto diaria de «ayer» (hora de Madrid) por el cron; 2 cuentas por pasada. Ranking con las últimas 30 publicaciones; métricas por publicación solo de las de los últimos 45 días (ahorra llamadas).
+- Mejores días/horas: media de interacciones por publicación, con al menos 2 publicaciones en ese grupo para dar una recomendación.
+- Gráficos de una sola serie en el azul del Resumen financiero (el rojo se reserva para «malo»).
+- Programación: los archivos se suben a Storage (bucket privado, carpeta del espacio) y se pasan a Instagram con URLs firmadas de 3 h. Reintentos a los 2, 10 y 30 min; después «Error» con «Reintentar». Errores de formato no se reintentan.
+- Límite de archivos: 50 MB cada uno y 500 MB en total (el plan gratuito de Supabase da 1 GB para todo). Se borran 3 días después de publicar.
+- Arrastrar en el Calendario cambia solo el día (la hora se mantiene). En el móvil: mantener pulsado el asa ⋮⋮ en la vista Semana o Agenda.
+- «Usar como idea» crea un borrador con el resumen, las ideas y tus notas del vídeo.
+- Arreglo general: los avisos (toasts) quedaban ocultos detrás de las hojas abiertas; ahora salen encima.

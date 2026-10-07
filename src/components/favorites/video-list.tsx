@@ -12,6 +12,7 @@ import { formatDuration } from "@/lib/favorites/url";
 import type { VideoCategory, VideoRow } from "@/lib/favorites/data";
 import { STATUS_LABELS } from "@/lib/favorites/labels";
 import { UploadFull } from "./upload-full";
+import { createDraft } from "@/app/(app)/redes/actions";
 
 type Tag = { id: string; name: string; color: string };
 type Biz = { id: string; name: string };
@@ -178,6 +179,7 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" disabled={pending} onClick={() => run(() => videoToTask(v.id), "Tarea creada ✔")}><Check className="size-4" aria-hidden /> Convertir en tarea</Button>
           <Button variant="secondary" disabled={pending} onClick={() => run(() => videoToNote(v.id), "Nota creada ✔")}>Guardar como nota</Button>
+          <Button variant="secondary" disabled={pending} onClick={() => start(async () => { const r = await createDraft({ videoId: v.id }); if (r.ok) router.push(`/redes?vista=publicaciones&abrir=${r.id}`); else toast({ message: r.error }); })}>Usar como idea</Button>
           <button type="button" disabled={pending} onClick={remove} className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-muted hover:text-danger md:min-h-9"><Trash2 className="size-4" aria-hidden /> Eliminar</button>
         </div>
       </div>
