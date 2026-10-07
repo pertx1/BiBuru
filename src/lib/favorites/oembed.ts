@@ -16,6 +16,22 @@ async function getJson(url: string, f: Fetch): Promise<Record<string, unknown> |
 
 const asStr = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
+/**
+ * Como `tiktokOembed`, pero distingue «no disponible» (TikTok responde 400/404: vídeo privado o borrado) de un fallo de red.
+ */
+export async function tiktokOembedStatus(videoUrl: string, f: Fetch = fetch): Promise<OEmbed | "unavailable" | null> {
+  const u = parseHttpUrl(videoUrl);
+  if (!u || !(u.hostname === "www.tiktok.com" || u.hostname === "tiktok.com")) return null;
+  const res = await f(`https://www.tiktok.com/oembed?url=${encodeURIComponent(u.toString())}`, { signal: AbortSignal.timeout(8000), headers: { Accept: "application/json" }, redirect: "error" }).catch(() => null);
+  if (!res) return null;
+  if (res.status === 400 || res.status === 404) return "unavailable"; // 403/429 = bloqueo temporal: no se marca
+  if (!res.ok) return null;
+  const j = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!j) return null;
+  if (typeof j.code === "number" && j.code !== 0) return "unavailable"; // a veces responde 200 con un código de error
+  return { title: asStr(j.title, 300) ?? "Vídeo de TikTok", author: asStr(j.author_name, 200), thumbnail: asStr(j.thumbnail_url, 2000) };
+}
+
 export async function tiktokOembed(videoUrl: string, f: Fetch = fetch): Promise<OEmbed | null> {
   const u = parseHttpUrl(videoUrl);
   if (!u || !(u.hostname === "www.tiktok.com" || u.hostname === "tiktok.com")) return null;

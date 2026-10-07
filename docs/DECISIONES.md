@@ -36,3 +36,14 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Revisión con Chromium emulando iPhone porque WebKit no se puede descargar aquí. El test `npm run test:mobile` necesita la app local levantada (no va en CI).
 - Tamaños de 44 px solo en móvil (`md:` mantiene el tamaño de escritorio) para no cambiar la composición en el ordenador.
 - Deslizar: derecha = hecha, izquierda = mañana (la opción de posponer más usada). Solo en Tareas.
+
+## 4. Favoritos de TikTok
+- Ya existía guardar enlaces de TikTok (con oEmbed y enlaces cortos): lo he mejorado en lugar de duplicarlo.
+- Datos del vídeo solo por el **oEmbed oficial** de TikTok (descripción, autor y portada). Nunca se descarga el vídeo de TikTok.
+- «No disponible» = TikTok responde 400/404 al oEmbed (privado o borrado). Un 403/429 (bloqueo temporal) no lo marca.
+- La portada se descarga solo de los servidores de imágenes de TikTok (`*.tiktokcdn.com`…) y como mucho 3 MB, para pasársela al modelo como imagen.
+- Tu nota se envía al modelo junto al texto. Si la escribes después, hay un botón «Volver a analizar con mi nota».
+- «Subir el vídeo»: el archivo va directo del móvil a Supabase Storage con una URL firmada de un solo uso (Vercel no deja pasar más de 4,5 MB por el servidor). Máx. 50 MB (límite del plan gratuito de Supabase). Hasta 14 MB va dentro de la petición a Gemini; más grande, por la Files API de Gemini, que se borra justo después. El archivo de Storage se borra al terminar (bien o mal).
+- El coste se estima con la duración que lee el propio móvil antes de subir (300 tokens/s, el mismo cálculo que YouTube) y no deja subir si no cabe en lo que queda del presupuesto del mes.
+- En la captura rápida, si lo que pegas es (casi solo) un enlace de vídeo, va directo a Favoritos; el texto que lo acompañe se guarda como tu nota.
+- Hasta 20 enlaces por pegada.

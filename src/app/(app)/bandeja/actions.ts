@@ -9,7 +9,7 @@ import { applyProposal, classifyInboxItem } from "@/lib/ai/inbox";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { sessionAiContext } from "@/lib/ai/session";
 import { addVideoByUrl, analyzeSoon } from "@/lib/favorites/service";
-import { classifyVideoUrl, firstUrl } from "@/lib/favorites/url";
+import { allUrls, classifyVideoUrl, firstUrl } from "@/lib/favorites/url";
 import { getContext } from "@/lib/context";
 import type { Json } from "@/lib/supabase/database.types";
 import { captureSchema } from "@/lib/notes/schemas";
@@ -38,6 +38,22 @@ export async function captureItem(input: z.input<typeof captureSchema>): Promise
 
   // La captura ya está a salvo. La IA clasifica DESPUÉS, sin bloquear; si falla, queda pendiente con reintento (cron).
   const newId = inserted?.[0]?.id;
+  // Un enlace de vídeo (TikTok, YouTube) pegado en la captura rápida va directo a Favoritos y se analiza solo.
+  const videoLinks = allUrls(p.data.text).map((u) => classifyVideoUrl(u)).filter((r) => r && r.source !== "other");
+  if (newId && videoLinks.length && p.data.text.replace(/https?:\/\/\S+/g, "").trim().length < 200) {
+    const a = { supabase, workspaceId, userId, timezone: "Europe/Madrid" };
+    let firstId: string | null = null;
+    for (const ref of videoLinks) {
+      const r = await addVideoByUrl(a, ref!.url).catch(() => null);
+      if (r?.ok && r.id) { firstId ??= r.id; if (!r.duplicate && !r.unavailable && hasGeminiKey()) analyzeSoon(userId, workspaceId, r.id); }
+    }
+    if (firstId) {
+      if (p.data.text.replace(/https?:\/\/\S+/g, "").trim()) await supabase.from("saved_videos").update({ notes: p.data.text.replace(/https?:\/\/\S+/g, "").trim().slice(0, 5000) }).eq("id", firstId).eq("workspace_id", workspaceId).is("notes", null);
+      await supabase.from("inbox_items").update({ status: "accepted", processed_at: new Date().toISOString(), proposal: { result: { kind: "video", id: firstId } } }).eq("id", newId).eq("workspace_id", workspaceId);
+      refresh();
+      return { ok: true };
+    }
+  }
   if (newId) {
     const ctx = await sessionAiContext().catch(() => null);
     if (ctx) after(async () => { try { await classifyInboxItem(ctx, newId); } catch (e) { console.error("[inbox] classify:", e instanceof Error ? e.message : e); } });

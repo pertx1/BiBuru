@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, ExternalLink, Loader2, Play, Star, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, EyeOff, ExternalLink, Loader2, Play, RotateCw, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { confirmAnalysis, deleteVideo, retryAnalysis, setVideoStatus, updateVideo, videoToNote, videoToTask } from "@/app/(app)/favoritos/actions";
@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { formatDuration } from "@/lib/favorites/url";
 import type { VideoCategory, VideoRow } from "@/lib/favorites/data";
 import { STATUS_LABELS } from "@/lib/favorites/labels";
+import { UploadFull } from "./upload-full";
 
 type Tag = { id: string; name: string; color: string };
 type Biz = { id: string; name: string };
@@ -23,8 +24,13 @@ function Stars({ n }: { n: number | null }) {
   return <span className="inline-flex items-center gap-0.5 text-amber-500" role="img" aria-label={`Utilidad ${n} de 5`}>{Array.from({ length: n }, (_, i) => <Star key={i} className="size-3.5 fill-current" aria-hidden />)}</span>;
 }
 
+/** En qué se basa el análisis (se ve en cada ficha). */
+export const BASIS_LABEL: Record<string, string> = { texto: "texto", texto_portada: "texto y portada", video_completo: "vídeo completo", enlace: "vídeo completo" };
+const basisOf = (v: VideoRow) => v.analysis_basis ?? (v.analysis_mode === "video" ? "video_completo" : "texto");
+
 function AnalysisBadge({ v }: { v: VideoRow }) {
-  if (v.analysis_status === "ready") return null;
+  if (v.unavailable && v.analysis_status !== "ready") return <Badge className="text-muted"><EyeOff className="size-3" aria-hidden /> No disponible</Badge>;
+  if (v.analysis_status === "ready") return <Badge className="text-good"><CheckCircle2 className="size-3" aria-hidden /> Listo · {BASIS_LABEL[basisOf(v)]}</Badge>;
   const map = {
     pending: <Badge className="text-muted"><Loader2 className="size-3 animate-spin" aria-hidden /> Pendiente de analizar</Badge>,
     analyzing: <Badge className="text-muted"><Loader2 className="size-3 animate-spin" aria-hidden /> Analizando…</Badge>,
@@ -46,7 +52,7 @@ export function VideoList({ videos, categories, businesses, tags, costs, openId 
     <>
       <ul className="grid gap-3 md:grid-cols-2">
         {videos.map((v) => (
-          <li key={v.id}>
+          <li key={v.id} className="flex flex-col gap-1">
             <button type="button" onClick={() => setOpen(v.id)} className="flex w-full gap-3 rounded-xl border border-border bg-surface p-3 text-left hover:bg-surface-2">
               <span className="relative block h-20 w-32 shrink-0 overflow-hidden rounded-lg bg-surface-2">
                 {v.thumbnail_url
@@ -67,11 +73,24 @@ export function VideoList({ videos, categories, businesses, tags, costs, openId 
                 </span>
               </span>
             </button>
+            {v.analysis_status === "error" && !v.unavailable && <RetryButton id={v.id} />}
           </li>
         ))}
       </ul>
       {current && <VideoSheet key={current.id} v={current} categories={categories} businesses={businesses} tags={tags[current.id] ?? []} cost={costs[current.id]} onClose={() => setOpen(null)} />}
     </>
+  );
+}
+
+/** Reintento con un toque desde la tarjeta. */
+function RetryButton({ id }: { id: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <button type="button" disabled={pending} onClick={() => start(async () => { await retryAnalysis(id); router.refresh(); })}
+      className="inline-flex min-h-11 items-center gap-1.5 self-end px-2 text-xs font-medium text-accent md:min-h-9">
+      <RotateCw className={pending ? "size-3.5 animate-spin" : "size-3.5"} aria-hidden /> Reintentar análisis
+    </button>
   );
 }
 
@@ -114,7 +133,7 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
           </div>
         )}
         {v.analysis_status === "error" && (
-          <div className="rounded-xl border border-danger/40 bg-danger/5 p-3"><p>{v.analysis_error ?? "No se pudo analizar."}</p><Button className="mt-2" variant="secondary" disabled={pending} onClick={() => run(() => retryAnalysis(v.id), "Reintentando…")}>Reintentar</Button></div>
+          <div className="rounded-xl border border-danger/40 bg-danger/5 p-3"><p>{v.analysis_error ?? "No se pudo analizar."}</p>{!v.unavailable && <Button className="mt-2" variant="secondary" disabled={pending} onClick={() => run(() => retryAnalysis(v.id), "Reintentando…")}>Reintentar</Button>}</div>
         )}
         {(v.analysis_status === "pending" || v.analysis_status === "analyzing") && <p className="text-muted">En la cola de análisis. {v.analysis_error ? `Último aviso: ${v.analysis_error}` : "Se hace solo en unos minutos."}</p>}
 
@@ -122,13 +141,15 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
           <section>
             <h4 className="mb-1 font-semibold">Resumen</h4>
             <p className="leading-relaxed">{v.summary}</p>
-            {v.analysis_mode !== "video" && <p className="mt-1 text-xs text-muted">Basado solo en el texto disponible (título, autor y descripción); la IA no ha visto el vídeo.</p>}
+            <p className="mt-1 text-xs text-muted">Análisis basado en: <strong>{BASIS_LABEL[basisOf(v)]}</strong>{basisOf(v) === "video_completo" ? "." : basisOf(v) === "texto_portada" ? " (descripción, hashtags, autor y portada; la IA no ha visto el vídeo)." : " (título, autor y descripción; la IA no ha visto el vídeo)."}</p>
           </section>
         )}
         {points.length > 0 && <section><h4 className="mb-1 font-semibold">Puntos clave</h4><ul className="list-disc space-y-1 pl-5">{points.map((p) => <li key={p}>{p}</li>)}</ul></section>}
         {actions.length > 0 && <section><h4 className="mb-1 font-semibold">Ideas para aplicar</h4><ul className="list-disc space-y-1 pl-5">{actions.map((p) => <li key={p}>{p}</li>)}</ul></section>}
         {v.business_reason && <section><h4 className="mb-1 font-semibold">Útil para tu negocio</h4><p>{v.business_reason}</p></section>}
         {tags.length > 0 && <div className="flex flex-wrap gap-1.5">{tags.map((t) => <Badge key={t.id} color={t.color}>{t.name}</Badge>)}</div>}
+
+        {v.source !== "youtube" && basisOf(v) !== "video_completo" && !v.upload_path && <UploadFull videoId={v.id} />}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-xs text-muted">Estado
@@ -150,6 +171,9 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
         <label className="flex flex-col gap-1 text-xs text-muted">Mis notas
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={() => notes !== (v.notes ?? "") && run(() => updateVideo(v.id, { notes: notes || null }))} rows={3} maxLength={5000} className="rounded-lg border border-border bg-surface p-2 text-base text-foreground md:text-sm" />
         </label>
+        {v.analysis_status === "ready" && notes.trim() && !v.unavailable && (
+          <Button variant="secondary" disabled={pending} onClick={() => run(async () => { if (notes !== (v.notes ?? "")) await updateVideo(v.id, { notes }); return retryAnalysis(v.id); }, "Reanalizando con tu nota…")}>Volver a analizar con mi nota</Button>
+        )}
 
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" disabled={pending} onClick={() => run(() => videoToTask(v.id), "Tarea creada ✔")}><Check className="size-4" aria-hidden /> Convertir en tarea</Button>

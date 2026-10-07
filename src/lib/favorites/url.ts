@@ -66,3 +66,27 @@ export function formatDuration(sec: number | null | undefined): string {
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
 }
+
+/** Todos los enlaces de un texto pegado (uno o varios, separados por espacios o saltos), sin repetir y como mucho `max`. */
+export function allUrls(text: string, max = 20): string[] {
+  const out: string[] = [];
+  for (const m of text.matchAll(/https?:\/\/[^\s<>"')]+/gi)) {
+    const u = m[0].replace(/[.,;:!?]+$/, "");
+    if (!out.includes(u)) out.push(u);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/** Hashtags de una descripción (TikTok los pone en el texto): «#ventas #emprender» → ["ventas", "emprender"]. */
+export function hashtags(text: string | null | undefined, max = 15): string[] {
+  const out: string[] = [];
+  for (const m of (text ?? "").matchAll(/#([\p{L}\p{N}_]{2,40})/gu)) { const t = m[1].toLowerCase(); if (!out.includes(t)) out.push(t); }
+  return out.slice(0, max);
+}
+
+/** Portadas de TikTok: solo se descargan de sus servidores de imágenes (anti-SSRF). */
+export function isTiktokImageHost(raw: string): boolean {
+  const u = parseHttpUrl(raw);
+  return !!u && u.protocol === "https:" && /(^|\.)(tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|ibytedtos\.com|byteimg\.com)$/i.test(u.hostname);
+}

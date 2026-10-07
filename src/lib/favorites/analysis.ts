@@ -33,14 +33,16 @@ export function parseVideoAnalysis(text: string): VideoAnalysis | null {
   }
 }
 
-export type AnalysisCtx = { businesses: { name: string; description: string | null }[]; categories: string[]; textOnly: boolean; light: boolean };
+export type AnalysisCtx = { businesses: { name: string; description: string | null }[]; categories: string[]; textOnly: boolean; light: boolean; cover?: boolean };
 
 export function buildVideoPrompt(c: AnalysisCtx): string {
   const biz = c.businesses.length ? c.businesses.map((b) => `- ${b.name}${b.description ? `: ${b.description}` : ""}`).join("\n") : "(sin negocios)";
   const cats = c.categories.length ? c.categories.join(", ") : "(ninguna todavía)";
   return `Eres el analista de vídeos guardados de BiBuru, el panel personal de un emprendedor en España. Resume el contenido para que la persona decida si le interesa y qué hacer con él. Responde solo con el JSON pedido, en español de España.
 
-${c.textOnly ? "Solo dispones del título, el autor y la descripción (no se ve el vídeo): di claramente en el resumen que está basado solo en ese texto y no inventes contenido que no conste.\n" : ""}${c.light ? "Haz un análisis ligero: resumen de 2-3 frases, 3 puntos clave como máximo.\n" : "Resumen de 3 a 5 frases.\n"}
+${c.textOnly ? (c.cover
+    ? "Solo dispones de la descripción, los hashtags, el autor y la imagen de portada (no se ve el vídeo): usa la portada (texto que aparezca, producto, escena) y di claramente en el resumen que está basado en el texto y la portada; no inventes lo que no conste.\n"
+    : "Solo dispones del título, el autor y la descripción (no se ve el vídeo): di claramente en el resumen que está basado solo en ese texto y no inventes contenido que no conste.\n") : ""}${c.light ? "Haz un análisis ligero: resumen de 2-3 frases, 3 puntos clave como máximo.\n" : "Resumen de 3 a 5 frases.\n"}
 - key_points: puntos clave concretos (frases cortas).
 - category: UNA categoría. Reutiliza una existente si encaja; solo crea una nueva si ninguna sirve. Existentes: ${cats}.
 - tags: hasta 6 etiquetas cortas en minúsculas.
