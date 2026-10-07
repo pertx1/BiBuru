@@ -282,7 +282,7 @@ Sin la **auditoría** (una revisión que hace TikTok a la app), todo lo que una 
 
 - **«client_key»** o **«redirect_uri»** no válidos: comprueba que copiaste las llaves **del Sandbox** y la dirección de F1.8.
 - **«Falta conectar»**: falta una variable o el **Redeploy**.
-- No llega el borrador: en **Redes → Publicaciones**, abre la publicación; si pone **Error**, pulsa **Reintentar**. Si TikTok no deja subir en tu cuenta, la app pasará a **avisarte** (publicación asistida).
+- No llega el borrador: en **Redes → Contenido**, abre la publicación; si pone **Error**, pulsa **Reintentar**. Si TikTok no deja subir en tu cuenta, la app pasará a **avisarte** (publicación asistida).
 
 ---
 
