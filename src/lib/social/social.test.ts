@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { igAuthUrl, igContainerStatus, igCreateContainer, igDayInsights, igExchangeCode, IgError, igProfile, igPublish, igRecentMedia, igRefresh } from "./instagram";
-import { bestOfWeek, bestTimes, composeCaption, dailySeries, nextRetry, pctChange, periodTotals, rankMedia, tokenState, type MediaRow } from "./stats";
+import { aggregateDaily, isStale, socialAlerts, bestOfWeek, bestTimes, composeCaption, followerDelta, dailySeries, nextRetry, pctChange, periodTotals, rankMedia, tokenState, type MediaRow } from "./stats";
 import { overallStatus } from "./service";
 import { tiktokModeFor } from "./tiktok-mode";
 import { postsToItems } from "@/lib/tasks/calendar";
@@ -152,5 +152,42 @@ describe("programación", () => {
   it("calendario de contenido en hora de Madrid", () => {
     const [i] = postsToItems([{ id: "p", title: null, caption: "Lanzamiento", scheduled_at: "2026-10-07T22:30:00Z", status: "programada", business_id: null }]);
     expect(i).toMatchObject({ kind: "post", date: "2026-10-08", startTime: "00:30", title: "📣 Lanzamiento", done: false });
+  });
+});
+
+describe("Redes: suma de cuentas y variación de seguidores", () => {
+  it("suma día a día y deja null solo si ninguna cuenta tiene el dato", () => {
+    const r = aggregateDaily([
+      { day: "2026-10-01", followers: 100, reach: 10, views: null, interactions: 1 },
+      { day: "2026-10-01", followers: 50, reach: null, views: null, interactions: 2 },
+      { day: "2026-10-02", followers: 101, reach: 5, views: 7, interactions: null },
+    ]);
+    expect(r).toEqual([
+      { day: "2026-10-01", followers: 150, reach: 10, views: null, interactions: 3 },
+      { day: "2026-10-02", followers: 101, reach: 5, views: 7, interactions: null },
+    ]);
+  });
+  it("+N hoy y +N esta semana frente a la foto más reciente de ese día o anterior", () => {
+    const d = [{ day: "2026-09-30", followers: 900 }, { day: "2026-10-06", followers: 988 }, { day: "2026-10-07", followers: null }];
+    expect(followerDelta(1000, d, "2026-10-06")).toBe(12);
+    expect(followerDelta(1000, d, "2026-09-30")).toBe(100);
+    expect(followerDelta(1000, d, "2026-09-01")).toBeNull();
+    expect(followerDelta(null, d, "2026-10-06")).toBeNull();
+  });
+});
+
+describe("Redes: avisos opcionales y frescura", () => {
+  const at = new Date("2026-10-07T12:00:00Z");
+  it("cifra redonda, caída brusca y publicación muy por encima de la media", () => {
+    const media = [1, 2, 3, 4, 5].map((i) => ({ id: `m${i}`, views: 100, posted_at: "2026-09-20T10:00:00Z" }));
+    const a = socialAlerts({ accountId: "A", username: "akerra", before: 990, now: 1003, media: [...media, { id: "top", views: 900, posted_at: "2026-10-06T10:00:00Z" }], at });
+    expect(a.map((x) => x.key)).toEqual(["social:hito:A:1000", "social:top:A:top"]);
+    expect(socialAlerts({ accountId: "A", username: null, before: 1000, now: 970, media: [], at })[0].key).toBe("social:caida:A:2026-10-07");
+    expect(socialAlerts({ accountId: "A", username: null, before: 1000, now: 995, media: [], at })).toEqual([]);
+  });
+  it("más de 15 minutos sin actualizar = refrescar", () => {
+    expect(isStale(null, at)).toBe(true);
+    expect(isStale("2026-10-07T11:50:00Z", at)).toBe(false);
+    expect(isStale("2026-10-07T11:40:00Z", at)).toBe(true);
   });
 });
