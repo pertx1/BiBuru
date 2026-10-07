@@ -33,7 +33,7 @@ export default async function CorreoPage({ searchParams }: { searchParams: Promi
               <p className="max-w-sm text-sm text-muted">La app aún no está registrada en Microsoft. Sigue el paso «Correo de Outlook» de la guía <code>docs/QUE-TENGO-QUE-HACER.pdf</code> y vuelve aquí.</p>
             </>
           )}
-          <Link href="/ajustes#correo" className="text-sm text-accent">Ajustes de correo</Link>
+          <Link href="/ajustes#correo" className="inline-flex min-h-11 items-center text-sm text-accent">Ajustes de correo</Link>
         </div>
       ) : (
         <MailInbox

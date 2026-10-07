@@ -38,7 +38,7 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
                 {warn && (
                   <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                     {a.status === "expired" ? "La conexión ha caducado." : a.status === "error" ? a.last_error ?? "Error de conexión." : `La conexión caduca en ${left} días; se renueva sola si la app sigue en uso.`}
-                    <a href={`/api/${a.platform}/connect`} className="ml-1 underline">Reconectar</a></p>
+                    <a href={`/api/${a.platform}/connect`} className="-my-3 ml-1 inline-flex min-h-11 items-center underline">Reconectar</a></p>
                 )}
                 {a.platform === "tiktok" && <p className="text-xs text-muted">{audited ? "App auditada por TikTok: publicación directa y pública." : "App sin auditar: lo que se publique por API quedaría privado, así que se envía como borrador a tu TikTok (lo publicas tú) o te aviso a la hora."}</p>}
                 <div className="flex flex-wrap items-center gap-2">

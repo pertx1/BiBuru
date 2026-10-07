@@ -16,6 +16,7 @@ export const ROUTES = [
   ["pedidos", `/negocios/${BIZ}/pedidos`], ["deudas", `/negocios/${BIZ}/pedidos?vista=deudas`], ["gastos", `/negocios/${BIZ}/gastos`],
   ["ingresos", `/negocios/${BIZ}/ingresos`], ["productos", `/negocios/${BIZ}/productos`], ["stock", `/negocios/${BIZ}/stock`],
   ["estadisticas", `/negocios/${BIZ}/estadisticas`], ["negocio-tareas", `/negocios/${BIZ}/tareas`], ["negocio-objetivos", `/negocios/${BIZ}/objetivos`],
+  ["correo", "/correo"], ["redes", "/redes"], ["redes-publicaciones", "/redes?vista=publicaciones"],
   ["produccion", `/negocios/${BIZ}/produccion`], ["bolsa", `/negocios/${BIZ}/produccion/bolsa`], ["reglas", `/negocios/${BIZ}/produccion/reglas`], ["facturas", `/negocios/${BIZ}/produccion/facturas`],
 ];
 const WIDTHS = (process.env.WIDTHS ?? "375,390,430").split(",").map(Number);
