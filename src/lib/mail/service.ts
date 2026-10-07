@@ -65,6 +65,6 @@ export async function syncDueMailAccounts(admin: AdminClient, o: { limit?: numbe
   if (o.userId) q = q.eq("user_id", o.userId);
   const { data } = await q;
   let ok = 0, failed = 0;
-  for (const acc of data ?? []) ((await syncMailAccount(admin, acc)).ok ? ok++ : failed++);
+  for (const acc of data ?? []) { if ((await syncMailAccount(admin, acc)).ok) ok++; else failed++; }
   return { accounts: data?.length ?? 0, ok, failed };
 }
