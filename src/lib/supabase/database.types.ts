@@ -469,6 +469,56 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"mail_accounts": {
+                  Row: {
+                    "business_id": string | null,"created_at": string,"delta_link": string | null,"display_name": string | null,"email": string,"id": string,"last_error": string | null,"last_sync_at": string | null,"notify_new": boolean,"provider": string,"refresh_token_enc": string,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "business_id"?: string | null,"created_at"?: string,"delta_link"?: string | null,"display_name"?: string | null,"email": string,"id"?: string,"last_error"?: string | null,"last_sync_at"?: string | null,"notify_new"?: boolean,"provider"?: string,"refresh_token_enc": string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "business_id"?: string | null,"created_at"?: string,"delta_link"?: string | null,"display_name"?: string | null,"email"?: string,"id"?: string,"last_error"?: string | null,"last_sync_at"?: string | null,"notify_new"?: boolean,"provider"?: string,"refresh_token_enc"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "mail_accounts_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "mail_accounts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"mail_messages": {
+                  Row: {
+                    "account_id": string,"created_at": string,"from_address": string | null,"from_name": string | null,"fts": unknown,"graph_id": string,"has_attachments": boolean,"id": string,"is_read": boolean,"notified_at": string | null,"preview": string | null,"received_at": string,"subject": string | null,"updated_at": string,"user_id": string,"web_link": string | null,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id": string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at": string,"subject"?: string | null,"updated_at"?: string,"user_id": string,"web_link"?: string | null,"workspace_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id"?: string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at"?: string,"subject"?: string | null,"updated_at"?: string,"user_id"?: string,"web_link"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "mail_messages_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "mail_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "mail_messages_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"news_digests": {
                   Row: {
                     "content": NonNullable<Json>,"cost_micros": number,"created_at": string,"day": string,"id": string,"manual_runs": number,"notified_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
@@ -740,13 +790,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {

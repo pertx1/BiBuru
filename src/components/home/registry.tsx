@@ -11,6 +11,7 @@ import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./wi
 import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
 import { PendingReceivablesWidget } from "./widgets/receivables";
 import { StockMissingWidget } from "./widgets/stock";
+import { MailUnreadWidget } from "./widgets/mail";
 import type { WidgetProps } from "./types";
 
 /**
@@ -52,6 +53,7 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "news-today": NewsTodayWidget,
   "news-idea": NewsIdeaWidget,
   "news-business": NewsBusinessWidget,
+  "mail-unread": MailUnreadWidget,
   "ai-ask": AiAskWidget,
   "ai-brief": AiBriefWidget,
   "ai-usage": AiUsageWidget,

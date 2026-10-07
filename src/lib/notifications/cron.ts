@@ -2,7 +2,7 @@ import "server-only";
 import { addDays, nowLocal } from "@/lib/dates";
 import type { AdminClient } from "@/lib/supabase/admin";
 import {
-  eventOccurrences, inQuietHours, planDailyDigest, planNewsPush, planEventReminders, planOverdueAlert, planTaskReminders, planWeeklyReview, type Prefs, type Push,
+  eventOccurrences, inQuietHours, planDailyDigest, planMailPushes, planNewsPush, planEventReminders, planOverdueAlert, planTaskReminders, planWeeklyReview, type Prefs, type Push,
 } from "./planning";
 import type { PushPayload, PushSub, Sender } from "./push";
 import { notificationText, type DigestContent, type DigestStatus } from "@/lib/news/digest";
@@ -85,6 +85,17 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
       }
     }
 
+    // Correo nuevo: solo cuentas con el aviso activado, mensajes sin leer de las últimas 2 h aún no avisados.
+    const { data: mailAccs } = await admin.from("mail_accounts").select("id, email").eq("user_id", p.user_id).eq("notify_new", true).eq("status", "ok");
+    let mailIds: string[] = [];
+    if (mailAccs?.length) {
+      const { data: fresh } = await admin.from("mail_messages").select("id, account_id, from_name, from_address, subject").in("account_id", mailAccs.map((a) => a.id))
+        .eq("is_read", false).is("notified_at", null).gte("received_at", new Date(now.getTime() - 2 * 3600_000).toISOString()).order("received_at", { ascending: false }).limit(20);
+      const email = new Map(mailAccs.map((a) => [a.id, a.email]));
+      mailIds = (fresh ?? []).map((m) => m.id);
+      pushes.push(...planMailPushes((fresh ?? []).map((m) => ({ id: m.id, from: m.from_name || m.from_address, subject: m.subject, account: email.get(m.account_id) ?? "" }))));
+    }
+
     // ------- envío (con reclamación previa)
     const deliver = async (payload: PushPayload): Promise<boolean> => {
       const results = await Promise.all(userSubs.map(async (s) => ({ s, r: await send(s, payload) })));
@@ -101,6 +112,7 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
         .upsert({ user_id: p.user_id, dedupe_key: n.key, kind: n.kind }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }).select("id");
       if (cerr || !claimed || claimed.length === 0) continue; // ya enviado (o error: se reintenta en el siguiente minuto)
       const ok = await deliver({ title: n.title, body: n.body, url: n.url, kind: n.kind, refId: n.refId, tag: n.key, image: n.image ?? undefined });
+      if (ok && n.kind === "mail" && mailIds.length) { await admin.from("mail_messages").update({ notified_at: now.toISOString() }).in("id", mailIds); mailIds = []; }
       if (ok && n.kind === "news" && newsDigestId) await admin.from("news_digests").update({ notified_at: now.toISOString() }).eq("id", newsDigestId);
       if (ok) summary.sent++;
       else { summary.failed++; await admin.from("notification_log").delete().eq("id", claimed[0].id); }

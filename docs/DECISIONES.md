@@ -47,3 +47,13 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - El coste se estima con la duración que lee el propio móvil antes de subir (300 tokens/s, el mismo cálculo que YouTube) y no deja subir si no cabe en lo que queda del presupuesto del mes.
 - En la captura rápida, si lo que pegas es (casi solo) un enlace de vídeo, va directo a Favoritos; el texto que lo acompañe se guarda como tu nota.
 - Hasta 20 enlaces por pegada.
+
+## 5. Correo de Outlook
+- Microsoft Graph con el punto `common` (sirven cuentas personales y de empresa) y solo `offline_access User.Read Mail.Read`. Con `Mail.Read` BiBuru no puede enviar, borrar ni marcar como leído: «leído» refleja lo que hagas en Outlook.
+- Las cuentas son personales (como la de Google): solo las ve quien las conecta, aunque se asignen a un negocio. El token va cifrado (AES-GCM con `TOKEN_ENCRYPTION_KEY`) y la app no puede leerlo ni el enlace de sincronización.
+- Primera sincronización: últimos 30 días de la Bandeja de entrada (no todo el buzón), en páginas de 50 y como mucho 250 por pasada; después solo cambios (delta) cada 10 min.
+- Se guarda remitente, asunto, fecha, vista previa (300 caracteres), leído y si tiene adjuntos. El cuerpo y los adjuntos se piden al abrir y no se guardan.
+- El HTML se limpia en el servidor y se muestra en un iframe aislado sin scripts; las imágenes remotas van bloqueadas hasta pulsar «Mostrar imágenes» (para que no sepan que lo has abierto).
+- «Responder en Outlook» abre el mensaje en Outlook (el enlace que da Microsoft).
+- La IA solo ve un correo si activas «Usar la IA con mis correos» y pulsas «Resumir con IA» en ese correo (nunca automáticamente).
+- Aviso de correo nuevo apagado por defecto y por cuenta; respeta tus horas de silencio; si llegan más de 3 a la vez, uno agrupado.
