@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 type Item = { id: string; name: string; variant: string; product_id: string | null; match_color: string | null; match_size: string | null; quantity: number; min_quantity: number };
 type Move = { id: string; label: string; kind: string; delta: number; reason: string | null; moved_on: string };
 
-const tone = (l: StockLine) => (l.missing > 0 ? "text-bad font-semibold" : l.available <= l.min ? "text-amber-600 dark:text-amber-400 font-semibold" : "");
+const tone = (l: StockLine) => (l.needed ? "text-bad font-semibold" : l.available <= l.min ? "text-amber-600 dark:text-amber-400 font-semibold" : "");
+const lack = (l: StockLine) => (l.missing > 0 ? `faltan ${l.missing}` : "a 0");
 
 /** Pantalla de Stock: lo que falta arriba, inventario por grupos con ajuste rápido y últimos movimientos. */
 export function StockScreen({ businessId, lines, items, production, products, moves, taskByKey }: {
@@ -45,13 +46,13 @@ export function StockScreen({ businessId, lines, items, production, products, mo
       ) : (
         <section className="rounded-xl border border-bad/30 bg-bad/5 p-4">
           <h2 className="flex items-center gap-2 font-semibold text-bad"><AlertTriangle className="size-4" aria-hidden /> Falta stock</h2>
-          <p className="mb-2 text-xs text-muted">Cada artículo tiene su tarea «Reponer» en Tareas (se actualiza y se completa sola).</p>
+          <p className="mb-2 text-xs text-muted">Cada artículo tiene su tarea «Pedir …» en Tareas, para hoy (se actualiza y se completa sola cuando hay stock).</p>
           <ul className="divide-y divide-border">
             {missing.map((l) => (
               <li key={l.key} className="flex min-h-12 items-center gap-2 py-1.5 text-sm">
                 <button type="button" onClick={() => setTarget(l)} className="min-w-0 flex-1 truncate text-left font-medium">{l.label}</button>
                 <span className="shrink-0 text-xs text-muted">{l.reserved > 0 ? `${l.reserved} en pedidos` : `mín. ${l.min}`}</span>
-                <span className="w-20 shrink-0 text-right font-semibold tabular-nums text-bad">faltan {l.missing}</span>
+                <span className="w-20 shrink-0 text-right font-semibold tabular-nums text-bad">{lack(l)}</span>
                 {taskByKey[l.key] && <Link href={`/tareas?abrir=${taskByKey[l.key]}`} className="inline-flex min-h-11 shrink-0 items-center px-1 text-xs font-medium text-accent">Tarea</Link>}
               </li>
             ))}
@@ -162,7 +163,7 @@ function AdjustForm({ line, busy, error, onAdjust, onMin, onEdit }: {
     <div className="flex flex-col gap-4">
       <div className="text-sm">
         <p className="font-semibold">{line.label}</p>
-        <p className="text-muted">Tienes {line.base} · {line.reserved} reservado en pedidos · disponible <strong className={tone(line)}>{line.available}</strong>{line.missing > 0 && <> · <span className="text-bad">faltan {line.missing}</span></>}</p>
+        <p className="text-muted">Tienes {line.base} · {line.reserved} reservado en pedidos · disponible <strong className={tone(line)}>{line.available}</strong>{line.needed && <> · <span className="text-bad">{lack(line)}</span></>}</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Unidades" htmlFor="adj-n"><Input id="adj-n" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>

@@ -32,21 +32,27 @@ await page.locator('input[inputmode="decimal"]').first().fill("30");
 await page.getByRole("button", { name: "Guardar pedido" }).click();
 await page.waitForURL(/nuevo=/);
 
-await page.goto(`${base}/tareas?v=todas`, { waitUntil: "networkidle" });
-const task = page.getByText(`Reponer: ${name}, faltan 4`);
-ok(await task.isVisible(), "tarea «Reponer … faltan 4» en Tareas");
+// Como en BATU: tarea «Pedir …» para HOY (sale en «Hoy») con la cantidad en la nota.
+await page.goto(`${base}/tareas`, { waitUntil: "networkidle" });
+const task = page.getByText(`Pedir ${name}`, { exact: true });
+ok(await task.isVisible(), "tarea «Pedir …» en Tareas → Hoy");
 ok(await page.locator("li", { has: task }).getByText("Stock", { exact: true }).isVisible(), "con la etiqueta Stock");
 
-// Completar: pregunta unidades; entran 4 → ya no falta → no se abre otra.
+// Se tacha como cualquier tarea; mientras siga faltando, no vuelve a salir.
 await page.locator("li", { has: task }).locator('input[type="checkbox"]').click();
-ok(await page.getByText("¿Cuántas unidades han entrado?").isVisible(), "pregunta cuántas unidades han entrado");
-await page.getByLabel("Unidades que han entrado").fill("4");
-await page.getByRole("button", { name: "Registrar entrada y completar" }).click();
-await page.waitForTimeout(2000);
-await page.goto(`${base}/tareas?v=todas`, { waitUntil: "networkidle" });
-ok(!(await page.getByText(`Reponer: ${name}`).count()), "la tarea se cierra y no vuelve");
+await page.getByText("Hecha ✔").last().waitFor();
+ok(true, "se tacha como cualquier tarea");
+await page.goto(`${base}/tareas`, { waitUntil: "networkidle" });
+ok(!(await page.getByText(`Pedir ${name}`, { exact: true }).count()), "tachada y aún faltando: no vuelve a salir");
 
+// Apuntar la entrada desde Stock: ya hay stock → la clave se suelta.
 await page.goto(`${base}/negocios/${biz}/stock`, { waitUntil: "networkidle" });
-ok(await page.getByText("Reposición (tarea completada)").first().isVisible(), "la entrada queda en movimientos");
+await page.getByRole("button", { name }).first().click();
+await page.locator("#adj-n").fill("4");
+await page.getByRole("button", { name: "Entrada" }).click();
+await page.waitForTimeout(1500);
+ok(await page.getByText("No falta nada").isVisible(), "con la entrada ya no falta nada");
+await page.goto(`${base}/negocios/${biz}/stock`, { waitUntil: "networkidle" });
+ok(await page.getByText("+4").first().isVisible(), "la entrada queda en movimientos");
 ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "sin scroll horizontal en móvil");
 await browser.close();

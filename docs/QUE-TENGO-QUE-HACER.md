@@ -19,7 +19,7 @@ Hola. Esta noche he trabajado en BiBuru mientras dormías. Aquí tienes **todo l
 | Función | Estado | En una frase |
 |---|---|---|
 | 1. Pedidos: cobros, «Me deben», filtros y botón «Nuevo pedido» | **Hecha** | Cada pedido tiene estado de pago, puedes apuntar cobros, ver quién te debe y filtrar como quieras. |
-| 2. Stock que falta, en Tareas | **Hecha** | Si falta algo para tus pedidos o baja del mínimo, aparece solo una tarea «Reponer: …». |
+| 2. Stock que falta, en Tareas | **Hecha** | Si algo se queda a 0 (o falta para tus pedidos), aparece sola una tarea «Pedir …» para hoy, como en BATU. |
 | 3. Que la app vaya mejor en el móvil | **Hecha** | Botones más grandes, sin zoom al escribir, deslizar tareas y tirar hacia abajo para actualizar. |
 | 4. Favoritos de TikTok pegando el enlace | **Hecha** | Pegas uno o varios enlaces y se analizan solos con la descripción y la portada; puedes subir el vídeo para un análisis completo. |
 | 5. Correo de Outlook | **Hecha a medias** | Todo está construido, pero **falta conectar**: tienes que registrar la app en Microsoft (bloque D). |
@@ -115,7 +115,7 @@ Así la app sabe qué te falta y crea las tareas **Reponer** solas.
 3. Si quieres, pon **Variante** (por ejemplo **M**), **Tienes ahora** y **Mínimo**.
 4. Pulsa **Guardar**.
 
-**Sabrás que ha salido bien cuando…** arriba ponga **No falta nada** o, si falta algo, en **Tareas** aparezca **Reponer: …, faltan N** con la etiqueta **Stock**.
+**Sabrás que ha salido bien cuando…** arriba ponga **No falta nada** o, si falta algo, en **Tareas → Hoy** aparezca **Pedir …** con la etiqueta **Stock**.
 
 **Si te sale este error, haz esto…** «Ya existe un artículo con ese nombre y variante»: búscalo en la lista y edítalo en vez de crear otro.
 
@@ -325,8 +325,8 @@ Cada una tiene opciones, lo que te recomiendo y qué pasa si no haces nada.
 4. **¿Pido la auditoría de TikTok?** (bloque F4)
    - Recomiendo: **No por ahora**. El borrador ya te deja publicar en público con un toque.
    - Si no haces nada: se sigue usando borrador o aviso.
-5. **Margen de las tareas de Stock**: la fecha límite es el pedido más antiguo que lo espera **+ 3 días**.
-   - Si quieres otro margen, dímelo y lo cambio.
+5. **Tareas de Stock**: salen para hoy cuando algo está a 0 o falta (como en BATU).
+   - Si prefieres que solo salgan al bajar de un mínimo, ponle mínimo a cada artículo o dímelo y lo cambio.
 6. **Espacio para archivos de Redes**: límite de **500 MB** y borrado **3 días** después de publicar.
    - Si no haces nada: así se queda (cabe en el plan gratuito de Supabase).
 
@@ -357,14 +357,15 @@ Abre BiBuru desde el icono de tu pantalla de inicio.
 4. Añade un producto y precio y pulsa **Guardar pedido**: el pedido sale destacado en la lista.
 5. Pulsa **Añadir cobro**, pon la mitad y guarda: sale **Pago parcial**.
 6. Pulsa **Marcar como pagado**: sale **Pagado**.
-7. Pulsa **Filtros**, elige **Este mes** y **Aplicar**: salen las etiquetas y los totales.
-8. Pulsa el cuadro **Me deben** → **Quién me debe**: ves la lista y los gráficos.
+7. En el selector de pago elige **Pendiente**: vuelve a no pagado (con **Deshacer**).
+8. Pulsa **Filtros**, elige **Este mes** y **Aplicar**: salen las etiquetas y los totales.
+9. Pulsa el cuadro **Me deben** → **Quién me debe**: ves la lista y los gráficos.
 
 **Stock**
 
-1. **Negocios → Akerra → Stock** → **Añadir artículo**, mínimo **2**, tienes **1**.
-2. En **Tareas** aparece **Reponer: …, faltan 1**.
-3. Marca la tarea: te pregunta **¿Cuántas unidades han entrado?**. Pon **1** y pulsa **Registrar entrada y completar**.
+1. **Negocios → Akerra → Stock** → **Añadir artículo** con **Tienes ahora 0**.
+2. En **Tareas → Hoy** aparece **Pedir …** (en la nota: «Se ha quedado a 0»).
+3. Táchala: se completa como cualquier tarea y no vuelve a salir mientras siga a 0. Si quieres, pulsa **Apuntar unidades** en el aviso.
 
 **Móvil**
 
@@ -392,7 +393,7 @@ Están todas, con su porqué, en **docs/DECISIONES.md**. Las más importantes:
 - **Marcar como pagado** apunta un cobro por lo que falte, con fecha de hoy y método **Otro**.
 - Colores: **cobrado en azul** y **pendiente en rojo** (el verde/ámbar no se distingue bien con daltonismo).
 - El stock de Producción ya existía: lo he reutilizado y le he añadido **mínimo**; para lo demás hay **Materiales y productos**.
-- Las tareas de Stock tienen prioridad media y vencen con el pedido más antiguo **+ 3 días**.
+- Las tareas de Stock funcionan como en BATU: «Pedir …», para hoy, prioridad alta, no se repiten si las tachas y se completan solas cuando hay stock.
 - El correo guarda solo remitente, asunto, fecha y un extracto; el cuerpo se pide al abrirlo. Las imágenes van bloqueadas hasta que pulses **Mostrar imágenes**.
 - Las cuentas de Instagram y TikTok son del espacio (las ve quien lo comparta contigo); las llaves no las puede leer nadie desde la app.
 - Sin auditoría de TikTok uso **borrador** o **aviso**, nunca algo que quedaría privado sin decírtelo.

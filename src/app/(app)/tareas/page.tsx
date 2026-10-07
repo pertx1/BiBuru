@@ -7,6 +7,7 @@ import { listBusinesses } from "@/lib/data";
 import { z } from "zod";
 import { ReminderList } from "@/components/notifications/reminder-list";
 import { nowLocal } from "@/lib/dates";
+import { syncAllStockTasks } from "@/lib/stock/service";
 import { getNow, getTask, listGoals, listReminders, listTasks, TASK_VIEWS, type TaskView } from "@/lib/tasks/data";
 import { groupTasks } from "@/lib/tasks/groups";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ const EMPTY: Record<TaskView, string> = {
 export default async function TareasPage({ searchParams }: { searchParams: Promise<{ v?: string; abrir?: string }> }) {
   const { v, abrir } = await searchParams;
   const view = (TASK_VIEWS.find((x) => x === v) ?? "hoy") as TaskView;
+  // Tareas «Pedir …» de Stock al día antes de enseñar la lista (BATU lo hacía cada hora con Profity).
+  await syncAllStockTasks();
   const [now, tasks, businesses, goals, openTask, reminders] = await Promise.all([getNow(), listTasks(view), listBusinesses(), listGoals({ status: "active" }), abrir && z.uuid().safeParse(abrir).success ? getTask(abrir) : Promise.resolve(null), view === "hoy" ? listReminders() : Promise.resolve([])]);
   const biz = new Map(businesses.map((b) => [b.id, b.name]));
   const bizOptions = businesses.map((b) => ({ id: b.id, name: b.name, color: b.color }));

@@ -1,48 +1,51 @@
 import { describe, expect, it } from "vitest";
-import { dueFor, lineMatches, planTasks, reserveGeneric, shortages, taskTitle, withMissing, type StockEntry } from "./shortage";
+import { lineMatches, planTasks, reserveGeneric, shortages, taskNotes, taskTitle, withMissing, type StockEntry, type StockTask } from "./shortage";
 
 const e = (p: Partial<StockEntry>): StockEntry => ({ key: "k", group: "articulos", label: "Camiseta negra M", base: 0, min: 0, reserved: 0, oldestOrder: null, ...p });
 
-describe("lo que falta", () => {
-  it("pedidos sin cubrir y bajo el mínimo", () => {
-    expect(withMissing(e({ base: 4, reserved: 10 }))).toMatchObject({ available: -6, missing: 6 });
-    expect(withMissing(e({ base: 4, reserved: 1, min: 5 }))).toMatchObject({ available: 3, missing: 2 });
-    expect(withMissing(e({ base: 10, reserved: 2, min: 5 }))).toMatchObject({ available: 8, missing: 0 });
-    expect(withMissing(e({ base: 0 })).missing).toBe(0); // a 0 sin pedidos ni mínimo no falta nada
+describe("qué hay que pedir (como «Pedir ya» y BATU)", () => {
+  it("a 0 o menos, o bajo el mínimo", () => {
+    expect(withMissing(e({ base: 4, reserved: 10 }))).toMatchObject({ available: -6, missing: 6, needed: true });
+    expect(withMissing(e({ base: 0 }))).toMatchObject({ available: 0, missing: 0, needed: true }); // se ha quedado a 0
+    expect(withMissing(e({ base: 4, reserved: 1, min: 5 }))).toMatchObject({ available: 3, missing: 2, needed: true });
+    expect(withMissing(e({ base: 10, reserved: 2, min: 5 }))).toMatchObject({ available: 8, needed: false });
+    expect(withMissing(e({ base: 1 }))).toMatchObject({ needed: false });
   });
-  it("primero lo que bloquea pedidos y el pedido más antiguo", () => {
-    const r = shortages([e({ key: "min", base: 1, min: 3 }), e({ key: "new", base: 0, reserved: 2, oldestOrder: "2026-10-05" }), e({ key: "old", base: 0, reserved: 1, oldestOrder: "2026-10-01" })]);
-    expect(r.map((x) => x.key)).toEqual(["old", "new", "min"]);
+  it("lo más negativo primero", () => {
+    expect(shortages([e({ key: "cero", base: 0 }), e({ key: "neg", base: 0, reserved: 3 }), e({ key: "ok", base: 2 })]).map((x) => x.key)).toEqual(["neg", "cero"]);
   });
-  it("título y fecha límite", () => {
-    expect(taskTitle({ label: "Camiseta negra M", missing: 6 })).toBe("Reponer: Camiseta negra M, faltan 6");
-    expect(dueFor({ oldestOrder: "2026-10-05", reserved: 3, base: 0 }, "2026-10-06")).toBe("2026-10-08");
-    expect(dueFor({ oldestOrder: "2026-09-01", reserved: 3, base: 0 }, "2026-10-06")).toBe("2026-10-06");
-    expect(dueFor({ oldestOrder: null, reserved: 0, base: 0 }, "2026-10-06")).toBe("2026-10-13");
+  it("título fijo y nota con la cantidad", () => {
+    expect(taskTitle({ label: "Camiseta negra M" })).toBe("Pedir Camiseta negra M");
+    expect(taskNotes(withMissing(e({ base: 1, reserved: 7 })))).toMatch(/^Faltan 6 para cubrir los pedidos pendientes\./);
+    expect(taskNotes(withMissing(e({ base: 0 })))).toMatch(/^Se ha quedado a 0\./);
+    expect(taskNotes(withMissing(e({ base: 2, min: 5 })))).toMatch(/^Quedan 2 y el mínimo es 5\. Para llegar al mínimo \(5\) pide 3\./);
   });
 });
 
-describe("tareas de reposición", () => {
-  const today = "2026-10-06";
-  const lines = shortages([e({ key: "a", base: 0, reserved: 6, oldestOrder: "2026-10-05" }), e({ key: "b", label: "Bolsas", base: 0, min: 10 })]);
+describe("tareas «Pedir …» (mismas reglas que BATU con Profity)", () => {
+  const lines = shortages([e({ key: "a", base: 0, reserved: 6 }), e({ key: "b", label: "Bolsas", base: 0 })]);
+  const t = (p: Partial<StockTask>): StockTask => ({ id: "1", stock_key: "a", stock_missing: 6, notes: taskNotes(lines[0]), status: "open", ...p });
   it("crea una por artículo que falta", () => {
-    const p = planTasks(lines, [], today);
-    expect(p.create.map((c) => [c.key, c.title, c.missing])).toEqual([["a", "Reponer: Camiseta negra M, faltan 6", 6], ["b", "Reponer: Bolsas, faltan 10", 10]]);
+    expect(planTasks(lines, []).create.map((c) => [c.key, c.title, c.missing])).toEqual([["a", "Pedir Camiseta negra M", 6], ["b", "Pedir Bolsas", 0]]);
   });
-  it("actualiza si cambia la cantidad, completa lo repuesto y cierra duplicados", () => {
-    const p = planTasks(lines, [
-      { id: "1", stock_key: "a", stock_missing: 4, title: "Reponer: Camiseta negra M, faltan 4", due_date: "2026-10-08" },
-      { id: "2", stock_key: "a", stock_missing: 6, title: "x", due_date: null },
-      { id: "3", stock_key: "gone", stock_missing: 1, title: "x", due_date: null },
-    ], today);
-    expect(p.update).toEqual([{ id: "1", title: "Reponer: Camiseta negra M, faltan 6", missing: 6, due: "2026-10-08" }]);
-    expect(p.complete.map((c) => c.id)).toEqual(["2", "3"]);
+  it("si cambia la cantidad, actualiza la nota de la abierta", () => {
+    const p = planTasks(lines, [t({ stock_missing: 4, notes: "vieja" })]);
+    expect(p.update).toEqual([{ id: "1", notes: taskNotes(lines[0]), missing: 6 }]);
     expect(p.create.map((c) => c.key)).toEqual(["b"]);
   });
+  it("si la tachaste y sigue faltando, no vuelve a salir", () => {
+    const p = planTasks(lines, [t({ status: "done" })]);
+    expect(p.create.map((c) => c.key)).toEqual(["b"]);
+    expect(p.update).toEqual([]);
+    expect(p.release).toEqual([]);
+  });
+  it("con stock: se suelta la clave y la pendiente se completa sola", () => {
+    const p = planTasks([], [t({}), t({ id: "2", status: "done" })]);
+    expect(p.release).toEqual([{ id: "1", key: "a", complete: true }, { id: "2", key: "a", complete: false }]);
+  });
   it("sin cambios no toca nada", () => {
-    const first = planTasks(lines, [], today);
-    const open = first.create.map((c, i) => ({ id: String(i), stock_key: c.key, stock_missing: c.missing, title: c.title, due_date: c.due }));
-    expect(planTasks(lines, open, today)).toEqual({ create: [], update: [], complete: [] });
+    const open = planTasks(lines, []).create.map((c, i) => ({ id: String(i), stock_key: c.key, stock_missing: c.missing, notes: c.notes, status: "open" }));
+    expect(planTasks(lines, open)).toEqual({ create: [], update: [], release: [] });
   });
 });
 

@@ -21,7 +21,7 @@ export async function StockMissingWidget({ w, ctx }: WidgetProps) {
               <Link href={`/negocios/${l.biz.id}/stock`} className="flex min-h-11 items-center gap-2 text-sm">
                 {!biz && <span className="size-2 shrink-0 rounded-full" style={{ background: l.biz.color }} aria-hidden />}
                 <span className="min-w-0 flex-1 truncate">{l.label}</span>
-                <span className="shrink-0 font-semibold tabular-nums text-bad">faltan {l.missing}</span>
+                <span className="shrink-0 font-semibold tabular-nums text-bad">{l.missing > 0 ? `faltan ${l.missing}` : "a 0"}</span>
               </Link>
             </li>
           ))}
