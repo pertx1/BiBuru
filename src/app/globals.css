@@ -2,23 +2,32 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Estilo «Antola»: negro puro, tarjetas gris iOS sin bordes marcados y acento morado. */
+/*
+ * Estilo Apple (iOS): fondo agrupado gris, tarjetas blancas SIN borde, controles con relleno gris translúcido
+ * (como los campos de búsqueda de iOS), botones en cápsula y un solo color de acento, reservado para lo que se pulsa.
+ * Contrastes (WCAG): ver docs/DECISIONES.md · «Diseño estilo Apple».
+ */
 :root {
-  --background: #f2f2f7;
+  --background: #f2f2f7;        /* systemGroupedBackground */
   --foreground: #111114;
-  --surface: #ffffff;
+  --surface: #ffffff;           /* secondarySystemGroupedBackground */
   --surface-2: #e9e9ef;
-  --border: #e3e3e8;
-  --muted: #6c6c72;
-  --accent: #6c5ce7;
+  --fill: rgb(118 118 128 / 0.12);        /* tertiarySystemFill: campos, chips, botones secundarios */
+  --fill-strong: rgb(118 118 128 / 0.2);  /* al pulsar o pasar el ratón */
+  --border: #e3e3e8;            /* separadores dentro de listas */
+  --muted: #6c6c72;             /* 5,2:1 sobre blanco · 4,7:1 sobre el fondo */
+  --accent: #5e50dd;            /* 5,7:1 con texto blanco · 5,1:1 como texto sobre el fondo */
+  --accent-text: #5e50dd;
   --accent-foreground: #ffffff;
-  --danger: #e5484d;
-  --ring: rgb(108 92 231 / 0.45);
+  --danger: #d70015;            /* 5,4:1 sobre blanco */
+  --ring: rgb(94 80 221 / 0.45);
   /* Gráficos (validados para daltonismo y contraste sobre cada superficie). */
   --chart-income: #2563eb;
   --chart-expense: #dc2626;
-  --good: #16a34a;
-  --bad: #dc2626;
+  --good: #1f7a35;              /* 5,4:1 */
+  --bad: #c4161c;               /* 6,0:1 */
+  --glass: rgb(255 255 255 / 0.78);
+  --glass-edge: rgb(0 0 0 / 0.06);
 }
 
 .dark {
@@ -26,24 +35,29 @@
   --foreground: #f5f5f7;
   --surface: #1c1c1e;
   --surface-2: #2c2c2e;
-  --border: #2a2a2d;
-  --muted: #8e8e93;
-  --accent: #7b6cf6;
+  --fill: rgb(118 118 128 / 0.24);
+  --fill-strong: rgb(118 118 128 / 0.34);
+  --border: #2c2c2e;
+  --muted: #98989f;             /* 5,9:1 sobre #1c1c1e */
+  --accent: #5f52e4;            /* relleno de botones: 5,5:1 con texto blanco */
+  --accent-text: #9d8fff;       /* acento como texto: 6,3:1 sobre #1c1c1e */
   --accent-foreground: #ffffff;
-  --danger: #f0574b;
-  --ring: rgb(123 108 246 / 0.55);
+  --danger: #ff6961;            /* 6,0:1 sobre #1c1c1e */
+  --ring: rgb(157 143 255 / 0.55);
   --chart-income: #3b82f6;
   --chart-expense: #ef4444;
-  --good: #22c55e;
-  --bad: #f87171;
+  --good: #30d158;
+  --bad: #ff6961;
+  --glass: rgb(28 28 30 / 0.82);
+  --glass-edge: rgb(255 255 255 / 0.08);
 }
 
-/* Esquinas grandes en todo (tarjetas 24 px, botones y campos 16 px). */
+/* Esquinas: tarjetas 20 px, campos 12 px; los botones son cápsulas. */
 @theme {
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-2xl: 1.75rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
 }
 
 @theme inline {
@@ -51,6 +65,8 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
@@ -61,12 +77,13 @@
   --color-bad: var(--bad);
   --color-income: var(--chart-income);
   --color-expense: var(--chart-expense);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, "Inter", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
   color-scheme: light;
+  accent-color: var(--accent);  /* casillas, radios y deslizadores nativos con el color de la app */
   -webkit-text-size-adjust: 100%;
 }
 html.dark {
@@ -77,6 +94,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
   /* La PWA no debe "rebotar" ni seleccionar texto al tocar la interfaz. */
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
@@ -84,9 +103,45 @@ body {
 
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
+}
+
+/*
+ * Reglas globales del estilo Apple (sin capa: mandan sobre las utilidades). Así toda la app cambia a la vez
+ * sin tocar cada pantalla:
+ * - Tarjetas (esquinas grandes, fondo blanco): sin borde; el contraste con el fondo gris basta (listas agrupadas de iOS).
+ * - Chips, campos y botones secundarios (cápsulas o esquinas pequeñas con borde): relleno gris translúcido, sin borde.
+ */
+:is(.rounded-xl, .rounded-2xl, .rounded-3xl).border-border.bg-surface {
+  border-color: transparent;
+}
+:is(.rounded-full, .rounded-lg, .rounded-md, input, select, textarea).border-border.bg-surface {
+  background-color: var(--fill);
+  border-color: transparent;
+}
+:is(a, button, label, summary):is(.rounded-full, .rounded-lg, .rounded-md).border-border.bg-surface:hover {
+  background-color: var(--fill-strong);
+}
+/* En oscuro, el acento como texto va más claro que el de los botones (contraste). */
+.dark .text-accent { color: var(--accent-text); }
+/* Contraste alto del sistema: vuelven los bordes. */
+@media (prefers-contrast: more) {
+  :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-full, .rounded-lg, .rounded-md, input, select, textarea).border-border.bg-surface {
+    border-color: var(--muted);
+  }
+}
+
+/* Cristal (Liquid Glass) solo para la capa flotante: barra inferior. Sin transparencia si el sistema lo pide. */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 0 0 0.5px var(--glass-edge), 0 8px 32px rgb(0 0 0 / 0.12);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Áreas seguras del iPhone (notch y barra de inicio). */

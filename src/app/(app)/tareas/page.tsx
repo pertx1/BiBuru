@@ -48,7 +48,7 @@ export default async function TareasPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="Tareas" subtitle="Lo que tienes que hacer, sin que se te escape nada." />
+      <PageHeader title="Tareas" />
       <div className="mb-4 flex flex-col gap-3">
         <QuickAdd today={now.date} nowTime={now.time} businessId={project?.id} />
         <nav aria-label="Filtros" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">

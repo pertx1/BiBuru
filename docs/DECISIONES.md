@@ -113,3 +113,24 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   - **Subtareas en su propia tabla** (`subtasks`), como máximo 50. Las tareas hijas que había antes se han copiado como subtareas.
   - **Clave externa `origen:clave`**, única por espacio. La usan las tareas de Stock (`stock:<negocio>:<artículo>`) y se suelta cuando ya no hace falta.
   - **Las fechas y horas «de pared» siguen en `due_date`/`due_time`.** Además se guardan los instantes UTC (`due_at`, `reminder_at`, `remind_at`), que son los que usa el cron.
+
+## Diseño estilo Apple (7/10)
+- **Más simple y limpio, según las guías de Apple (HIG).** Fondo gris agrupado de iOS, tarjetas blancas **sin borde**, controles con **relleno gris translúcido** (como los campos de búsqueda de iOS), botones en **cápsula** y un solo color de acento para lo que se pulsa.
+- **Se aplica a toda la app desde `globals.css`** con unas pocas reglas globales, sin tocar cada pantalla:
+  - Las tarjetas (`rounded-xl/2xl` + `bg-surface` + borde) pierden el borde.
+  - Chips, campos y botones (`rounded-full/lg`) pasan a relleno gris.
+  - Con «Aumentar contraste» del sistema vuelven los bordes.
+- **Barra inferior flotante de cristal**, como la de iOS 26. Es la única pieza con material translúcido (la capa de navegación, nunca el contenido) y queda opaca con «Reducir transparencia».
+- **Claro u oscuro según el sistema** (antes empezaba siempre en oscuro). Apple pide seguir el ajuste del iPhone. El selector de Ajustes sigue ahí por si quieres fijar uno.
+- **Colores recalculados para contraste** (WCAG AA, mínimo 4,5:1 en texto pequeño):
+
+  | Color | Claro | Oscuro |
+  |---|---|---|
+  | Acento | #5e50dd (5,7:1 con texto blanco) | relleno #5f52e4 (5,5:1); como texto #9d8fff (6,3:1) |
+  | Rojo | #d70015 (5,4:1) | #ff6961 (6,0:1) |
+  | Verde | #1f7a35 (5,4:1) | #30d158 |
+  | Texto secundario | #6c6c72 (5,2:1) | #98989f (5,9:1) |
+
+- **Listas como en Ajustes de iOS**: el separador empieza después del icono o del círculo. «Vencidas» ya no es una caja roja: solo el título en rojo, como en Recordatorios.
+- **Estados de pedido**: cápsulas teñidas sin borde. El texto se mezcla con el color del tema para que se lea en claro y en oscuro.
+- Se quita el subtítulo de relleno de Tareas («Lo que tienes que hacer…»).

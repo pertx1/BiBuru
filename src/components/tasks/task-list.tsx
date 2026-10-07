@@ -87,9 +87,9 @@ export function TaskList({ groups, businesses, today, empty, compact }: {
     <>
       <div className="flex flex-col gap-5">
         {visible.map((g) => (
-          <section key={g.key} aria-label={g.title || "Tareas"} className={cn(g.tone === "danger" && "rounded-2xl border border-danger/30 bg-danger/5 p-2")}>
-            {g.title && <h2 className={cn("mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide", g.tone === "danger" ? "text-danger" : "text-muted")}>{g.title} · {g.tasks.length}</h2>}
-            <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          <section key={g.key} aria-label={g.title || "Tareas"}>
+            {g.title && <h2 className={cn("mb-2 flex items-baseline gap-1.5 px-4 text-[15px] font-semibold", g.tone === "danger" ? "text-danger" : "text-foreground")}>{g.title}<span className="font-normal text-muted">{g.tasks.length}</span></h2>}
+            <ul className="overflow-hidden rounded-xl bg-surface [&>li+li_a]:shadow-[inset_0_1px_0_var(--border)]">
               {g.tasks.map((t) => {
                 const isDone = done[t.id] ?? t.status === "done";
                 const prio = PRIORITY_META[t.priority] ?? PRIORITY_META[2];
@@ -104,13 +104,13 @@ export function TaskList({ groups, businesses, today, empty, compact }: {
                         {isDone && <Check className="size-4" strokeWidth={3} aria-hidden />}
                       </span>
                     </button>
-                    <Link href={`/tareas/${t.id}`} className="flex min-h-14 min-w-0 flex-1 flex-col justify-center gap-0.5 py-2 pr-4 hover:bg-surface-2">
-                      <span className={cn("truncate text-[0.95rem] font-medium", isDone && "text-muted line-through")}>{t.title}</span>
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+                    <Link href={`/tareas/${t.id}`} className="flex min-h-14 min-w-0 flex-1 flex-col justify-center gap-0.5 py-2.5 pr-4 active:bg-fill md:hover:bg-fill">
+                      <span className={cn("truncate text-[17px] leading-snug", isDone && "text-muted line-through")}>{t.title}</span>
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted">
                         {t.due_date && <span className={cn(overdue && "font-medium text-danger")}>{relativeDay(t.due_date, today)}</span>}
                         {t.due_time && <span className="tabular-nums">{t.due_time.slice(0, 5)}</span>}
                         {biz && <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full" style={{ backgroundColor: biz.color }} aria-hidden />{biz.name}</span>}
-                        {t.external_key?.startsWith("stock:") && <span className="inline-flex items-center gap-0.5 rounded-full border border-border px-1.5 font-medium"><Boxes className="size-3" aria-hidden />Stock</span>}
+                        {t.external_key?.startsWith("stock:") && <span className="inline-flex items-center gap-0.5 rounded-full bg-fill px-1.5 font-medium"><Boxes className="size-3" aria-hidden />Stock</span>}
                         {t.subtasks.length > 0 && <span className="inline-flex items-center gap-0.5 tabular-nums"><ListChecks className="size-3.5" aria-hidden />{subDone}/{t.subtasks.length}</span>}
                         {t.repeat !== "none" && <Repeat className="size-3.5" aria-label="Se repite" />}
                         {t.remind_at && !isDone && <AlarmClock className="size-3.5" aria-label="Con recordatorio" />}

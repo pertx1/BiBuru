@@ -13,15 +13,18 @@ export default async function MasPage() {
   return (
     <>
       <PageHeader title="Más" />
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+      <ul className="overflow-hidden rounded-xl bg-surface">
         {moreSections(tabs).map((s) => {
           const Icon = SECTION_ICONS[s.key];
           return (
             <li key={s.key}>
-              <Link href={s.href} className="flex min-h-12 items-center gap-3 px-4 hover:bg-surface-2">
-                <Icon className="size-5 text-muted" aria-hidden />
-                <span className="flex-1 text-sm font-medium">{s.long}</span>
-                <ChevronRight className="size-4 text-muted" aria-hidden />
+              <Link href={s.href} className="flex min-h-12 items-center gap-3.5 pl-4 active:bg-fill md:hover:bg-fill">
+                <Icon className="size-[1.375rem] text-accent" aria-hidden />
+                {/* Separador iOS: empieza en el texto, no en el icono. */}
+                <span className="flex min-h-12 flex-1 items-center gap-2 pr-4 text-[17px] [li+li_&]:shadow-[inset_0_1px_0_var(--border)]">
+                  <span className="flex-1">{s.long}</span>
+                  <ChevronRight className="size-4 text-muted/70" aria-hidden />
+                </span>
               </Link>
             </li>
           );

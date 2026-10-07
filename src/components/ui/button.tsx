@@ -3,13 +3,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 md:min-h-9",
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 [&_svg]:shrink-0 text-[15px] font-semibold transition-[background-color,opacity,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 md:min-h-9 md:text-sm",
   {
     variants: {
       variant: {
         primary: "bg-accent text-accent-foreground hover:opacity-90",
-        secondary: "border border-border bg-surface hover:bg-surface-2",
-        ghost: "hover:bg-surface-2",
+        secondary: "bg-fill text-foreground hover:bg-fill-strong",
+        ghost: "text-accent hover:bg-fill",
       },
     },
     defaultVariants: { variant: "primary" },

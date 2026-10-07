@@ -86,15 +86,16 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
                 <select
                   aria-label="Estado del pedido" value={o.status}
                   onChange={(e) => start(async () => { await setOrderStatus(o.id, e.target.value); router.refresh(); })}
-                  className="min-h-11 shrink-0 rounded-lg border bg-surface px-2 text-base font-medium md:min-h-10 md:text-xs"
-                  style={{ borderColor: ORDER_STATUS_COLOR[o.status as OrderStatus], color: ORDER_STATUS_COLOR[o.status as OrderStatus] }}
+                  className="min-h-11 shrink-0 rounded-full border-0 px-3 text-base font-semibold md:min-h-9 md:text-xs"
+                  // El texto se mezcla con el color de texto del tema: legible (≥ 4,5:1) en claro y en oscuro.
+                  style={{ backgroundColor: `${ORDER_STATUS_COLOR[o.status as OrderStatus]}1f`, color: `color-mix(in srgb, ${ORDER_STATUS_COLOR[o.status as OrderStatus]} 70%, var(--foreground))` }}
                 >
                   {ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}
                 </select>
                 {st !== "cancelled" && (
                   <select aria-label="Estado de pago" value={st === "paid" ? "paid" : st === "unreviewed" ? "unreviewed" : st === "partial" ? "partial" : "pending"} disabled={busy}
                     onChange={(e) => setPay(o, e.target.value as "paid" | "pending")}
-                    className={cn("min-h-11 shrink-0 rounded-lg border bg-surface px-2 text-base font-semibold md:min-h-10 md:text-xs", PAY_CLASS[st])}>
+                    className={cn("min-h-11 shrink-0 rounded-full border-0 px-3 text-base font-semibold md:min-h-9 md:text-xs", PAY_CLASS[st])}>
                     {st === "unreviewed" && <option value="unreviewed" disabled>{PAY_LABEL.unreviewed}</option>}
                     <option value="pending">{PAY_LABEL.pending}</option>
                     {st === "partial" && <option value="partial" disabled>{PAY_LABEL.partial}</option>}

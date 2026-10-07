@@ -50,7 +50,7 @@ export function OrderPayments({ order, today }: { order: OrderLite; today: strin
     <section className="flex flex-col gap-2 rounded-lg border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Cobros</h3>
-        <span className={cn("rounded-full border px-2 py-0.5 text-xs font-semibold", PAY_CLASS[st])}>{PAY_LABEL[st]}</span>
+        <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", PAY_CLASS[st])}>{PAY_LABEL[st]}</span>
       </div>
       <dl className="grid grid-cols-2 gap-2 text-sm">
         <div><dt className="text-xs text-muted">Cobrado</dt><dd className="font-semibold tabular-nums">{formatEUR(order.paid_cents)}</dd></div>
