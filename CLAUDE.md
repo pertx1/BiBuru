@@ -221,5 +221,14 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Zonas de 44 px solo en móvil (`min-h-11 md:min-h-…`). Gestos: `SwipeRow` (tareas) y `PullToRefresh` (layout).
 - Los avisos (`ToastProvider`) se muestran como `popover` para quedar encima de los `<dialog>` abiertos.
 
+## Bandeja de redes y sincronización
+- Adaptador por red en `src/lib/inbox/logic.ts` (`CAPABILITIES`: Instagram todo; TikTok nada, solo enlace). Lógica pura (24 h, firma Meta, webhook → `InboxEvent`, filtros) con tests.
+- `src/lib/inbox/service.ts` (servidor, clave de servicio): `ingestEvents` (webhook), `syncInboxAccount` (lectura de conversaciones y comentarios), `storeMessages` idempotente
+  por `(thread_id, external_id)`. La primera sincronización no avisa. Acciones en `redes/inbox-actions.ts`; nada se envía sin pulsar «Enviar».
+- `/api/webhooks/meta`: GET con `META_WEBHOOK_VERIFY_TOKEN`; POST con `X-Hub-Signature-256` (HMAC de `INSTAGRAM_APP_SECRET`). Es público en el proxy.
+- Meta solo manda webhooks a apps Live (comentarios: acceso avanzado): la bandeja se sostiene con la sincronización horaria (`src/lib/sync/service.ts`, llamada desde el cron de Redes),
+  `refreshIfStale` (al abrir, >15 min) y «Actualizar todo». Si una red limita, `rate_limited_until` = +1 h.
+- Pantalla común `RedesView` para `/redes` y `/negocios/[id]/redes`. Ajustes en `profiles.inbox_ai_suggest | inbox_push_enabled | social_alerts_enabled`.
+
 ## Páginas públicas
 - `/privacidad` y `/terminos` (las piden Meta y TikTok); están en `PUBLIC_PATHS` del proxy.

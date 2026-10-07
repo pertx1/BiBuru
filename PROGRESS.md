@@ -12,6 +12,16 @@
 | 7 · Favoritos (vídeos) | Pendiente |
 | 8 · Pulido | Pendiente |
 
+## Mejoras «todo de una» (rama `mejoras-todo`)
+- **Redes por negocio**: pestaña **Redes** en cada negocio y «Todas las redes» con filtro por negocio. Tarjeta por cuenta (seguidores, +hoy/+semana,
+  sin responder, «Actualizado hace X min», límites). Secciones Bandeja / Contenido / Estadísticas (suma de todas o detalle por cuenta).
+- **Bandeja unificada** (`social_threads`, `social_messages`, `social_saved_replies`): mensajes, comentarios y menciones de Instagram con filtros,
+  búsqueda, etiquetas, hilo completo, respuesta (pública/privada en comentarios, ventana de 24 h), ocultar comentario, respuestas guardadas,
+  «Sugerir respuesta» con IA (apagada), Crear pedido/tarea/nota, vínculo con cliente o pedido, avisos, contador y widget. Webhook verificado en
+  `/api/webhooks/meta`. TikTok: «Abrir mensajes en TikTok» (no hay API). **Falta conectar**: permisos de mensajes y webhook en Meta.
+- **Actualización automática**: cada hora (dentro del cron de Redes), al abrir si >15 min, «Actualizar todo» y tirar hacia abajo; tiempo real en la
+  bandeja (Supabase Realtime, con respaldo cada minuto); alertas opcionales; foto diaria a medianoche; renovación de tokens y «Reconectar».
+
 ## Fase 1 — qué hay
 - Next.js 16 + TS estricto + Tailwind 4, tema claro/oscuro, componentes base.
 - Login por correo (enlace + código de 6 dígitos), registro cerrado, proxy de sesión.
