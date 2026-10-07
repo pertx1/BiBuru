@@ -57,7 +57,7 @@ export async function snapshotAccount(admin: AdminClient, acc: SocialAccount, no
       workspace_id: acc.workspace_id, account_id: acc.id, day: yesterday, followers: profile.followers, reach: ins.reach ?? null, views: ins.views ?? null,
       interactions: ins.total_interactions ?? null, likes: ins.likes ?? null, comments: ins.comments ?? null, shares: ins.shares ?? null, saves: ins.saves ?? null, profile_views: ins.profile_views ?? null,
     }, { onConflict: "account_id,day" });
-    const media = await igRecentMedia(token, 30);
+    const media = await igRecentMedia(token, 30, fetch, acc.external_id);
     const recent = media.filter((m) => now.getTime() - new Date(m.postedAt).getTime() < 45 * 86400_000);
     const rows = [];
     for (const m of media) {

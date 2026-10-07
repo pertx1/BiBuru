@@ -195,6 +195,18 @@ Necesitas que tu Instagram sea **profesional** (empresa o creador). Funciona en 
 11. Ve a **Roles de la app** → **Roles** → **Añadir personas** → **Evaluador de Instagram** (*Instagram Tester*) y escribe tu usuario de Instagram. Pulsa **Añadir**.
 12. Abre Instagram (en la web: **https://www.instagram.com/accounts/manage_access/**), pestaña **Invitaciones de evaluador** y pulsa **Aceptar**.
 
+**E2-bis. Si Meta solo te deja «inicio de sesión con Facebook»** (la página dice «Configuración de la API con inicio de sesión con Facebook»)
+
+BiBuru también funciona así. Cambia esto:
+
+1. **Vincula tu Instagram a una página de Facebook**: en Facebook, entra en tu página → **Configuración** → **Cuentas vinculadas** → **Instagram** → **Conectar cuenta**. Si no tienes página, crea una (gratis).
+2. En la app de Meta, en **Configuración de la API con el inicio de sesión con Facebook**, pulsa **Go to permissions and features** y **Añade** estos permisos: **instagram_basic**, **instagram_content_publish**, **instagram_manage_insights**, **pages_show_list**, **pages_read_engagement** y **business_management**.
+3. Dentro de **Configura el inicio de sesión con Facebook para empresas** → **Configuración**, en **URI de redireccionamiento de OAuth válidos** pega **https://bi-buru.vercel.app/api/instagram/callback** y guarda.
+4. Si ahí te pide crear una **Configuración** (*Configurations*), créala con los mismos permisos y copia su **ID de configuración**.
+5. Las llaves son las de la app de Facebook: **Configuración de la app → Básica** → **Identificador de la app** y **Clave secreta de la app** (**Mostrar**).
+6. En Vercel (E3), además de **INSTAGRAM_APP_ID** e **INSTAGRAM_APP_SECRET** con esas llaves, añade **INSTAGRAM_LOGIN** con el valor **facebook**. Si tienes ID de configuración del paso 4, añade también **INSTAGRAM_FB_CONFIG_ID** con ese número.
+7. Al conectar en BiBuru se abre **Facebook**: marca tu **página** y tu **Instagram** y pulsa **Guardar** / **Continuar**.
+
 **E3. Pegar las llaves en Vercel**
 
 1. En **Vercel → bi-buru → Settings → Environment Variables**, añade **INSTAGRAM_APP_ID** con el identificador de E2.7 (marca **Production**, **Save**).
@@ -212,6 +224,7 @@ Necesitas que tu Instagram sea **profesional** (empresa o creador). Funciona en 
 
 **Si te sale este error, haz esto…**
 
+- **«Tu Instagram profesional no está vinculado a una página de Facebook»** (variante Facebook): haz E2-bis.1 y, al conectar, marca la página y el Instagram.
 - **«Insufficient developer role»** o **«Invalid platform app»**: tu Instagram no aceptó la invitación de evaluador (E2.11–E2.12) o copiaste el ID de Facebook en vez del de Instagram.
 - **«Invalid redirect_uri»**: revisa E2.9 letra a letra.
 - **«La conexión caduca en N días»**: no hagas nada; se renueva sola. Si llega a **caducada**, pulsa **Reconectar**.
@@ -299,6 +312,8 @@ El análisis normal usa la descripción, los hashtags, el autor y la portada. Si
 | **MICROSOFT_CLIENT_SECRET** | Outlook | Solo si usas Correo |
 | **INSTAGRAM_APP_ID** | Instagram | Solo si usas Instagram |
 | **INSTAGRAM_APP_SECRET** | Instagram | Solo si usas Instagram |
+| **INSTAGRAM_LOGIN** | Instagram | Solo si tu app de Meta es la de «inicio de sesión con Facebook»: valor **facebook** |
+| **INSTAGRAM_FB_CONFIG_ID** | Instagram | Solo con **INSTAGRAM_LOGIN=facebook** y si Meta te pidió crear una «Configuración» |
 | **TIKTOK_CLIENT_KEY** | TikTok | Solo si usas TikTok |
 | **TIKTOK_CLIENT_SECRET** | TikTok | Solo si usas TikTok |
 | **TIKTOK_DIRECT_POST_AUDITED** | Poner **1** cuando TikTok apruebe la auditoría | No |

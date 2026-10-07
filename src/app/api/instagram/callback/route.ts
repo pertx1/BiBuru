@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { getContext } from "@/lib/context";
 import { encryptSecret } from "@/lib/favorites/crypto";
-import { igExchangeCode, igProfile, igRedirectUri } from "@/lib/social/instagram";
+import { IG_NO_LINKED_ACCOUNT, igExchangeCode, igProfile, igRedirectUri } from "@/lib/social/instagram";
 import { snapshotAccount } from "@/lib/social/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -36,6 +36,6 @@ export async function GET(request: NextRequest) {
     return back("ok");
   } catch (e) {
     console.error("[instagram] callback:", e instanceof Error ? e.message : e);
-    return back("error");
+    return back(e instanceof Error && e.message === IG_NO_LINKED_ACCOUNT ? "sin-pagina" : "error");
   }
 }
