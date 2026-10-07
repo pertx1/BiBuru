@@ -5,7 +5,10 @@ import { z } from "zod";
 import { createNote, createTask, type Actor } from "@/lib/ai/actors";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { getContext } from "@/lib/context";
-import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { allUrls } from "@/lib/favorites/url";
+import { getBudget } from "@/lib/ai/run";
+import { microsToEuros } from "@/lib/ai/pricing";
 import { parsePlaylistId } from "@/lib/favorites/rss";
 import { myPlaylists, refreshAccessToken } from "@/lib/favorites/youtube";
 import { decryptSecret } from "@/lib/favorites/crypto";
@@ -27,6 +30,78 @@ export async function addVideo(url: string): Promise<ActionResult & { duplicate?
   if (!r.duplicate && r.id && hasGeminiKey()) analyzeSoon(a.userId, a.workspaceId, r.id);
   refresh();
   return { ok: true, id: r.id, duplicate: r.duplicate };
+}
+
+/**
+ * Pega uno o varios enlaces a la vez (también cortos de TikTok): se guardan sin duplicados y se analizan solos.
+ * Devuelve cuántos son nuevos, repetidos, no disponibles (privados/borrados) o no válidos.
+ */
+export async function addVideos(text: string, note?: string): Promise<{ ok: true; added: number; duplicates: number; unavailable: number; invalid: number; firstId?: string } | { ok: false; error: string }> {
+  const t = z.string().trim().min(8).max(20000).safeParse(text);
+  const urls = t.success ? allUrls(t.data) : [];
+  if (!urls.length) return { ok: false, error: "No hay ningún enlace (debe empezar por https://)" };
+  const a = await actorOf();
+  const out = { added: 0, duplicates: 0, unavailable: 0, invalid: 0, firstId: undefined as string | undefined };
+  for (const u of urls) {
+    const r = await addVideoByUrl(a, u);
+    if (!r.ok) { out.invalid++; continue; }
+    if (r.duplicate) { out.duplicates++; continue; }
+    if (r.unavailable) { out.unavailable++; continue; }
+    out.added++;
+    out.firstId ??= r.id;
+    const n = note?.trim().slice(0, 5000);
+    if (n) await a.supabase.from("saved_videos").update({ notes: n }).eq("id", r.id).eq("workspace_id", a.workspaceId);
+    if (r.id && hasGeminiKey()) analyzeSoon(a.userId, a.workspaceId, r.id);
+  }
+  refresh();
+  return { ok: true, ...out };
+}
+
+// ------------------------------------------------------------------ análisis completo subiendo el vídeo
+const MAX_UPLOAD = 50 * 1024 * 1024;
+const VIDEO_MIME = ["video/mp4", "video/quicktime", "video/webm"] as const;
+
+/** Coste estimado del análisis completo y lo que queda de presupuesto este mes (para enseñarlo antes de subir). */
+export async function estimateFullAnalysis(id: string, durationSec: number): Promise<{ ok: true; costEur: number; remainingEur: number; fits: boolean } | { ok: false; error: string }> {
+  const p = z.object({ id: uuid, d: z.number().min(1).max(36000) }).safeParse({ id, d: durationSec });
+  if (!p.success) return { ok: false, error: "Datos no válidos" };
+  if (!hasGeminiKey()) return { ok: false, error: "La IA no está configurada (falta GEMINI_API_KEY)." };
+  const a = await actorOf();
+  const ctx = await adminVideoContext(createAdminClient(), a.userId, a.workspaceId);
+  if (!ctx) return { ok: false, error: "Perfil no encontrado" };
+  const [cost, budget] = await Promise.all([estimateVideoCost(ctx, Math.ceil(p.data.d)), getBudget({ ...ctx, supabase: a.supabase })]);
+  return { ok: true, costEur: microsToEuros(cost), remainingEur: microsToEuros(budget.remainingMicros), fits: cost <= budget.remainingMicros };
+}
+
+/** URL firmada de un solo uso para subir el vídeo directamente a Storage (no pasa por el servidor: límite de 4,5 MB de Vercel). */
+export async function createVideoUpload(id: string, input: { size: number; mime: string; durationSec: number }): Promise<{ ok: true; path: string; token: string } | { ok: false; error: string }> {
+  const p = z.object({ id: uuid, size: z.number().int().min(1).max(MAX_UPLOAD), mime: z.enum(VIDEO_MIME), durationSec: z.number().min(1).max(36000) }).safeParse({ id, ...input });
+  if (!p.success) return { ok: false, error: input.size > MAX_UPLOAD ? "El vídeo pasa de 50 MB. Guárdalo con menos calidad o recórtalo." : "Formato no válido (MP4, MOV o WebM)." };
+  const est = await estimateFullAnalysis(id, p.data.durationSec);
+  if (!est.ok) return est;
+  if (!est.fits) return { ok: false, error: "No queda presupuesto de IA este mes para analizar el vídeo completo." };
+  const a = await actorOf();
+  const { data: v } = await a.supabase.from("saved_videos").select("id").eq("id", id).eq("workspace_id", a.workspaceId).maybeSingle();
+  if (!v) return { ok: false, error: "Vídeo no encontrado" };
+  const ext = p.data.mime === "video/quicktime" ? "mov" : p.data.mime === "video/webm" ? "webm" : "mp4";
+  const path = `${a.workspaceId}/${id}-${Date.now()}.${ext}`;
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage.from("video-uploads").createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, error: "No se pudo preparar la subida" };
+  await admin.from("saved_videos").update({ upload_duration_sec: Math.ceil(p.data.durationSec) }).eq("id", id).eq("workspace_id", a.workspaceId);
+  return { ok: true, path: data.path, token: data.token };
+}
+
+/** Tras subir: lanza el análisis completo (el archivo se borra al terminar, salga bien o mal). */
+export async function startFullAnalysis(id: string, path: string): Promise<ActionResult> {
+  if (!uuid.safeParse(id).success || !z.string().max(300).safeParse(path).success) return { ok: false, error: "Datos no válidos" };
+  const a = await actorOf();
+  if (!path.startsWith(`${a.workspaceId}/${id}-`)) return { ok: false, error: "Subida no válida" };
+  const { error } = await a.supabase.from("saved_videos").update({ upload_path: path, analysis_status: "pending", analysis_attempts: 0, analysis_error: null, analysis_next_try_at: null }).eq("id", id).eq("workspace_id", a.workspaceId);
+  if (error) return { ok: false, error: "No se pudo empezar el análisis" };
+  analyzeSoon(a.userId, a.workspaceId, id);
+  refresh();
+  return { ok: true };
 }
 
 export async function setVideoStatus(id: string, status: (typeof STATUSES)[number]): Promise<ActionResult> {

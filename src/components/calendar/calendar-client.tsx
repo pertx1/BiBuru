@@ -1,10 +1,13 @@
 "use client";
 
-import { CheckSquare, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { DndContext, PointerSensor, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { CheckSquare, ChevronLeft, ChevronRight, GripVertical, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { loadTask } from "@/app/(app)/tareas/actions";
+import { reschedulePost } from "@/app/(app)/redes/actions";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { TaskSheet } from "@/components/tasks/task-sheet";
@@ -25,12 +28,39 @@ const dayNum = (iso: string) => String(+iso.slice(8, 10));
 const dowOf = (iso: string) => (new Date(`${iso}T00:00:00Z`).getUTCDay() + 6) % 7;
 const longDay = (iso: string) => `${["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"][dowOf(iso)]} ${dayNum(iso)} de ${MONTH_NAMES[+iso.slice(5, 7) - 1]}`;
 
+/** Día que acepta publicaciones arrastradas (calendario de contenido). */
+function DropDay({ day, className, children, ...rest }: { day: string; className?: string; children: React.ReactNode } & React.HTMLAttributes<HTMLDivElement>) {
+  const { setNodeRef, isOver } = useDroppable({ id: `day:${day}` });
+  return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-inset ring-accent")} {...rest}>{children}</div>;
+}
+
+/** Asa para arrastrar una publicación a otro día (con el dedo: mantener pulsado). */
+function DragPost({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `post:${id}` });
+  return (
+    <div ref={setNodeRef} className={cn("flex items-stretch", isDragging && "relative z-20 opacity-80")} style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}>
+      <span {...listeners} {...attributes} aria-label="Arrastrar a otro día" className="flex w-5 shrink-0 touch-none cursor-grab items-center justify-center text-muted"><GripVertical className="size-3" aria-hidden /></span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export function CalendarClient({
   view, focus, today, items, events, businesses, goals,
 }: {
   view: CalView; focus: string; today: string; items: CalItem[]; events: EventRow[]; businesses: Biz[]; goals: { id: string; title: string }[];
 }) {
   const router = useRouter();
+  const toast = useToast();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 6 } }));
+  async function onDragEnd(e: DragEndEvent) {
+    const id = String(e.active.id).replace(/^post:/, ""), day = e.over ? String(e.over.id).replace(/^day:/, "") : null;
+    const item = items.find((i) => i.kind === "post" && i.id === id);
+    if (!day || !item || item.date === day) return;
+    const r = await reschedulePost(id, day);
+    toast({ message: r.ok ? `Publicación movida al ${formatDate(day)}` : r.error });
+    router.refresh();
+  }
   const [dayOpen, setDayOpen] = useState<string | null>(null);
   const [eventOpen, setEventOpen] = useState<{ event: EventRow | null; draft: EventDraft | null } | null>(null);
   const [task, setTask] = useState<{ t: TaskWithSubs | null; open: boolean; date?: string }>({ t: null, open: false });
@@ -39,6 +69,7 @@ export function CalendarClient({
   const colorOf = (i: CalItem) => (i.businessId ? bizById.get(i.businessId)?.color : undefined) ?? ACCENT;
 
   async function openItem(i: CalItem) {
+    if (i.kind === "post") { router.push(`/redes?vista=publicaciones&abrir=${i.id}`); return; }
     if (i.kind === "event") {
       const e = eventById.get(i.id);
       if (e) setEventOpen({ event: e, draft: null });
@@ -58,6 +89,10 @@ export function CalendarClient({
 
   function Chip({ i, compact }: { i: CalItem; compact?: boolean }) {
     const c = colorOf(i);
+    if (i.kind === "post" && !i.done) return <DragPost id={i.id}><ChipButton i={i} c={c} compact={compact} /></DragPost>;
+    return <ChipButton i={i} c={c} compact={compact} />;
+  }
+  function ChipButton({ i, c, compact }: { i: CalItem; c: string; compact?: boolean }) {
     return (
       <button type="button" onClick={(e) => { e.stopPropagation(); void openItem(i); }}
         className={cn("flex w-full items-center gap-1 truncate rounded px-1.5 text-left", compact ? "min-h-5 text-[11px]" : "min-h-11 text-sm md:min-h-8", i.done && "opacity-50 line-through")}
@@ -82,7 +117,7 @@ export function CalendarClient({
             const dayItems = itemsForDay(items, d);
             const inMonth = d.slice(0, 7) === focus.slice(0, 7);
             return (
-              <div key={d} role="button" tabIndex={0} aria-label={`${longDay(d)}: ${dayItems.length} elementos`} onClick={() => setDayOpen(d)} onKeyDown={(e) => e.key === "Enter" && setDayOpen(d)}
+              <DropDay key={d} day={d} role="button" tabIndex={0} aria-label={`${longDay(d)}: ${dayItems.length} elementos`} onClick={() => setDayOpen(d)} onKeyDown={(e) => e.key === "Enter" && setDayOpen(d)}
                 className={cn("min-h-[4.5rem] cursor-pointer border-b border-r border-border p-1 text-left hover:bg-surface-2 md:min-h-28", (idx + 1) % 7 === 0 && "border-r-0", !inMonth && "bg-surface-2/50 text-muted")}>
                 <span className={cn("mb-0.5 inline-flex size-6 items-center justify-center rounded-full text-xs", d === today && "bg-accent font-semibold text-accent-foreground")}>{dayNum(d)}</span>
                 {/* móvil: puntos de color; escritorio: chips */}
@@ -91,7 +126,7 @@ export function CalendarClient({
                   {dayItems.slice(0, 3).map((i) => <Chip key={i.key} i={i} compact />)}
                   {dayItems.length > 3 && <span className="px-1 text-[11px] text-muted">+{dayItems.length - 3} más</span>}
                 </div>
-              </div>
+              </DropDay>
             );
           })}
         </div>
@@ -150,13 +185,13 @@ export function CalendarClient({
   function DayBlock({ day }: { day: string }) {
     const list = itemsForDay(items, day);
     return (
-      <section className="rounded-xl border border-border bg-surface p-3" aria-label={longDay(day)}>
+      <DropDay day={day} className="rounded-xl border border-border bg-surface p-3" aria-label={longDay(day)}>
         <div className="mb-1 flex items-center justify-between">
           <h3 className={cn("text-sm font-semibold first-letter:uppercase", day === today && "text-accent")}>{longDay(day)}{day === today && " · hoy"}</h3>
           <button type="button" aria-label={`Añadir a ${longDay(day)}`} onClick={() => setDayOpen(day)} className="flex size-10 items-center justify-center rounded-lg text-muted hover:bg-surface-2"><Plus className="size-4" aria-hidden /></button>
         </div>
         {list.length === 0 ? <p className="text-xs text-muted">Nada este día.</p> : <ul className="flex flex-col gap-1">{list.map((i) => <li key={i.key}><Chip i={i} /></li>)}</ul>}
-      </section>
+      </DropDay>
     );
   }
 
@@ -179,13 +214,15 @@ export function CalendarClient({
         <nav aria-label="Vista" className="flex gap-1">
           {([["mes", "Mes"], ["semana", "Semana"], ["agenda", "Agenda"]] as const).map(([v, l]) => (
             <Link key={v} href={href(v, focus)} aria-current={v === view ? "page" : undefined}
-              className={cn("flex min-h-10 items-center rounded-full border border-border px-3.5 text-sm", v === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
+              className={cn("flex min-h-11 md:min-h-10 items-center rounded-full border border-border px-3.5 text-sm", v === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{l}</Link>
           ))}
         </nav>
         <Button onClick={() => newEvent({ start_date: focus < today && view !== "mes" ? today : (view === "mes" && focus.slice(0, 7) !== today.slice(0, 7) ? focus : today) })}><Plus className="size-4" aria-hidden /> Evento</Button>
       </div>
 
-      {view === "mes" ? <MonthView /> : view === "semana" ? <WeekView /> : <AgendaView />}
+      <DndContext sensors={sensors} onDragEnd={(e) => void onDragEnd(e)}>
+        {view === "mes" ? <MonthView /> : view === "semana" ? <WeekView /> : <AgendaView />}
+      </DndContext>
 
       <Sheet open={dayOpen !== null} onClose={() => setDayOpen(null)} title={dayOpen ? longDay(dayOpen) : ""}>
         {dayOpen && (

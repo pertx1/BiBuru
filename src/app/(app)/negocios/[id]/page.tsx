@@ -41,7 +41,7 @@ export default async function ResumenPage({ params }: { params: Promise<{ id: st
       </section>
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-xl border border-border bg-surface p-4">
-          <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Últimos pedidos</h2><Link href={`/negocios/${id}/pedidos`} className="text-xs text-accent">Ver todos</Link></div>
+          <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Últimos pedidos</h2><Link href={`/negocios/${id}/pedidos`} className="inline-flex min-h-11 items-center text-xs text-accent">Ver todos</Link></div>
           {orders.length === 0 ? <p className="text-sm text-muted">Aún no hay pedidos.</p> : (
             <ul className="divide-y divide-border">
               {orders.map((o) => (
@@ -54,7 +54,7 @@ export default async function ResumenPage({ params }: { params: Promise<{ id: st
           )}
         </section>
         <section className="rounded-xl border border-border bg-surface p-4">
-          <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Últimos gastos</h2><Link href={`/negocios/${id}/gastos`} className="text-xs text-accent">Ver todos</Link></div>
+          <div className="mb-2 flex items-center justify-between"><h2 className="text-sm font-semibold">Últimos gastos</h2><Link href={`/negocios/${id}/gastos`} className="inline-flex min-h-11 items-center text-xs text-accent">Ver todos</Link></div>
           {expenses.length === 0 ? <p className="text-sm text-muted">Aún no hay gastos.</p> : (
             <ul className="divide-y divide-border">
               {expenses.map((e) => (

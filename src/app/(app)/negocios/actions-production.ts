@@ -7,6 +7,16 @@ import { getContext } from "@/lib/context";
 import { colorKey, DEFAULT_SIZES, SIZES } from "@/lib/production/text";
 import { dtfVariantsFor } from "@/lib/production/stock";
 import type { ActionResult } from "@/lib/schemas";
+import { garmentLabel } from "@/lib/production/stock";
+import { syncStockTasks } from "@/lib/stock/service";
+
+/** Tras cambiar el stock en Producción: apunta el movimiento y recalcula las tareas «Reponer». */
+async function afterStock(businessId: string, key: string, label: string, delta: number) {
+  const { supabase, workspaceId, userId } = await getContext();
+  if (delta !== 0) await supabase.from("stock_movements").insert({ workspace_id: workspaceId, user_id: userId, business_id: businessId, item_key: key, label, kind: delta > 0 ? "entrada" : "salida", delta, reason: "Ajuste en Producción" });
+  await syncStockTasks(businessId);
+  revalidatePath("/tareas");
+}
 
 const uuid = z.uuid();
 const name = (max = 60) => z.string().trim().min(1, "Escribe un nombre").max(max);
@@ -30,6 +40,7 @@ export async function adjustTshirtStock(input: { businessId: string; model: stri
     ? await supabase.from("tshirt_stocks").update({ quantity: cur.quantity + delta }).eq("id", cur.id)
     : await supabase.from("tshirt_stocks").insert({ workspace_id: workspaceId, user_id: userId, business_id: businessId, model, size, quantity: delta });
   if (error) return err("tshirt.adjust", error);
+  await afterStock(businessId, `tshirt|${model}|${size}`, `${garmentLabel(model)} ${size}`, delta);
   refresh();
   return { ok: true };
 }
@@ -44,6 +55,7 @@ export async function adjustDtfStock(input: { businessId: string; name: string; 
     ? await supabase.from("dtf_stocks").update({ quantity: cur.quantity + delta }).eq("id", cur.id)
     : await supabase.from("dtf_stocks").insert({ workspace_id: workspaceId, user_id: userId, business_id: businessId, name: n, variant, quantity: delta });
   if (error) return err("dtf.adjust", error);
+  await afterStock(businessId, `dtf|${n}|${variant}`, `DTF ${n}${variant === "UNICO" ? "" : variant === "BLANCO" ? " blanco" : " negro"}`, delta);
   refresh();
   return { ok: true };
 }

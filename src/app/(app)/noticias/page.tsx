@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export const metadata = { title: "Noticias" };
 type SP = { dia?: string; tema?: string; negocio?: string; tipo?: string; q?: string };
 
-const chip = (on: boolean) => cn("flex min-h-10 shrink-0 items-center rounded-full border px-3.5 text-sm", on ? "border-accent bg-accent font-semibold text-accent-foreground" : "border-border bg-surface");
+const chip = (on: boolean) => cn("flex min-h-11 shrink-0 items-center rounded-full border px-3.5 text-sm md:min-h-10", on ? "border-accent bg-accent font-semibold text-accent-foreground" : "border-border bg-surface");
 const dayTitle = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
 /** Noticias: resumen del día con fotos, filtros por negocio/tema/tipo de fuente e histórico con buscador. */
@@ -73,7 +73,7 @@ export default async function NoticiasPage({ searchParams }: { searchParams: Pro
 
       <form action="/noticias" className="flex items-center gap-2 rounded-full border border-border bg-surface p-1 pl-4">
         <Search className="size-4 shrink-0 text-muted" aria-hidden />
-        <input name="q" defaultValue={q} placeholder="Buscar en el histórico…" aria-label="Buscar noticias" className="min-h-10 min-w-0 flex-1 bg-transparent text-base outline-none md:text-sm" />
+        <input name="q" defaultValue={q} placeholder="Buscar en el histórico…" aria-label="Buscar noticias" className="min-h-11 md:min-h-10 min-w-0 flex-1 bg-transparent text-base outline-none md:text-sm" />
       </form>
 
       {q ? (

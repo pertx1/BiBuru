@@ -26,7 +26,7 @@ export function PeriodSelector({
             key={p} href={href(p)} scroll={false}
             aria-current={preset === p ? "true" : undefined}
             className={cn(
-              "flex min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm",
+              "flex min-h-11 md:min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm",
               preset === p ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2",
             )}
           >
@@ -38,12 +38,12 @@ export function PeriodSelector({
         {Object.entries(extraParams ?? {}).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         <input type="hidden" name="periodo" value="custom" />
         <label className="flex flex-col gap-1 text-xs text-muted">Desde
-          <input type="date" name="desde" defaultValue={from} className="min-h-10 rounded-lg border border-border bg-surface px-2 text-sm text-foreground" />
+          <input type="date" name="desde" defaultValue={from} className="min-h-11 md:min-h-10 rounded-lg border border-border bg-surface px-2 text-base text-foreground md:text-sm" />
         </label>
         <label className="flex flex-col gap-1 text-xs text-muted">Hasta
-          <input type="date" name="hasta" defaultValue={to} className="min-h-10 rounded-lg border border-border bg-surface px-2 text-sm text-foreground" />
+          <input type="date" name="hasta" defaultValue={to} className="min-h-11 md:min-h-10 rounded-lg border border-border bg-surface px-2 text-base text-foreground md:text-sm" />
         </label>
-        <button type="submit" className={cn("min-h-10 rounded-lg border border-border bg-surface px-3 hover:bg-surface-2", preset === "custom" && "border-accent")}>
+        <button type="submit" className={cn("min-h-11 md:min-h-10 rounded-lg border border-border bg-surface px-3 hover:bg-surface-2", preset === "custom" && "border-accent")}>
           Aplicar
         </button>
       </form>

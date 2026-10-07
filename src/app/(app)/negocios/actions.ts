@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/context";
+import { syncStockTasks } from "@/lib/stock/service";
 import {
   businessSchema, categorySchema, expenseSchema, incomeSchema, orderSchema, productSchema,
   type ActionResult,
@@ -92,6 +93,7 @@ export async function saveOrder(input: OrderPayload): Promise<ActionResult> {
     })),
   );
   if (itemsErr) return dbError("order.items.insert", itemsErr);
+  await syncStockTasks(o.business_id); // los pedidos pendientes reservan stock
   refresh();
   return { ok: true, id: orderId };
 }
@@ -100,8 +102,9 @@ export async function setOrderStatus(id: string, status: string): Promise<Action
   const parsed = z.object({ id: z.uuid(), status: orderSchema.shape.status }).safeParse({ id, status });
   if (!parsed.success) return firstError(parsed.error);
   const { supabase, workspaceId } = await getContext();
-  const { error } = await supabase.from("orders").update({ status: parsed.data.status }).eq("id", parsed.data.id).eq("workspace_id", workspaceId);
+  const { data, error } = await supabase.from("orders").update({ status: parsed.data.status }).eq("id", parsed.data.id).eq("workspace_id", workspaceId).select("business_id").maybeSingle();
   if (error) return dbError("order.status", error);
+  if (data) await syncStockTasks(data.business_id);
   refresh();
   return { ok: true };
 }
@@ -109,8 +112,9 @@ export async function setOrderStatus(id: string, status: string): Promise<Action
 export async function deleteOrder(id: string): Promise<ActionResult> {
   if (!z.uuid().safeParse(id).success) return { ok: false, error: "Pedido no válido" };
   const { supabase, workspaceId } = await getContext();
-  const { error } = await supabase.from("orders").delete().eq("id", id).eq("workspace_id", workspaceId);
+  const { data, error } = await supabase.from("orders").delete().eq("id", id).eq("workspace_id", workspaceId).select("business_id").maybeSingle();
   if (error) return dbError("order.delete", error);
+  if (data) await syncStockTasks(data.business_id);
   refresh();
   return { ok: true };
 }

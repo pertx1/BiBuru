@@ -9,6 +9,10 @@ import { GoalDeadlineWidget, GoalRingWidget, GoalTrendWidget } from "./widgets/g
 import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasWidget, VideosCategoryWidget, VideosRecentWidget, VideosTopWidget } from "./widgets/notes-videos";
 import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./widgets/ai";
 import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
+import { PendingReceivablesWidget } from "./widgets/receivables";
+import { StockMissingWidget } from "./widgets/stock";
+import { MailUnreadWidget } from "./widgets/mail";
+import { SocialBestPostWidget, SocialFollowersWidget, SocialUpcomingWidget } from "./widgets/social";
 import type { WidgetProps } from "./types";
 
 /**
@@ -27,6 +31,8 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "videos-to-watch": VideosToWatchWidget,
   "expenses-category": ExpensesCategoryWidget,
   orders: OrdersWidget,
+  "pending-receivables": PendingReceivablesWidget,
+  "stock-missing": StockMissingWidget,
   "business-compare": BusinessCompareWidget,
   "tasks-overdue": TasksOverdueWidget,
   "tasks-week": TasksWeekWidget,
@@ -48,6 +54,10 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "news-today": NewsTodayWidget,
   "news-idea": NewsIdeaWidget,
   "news-business": NewsBusinessWidget,
+  "mail-unread": MailUnreadWidget,
+  "social-followers": SocialFollowersWidget,
+  "social-best": SocialBestPostWidget,
+  "social-upcoming": SocialUpcomingWidget,
   "ai-ask": AiAskWidget,
   "ai-brief": AiBriefWidget,
   "ai-usage": AiUsageWidget,

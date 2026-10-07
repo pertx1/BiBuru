@@ -45,7 +45,7 @@ export function QuickAdd({
           value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} aria-label="Nueva tarea" autoFocus={autoFocus}
           enterKeyHint="done" maxLength={500} className="min-h-12 flex-1 bg-transparent text-base outline-none placeholder:text-muted md:min-h-11 md:text-sm"
         />
-        <button type="submit" disabled={pending || !text.trim()} aria-label="Añadir tarea" className="flex size-10 items-center justify-center rounded-lg text-muted enabled:text-accent disabled:opacity-40">
+        <button type="submit" disabled={pending || !text.trim()} aria-label="Añadir tarea" className="flex size-11 md:size-10 items-center justify-center rounded-lg text-muted enabled:text-accent disabled:opacity-40">
           <CornerDownLeft className="size-5" aria-hidden />
         </button>
       </form>

@@ -60,7 +60,7 @@ export function ChatView({ conversationId: initialId, initial, autoSend }: { con
         {messages.length === 0 && (
           <div className="rounded-xl border border-dashed border-border p-5">
             <p className="flex items-center gap-2 text-sm font-medium"><Sparkles className="size-4 text-accent" aria-hidden /> Pregúntame por tus tareas, tus negocios o dime qué apuntar.</p>
-            <div className="mt-3 flex flex-wrap gap-2">{SUGGESTIONS.map((s) => <button key={s} type="button" onClick={() => send(s)} className="min-h-10 rounded-full border border-border bg-surface px-3 text-left text-sm hover:bg-surface-2">{s}</button>)}</div>
+            <div className="mt-3 flex flex-wrap gap-2">{SUGGESTIONS.map((s) => <button key={s} type="button" onClick={() => send(s)} className="min-h-11 md:min-h-10 rounded-full border border-border bg-surface px-3 text-left text-sm hover:bg-surface-2">{s}</button>)}</div>
           </div>
         )}
         {messages.map((m) => (
@@ -99,7 +99,7 @@ export function ChatView({ conversationId: initialId, initial, autoSend }: { con
         <VoiceButton onText={(t) => setText((x) => (x ? `${x} ${t}` : t))} onError={setError} />
         <button type="submit" disabled={!text.trim() || pending} aria-label="Enviar" className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground disabled:opacity-50 md:size-9"><Send className="size-4" aria-hidden /></button>
       </form>
-      {messages.length > 0 && <button type="button" onClick={() => { setConversationId(crypto.randomUUID()); setMessages([]); setError(null); }} className="mt-2 inline-flex min-h-10 items-center gap-1.5 self-start text-xs text-muted hover:text-foreground"><Plus className="size-3.5" aria-hidden /> Nueva conversación</button>}
+      {messages.length > 0 && <button type="button" onClick={() => { setConversationId(crypto.randomUUID()); setMessages([]); setError(null); }} className="mt-2 inline-flex min-h-11 md:min-h-10 items-center gap-1.5 self-start text-xs text-muted hover:text-foreground"><Plus className="size-3.5" aria-hidden /> Nueva conversación</button>}
     </div>
   );
 }

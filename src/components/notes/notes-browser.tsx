@@ -91,10 +91,10 @@ export function NotesBrowser({ folders, notes, tags, noteTags, active, counts }:
             className={cn("flex size-9 shrink-0 items-center justify-center text-muted", children.length === 0 && "invisible")}><ChevronRight className={cn("size-4 transition-transform", isOpen && "rotate-90")} aria-hidden /></button>
           {renaming === f.id ? (
             <form className="flex-1" onSubmit={(e) => { e.preventDefault(); const v = String(new FormData(e.currentTarget).get("n") ?? "").trim(); setRenaming(null); if (v && v !== f.name) run(() => saveFolder({ id: f.id, name: v, parent_id: f.parent_id })); }}>
-              <Input name="n" defaultValue={f.name} autoFocus maxLength={80} aria-label="Nombre de la carpeta" onBlur={(e) => e.currentTarget.form?.requestSubmit()} className="min-h-9" />
+              <Input name="n" defaultValue={f.name} autoFocus maxLength={80} aria-label="Nombre de la carpeta" onBlur={(e) => e.currentTarget.form?.requestSubmit()} className="min-h-11 md:min-h-9" />
             </form>
           ) : (
-            <Link href={href(f.id)} className="flex min-h-10 min-w-0 flex-1 items-center gap-2 text-sm"><FolderIcon className="size-4 shrink-0 text-muted" aria-hidden /><span className="truncate">{f.name}</span><span className="ml-auto pr-1 text-xs text-muted">{counts[f.id] ?? 0}</span></Link>
+            <Link href={href(f.id)} className="flex min-h-11 md:min-h-10 min-w-0 flex-1 items-center gap-2 text-sm"><FolderIcon className="size-4 shrink-0 text-muted" aria-hidden /><span className="truncate">{f.name}</span><span className="ml-auto pr-1 text-xs text-muted">{counts[f.id] ?? 0}</span></Link>
           )}
           <span className="flex opacity-0 focus-within:opacity-100 group-hover:opacity-100 max-md:opacity-100">
             <button type="button" aria-label={`Subcarpeta en ${f.name}`} onClick={() => { setAdding({ parent: f.id }); setOpen((o) => new Set(o).add(f.id)); }} className="flex size-9 items-center justify-center text-muted hover:text-foreground"><FolderPlus className="size-3.5" aria-hidden /></button>
@@ -111,7 +111,7 @@ export function NotesBrowser({ folders, notes, tags, noteTags, active, counts }:
   function AddForm({ parent, depth }: { parent: string | null; depth: number }) {
     return (
       <form style={{ paddingLeft: depth * 12 + 8 }} className="py-1" onSubmit={(e) => { e.preventDefault(); const v = String(new FormData(e.currentTarget).get("n") ?? "").trim(); setAdding(null); if (v) run(() => saveFolder({ name: v, parent_id: parent })); }}>
-        <Input name="n" autoFocus placeholder="Nombre de la carpeta" maxLength={80} aria-label="Nueva carpeta" onBlur={(e) => e.currentTarget.form?.requestSubmit()} onKeyDown={(e) => e.key === "Escape" && setAdding(null)} className="min-h-9" />
+        <Input name="n" autoFocus placeholder="Nombre de la carpeta" maxLength={80} aria-label="Nueva carpeta" onBlur={(e) => e.currentTarget.form?.requestSubmit()} onKeyDown={(e) => e.key === "Escape" && setAdding(null)} className="min-h-11 md:min-h-9" />
       </form>
     );
   }
@@ -123,17 +123,17 @@ export function NotesBrowser({ folders, notes, tags, noteTags, active, counts }:
     <div className="grid gap-5 md:grid-cols-[16rem_1fr]">
       <aside aria-label="Carpetas" className="flex flex-col gap-3">
         <ul className="flex flex-col gap-0.5">
-          <li><Link href={href("")} {...dropProps(null, "all")} className={cn("flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm", !active.folder && "bg-surface-2", over === "all" && "ring-1 ring-accent")}><Inbox className="size-4 text-muted" aria-hidden /> Todas<span className="ml-auto text-xs text-muted">{counts.all ?? 0}</span></Link></li>
-          <li><Link href={href("none")} {...dropProps(null, "none")} className={cn("flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm", active.folder === "none" && "bg-surface-2", over === "none" && "ring-1 ring-accent")}><FolderIcon className="size-4 text-muted" aria-hidden /> Sin carpeta<span className="ml-auto text-xs text-muted">{counts.none ?? 0}</span></Link></li>
+          <li><Link href={href("")} {...dropProps(null, "all")} className={cn("flex min-h-11 md:min-h-10 items-center gap-2 rounded-lg px-3 text-sm", !active.folder && "bg-surface-2", over === "all" && "ring-1 ring-accent")}><Inbox className="size-4 text-muted" aria-hidden /> Todas<span className="ml-auto text-xs text-muted">{counts.all ?? 0}</span></Link></li>
+          <li><Link href={href("none")} {...dropProps(null, "none")} className={cn("flex min-h-11 md:min-h-10 items-center gap-2 rounded-lg px-3 text-sm", active.folder === "none" && "bg-surface-2", over === "none" && "ring-1 ring-accent")}><FolderIcon className="size-4 text-muted" aria-hidden /> Sin carpeta<span className="ml-auto text-xs text-muted">{counts.none ?? 0}</span></Link></li>
           {roots.map((f) => <FolderNode key={f.id} f={f} depth={0} />)}
         </ul>
         {adding?.parent === null ? <AddForm parent={null} depth={0} /> : (
-          <button type="button" onClick={() => setAdding({ parent: null })} className="flex min-h-10 items-center gap-2 rounded-lg px-3 text-left text-sm text-muted hover:bg-surface-2"><FolderPlus className="size-4" aria-hidden /> Nueva carpeta</button>
+          <button type="button" onClick={() => setAdding({ parent: null })} className="flex min-h-11 md:min-h-10 items-center gap-2 rounded-lg px-3 text-left text-sm text-muted hover:bg-surface-2"><FolderPlus className="size-4" aria-hidden /> Nueva carpeta</button>
         )}
         {tags.length > 0 && (
           <div><p className="mb-1 px-3 text-xs font-medium text-muted">Etiquetas</p>
             <div className="flex flex-wrap gap-1.5 px-1">{tags.map((t) => (
-              <Link key={t.id} href={href(active.folder, active.tag === t.id ? "" : t.id)} aria-pressed={active.tag === t.id} className={cn("flex min-h-9 items-center gap-1.5 rounded-full border border-border px-2.5 text-xs", active.tag === t.id ? "border-accent bg-accent/10" : "bg-surface")}>
+              <Link key={t.id} href={href(active.folder, active.tag === t.id ? "" : t.id)} aria-pressed={active.tag === t.id} className={cn("flex min-h-11 md:min-h-9 items-center gap-1.5 rounded-full border border-border px-2.5 text-xs", active.tag === t.id ? "border-accent bg-accent/10" : "bg-surface")}>
                 <span className="size-2 rounded-full" style={{ backgroundColor: t.color }} aria-hidden />{t.name}</Link>))}</div>
           </div>
         )}

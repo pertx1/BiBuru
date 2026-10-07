@@ -27,7 +27,7 @@ export type Prefs = {
 
 export type Push = {
   key: string;
-  kind: "task" | "event" | "digest" | "overdue" | "weekly" | "news";
+  kind: "task" | "event" | "digest" | "overdue" | "weekly" | "news" | "mail";
   refId?: string;
   title: string;
   body: string;
@@ -185,4 +185,10 @@ export function planNewsPush(prefs: Prefs, now: Local, digest: { day: string; re
   if (prefs.news_weekends === false && dow >= 5) return null;
   if (minutesOf(now.time) < minutesOf(hm(prefs.news_time ?? "08:00"))) return null;
   return { key: `news:${now.date}`, kind: "news", title: digest.title, body: digest.body, url: `/noticias?dia=${now.date}`, image: digest.image };
+}
+
+/** Correo nuevo (solo cuentas con el aviso activado, que viene apagado). Como mucho 3 por pasada; con más, uno agrupado. */
+export function planMailPushes(msgs: { id: string; from: string | null; subject: string | null; account: string }[]): Push[] {
+  if (msgs.length > 3) return [{ key: `mail:${msgs[0].id}`, kind: "mail", title: `${msgs.length} correos nuevos`, body: msgs.slice(0, 3).map((m) => m.from ?? m.account).join(", "), url: "/correo?filtro=no-leidos" }];
+  return msgs.map((m) => ({ key: `mail:${m.id}`, kind: "mail" as const, refId: m.id, title: m.from ?? "Correo nuevo", body: m.subject?.trim() || "(sin asunto)", url: `/correo?abrir=${m.id}` }));
 }

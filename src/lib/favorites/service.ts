@@ -8,13 +8,14 @@ import type { Json } from "@/lib/supabase/database.types";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
 import { buildVideoPrompt, parseVideoAnalysis, pickCategory, videoAnalysisJsonSchema } from "./analysis";
 import { decryptSecret } from "./crypto";
-import { resolveTiktokShort, tiktokOembed, youtubeOembed } from "./oembed";
+import { resolveTiktokShort, tiktokOembedStatus, youtubeOembed } from "./oembed";
 import { FeedError, fetchPlaylistFeed } from "./rss";
-import { classifyVideoUrl, firstUrl } from "./url";
+import { classifyVideoUrl, firstUrl, hashtags, isTiktokImageHost } from "./url";
+import { deleteGeminiFile, uploadGeminiFile } from "@/lib/ai/gemini";
 import { GoogleError, likedPage, playlistPage, refreshAccessToken, videoDetails, type YtVideo } from "./youtube";
 
 export type VideoMeta = { title?: string | null; channel?: string | null; thumbnail?: string | null; durationSec?: number | null; publishedAt?: string | null };
-export type AddResult = { ok: true; id: string; duplicate: boolean; source: string } | { ok: false; error: string };
+export type AddResult = { ok: true; id: string; duplicate: boolean; source: string; unavailable?: boolean } | { ok: false; error: string };
 
 /** Guarda un enlace de vídeo en Favoritos (sin duplicados). El análisis lo hace la cola, no esta función. */
 export async function addVideoByUrl(a: Actor, raw: string, o: { via?: "manual" | "youtube_like" | "youtube_playlist"; originList?: string; meta?: VideoMeta } = {}): Promise<AddResult> {
@@ -32,21 +33,36 @@ export async function addVideoByUrl(a: Actor, raw: string, o: { via?: "manual" |
   if (dup?.data) return { ok: true, id: dup.data.id, duplicate: true, source: ref.source };
 
   let meta: VideoMeta = o.meta ?? {};
+  let unavailable = false;
   if (!o.meta) {
-    const oe = ref.source === "youtube" ? await youtubeOembed(ref.url) : ref.source === "tiktok" ? await tiktokOembed(ref.url) : null;
-    if (oe) meta = { title: oe.title, channel: oe.author, thumbnail: oe.thumbnail };
+    const oe = ref.source === "youtube" ? await youtubeOembed(ref.url) : ref.source === "tiktok" ? await tiktokOembedStatus(ref.url) : null;
+    if (oe === "unavailable") unavailable = true;
+    else if (oe) meta = { title: oe.title, channel: oe.author, thumbnail: oe.thumbnail };
   }
   const fallbackTitle = ref.source === "other" ? new URL(ref.url).hostname.replace(/^www\./, "") : ref.source === "tiktok" ? "Vídeo de TikTok" : "Vídeo de YouTube";
   const { data, error } = await a.supabase.from("saved_videos").insert({
     workspace_id: a.workspaceId, user_id: a.userId, source: ref.source, external_id: ref.externalId, url: ref.url,
     title: (meta.title ?? fallbackTitle).slice(0, 300), channel: meta.channel ?? null, thumbnail_url: meta.thumbnail ?? null,
     duration_sec: meta.durationSec ?? null, published_at: meta.publishedAt ?? null, added_via: o.via ?? "manual", origin_list: o.originList ?? null,
+    // Privado o borrado: se guarda marcado y no entra en la cola de análisis.
+    ...(unavailable ? { unavailable: true, analysis_status: "error", analysis_error: "Vídeo privado o borrado en TikTok: no se puede analizar." } : {}),
   }).select("id").single();
   if (error) {
     if (error.code === "23505") return { ok: true, id: "", duplicate: true, source: ref.source }; // carrera: ya existe
     return { ok: false, error: "No se pudo guardar el vídeo" };
   }
-  return { ok: true, id: data.id, duplicate: false, source: ref.source };
+  return { ok: true, id: data.id, duplicate: false, source: ref.source, unavailable };
+}
+
+/** Portada de TikTok como imagen para el modelo (solo de sus servidores de imágenes, máx. 3 MB). */
+export async function fetchCoverImage(url: string | null, f: typeof fetch = fetch): Promise<{ mimeType: string; data: string } | null> {
+  if (!url || !isTiktokImageHost(url)) return null;
+  const res = await f(url, { signal: AbortSignal.timeout(8000), redirect: "error" }).catch(() => null);
+  const type = res?.headers.get("content-type")?.split(";")[0].trim() ?? "";
+  if (!res?.ok || !/^image\/(jpeg|png|webp|heic|heif)$/.test(type)) return null;
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length === 0 || buf.length > 3 * 1024 * 1024) return null;
+  return { mimeType: type, data: buf.toString("base64") };
 }
 
 // ------------------------------------------------------------------ token de Google (solo servidor)
@@ -77,10 +93,17 @@ export async function estimateVideoCost(ctx: Pick<AiContext, "supabase" | "works
  * Analiza un vídeo guardado. YouTube se envía a Gemini por su URL; el resto (y el análisis «ligero») usan solo el texto
  * disponible (título, autor, descripción), y la ficha lo indica. Un vídeo largo no se analiza sin confirmación.
  */
-export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video" | "light"; confirmed?: boolean } = {}): Promise<AnalyzeOutcome> {
+export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video" | "light" | "upload"; confirmed?: boolean } = {}): Promise<AnalyzeOutcome> {
   const { supabase, workspaceId } = ctx;
   const { data: v } = await supabase.from("saved_videos").select("*").eq("id", videoId).eq("workspace_id", workspaceId).maybeSingle();
-  if (!v || (v.analysis_status === "ready" && !o.mode) || v.analysis_status === "analyzing") return "skipped";
+  if (!v || (v.analysis_status === "ready" && !o.mode && !v.upload_path) || v.analysis_status === "analyzing") return "skipped";
+  // Un archivo subido pendiente manda: el análisis es del vídeo completo.
+  if (v.upload_path && !o.mode) o = { ...o, mode: "upload" };
+  if (v.unavailable && o.mode !== "upload") {
+    // Privado o borrado: no se analiza por enlace (sí si la persona sube el archivo).
+    await supabase.from("saved_videos").update({ analysis_status: "error", analysis_error: "Vídeo privado o borrado en TikTok: no se puede analizar por enlace. Puedes subir el archivo." }).eq("id", videoId).eq("workspace_id", workspaceId);
+    return "error";
+  }
   const save = (patch: Record<string, unknown>) => supabase.from("saved_videos").update(patch as never).eq("id", videoId).eq("workspace_id", workspaceId);
   const admin = createAdminClient();
 
@@ -95,11 +118,13 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     }
   }
 
-  const textOnly = v.source !== "youtube";
+  const upload = o.mode === "upload" && !!v.upload_path;
+  const textOnly = v.source !== "youtube" && !upload;
   const light = o.mode === "light";
-  const isLong = !textOnly && !light && (duration == null ? false : duration > ctx.videoLongMinutes * 60);
+  const isLong = !upload && !textOnly && !light && (duration == null ? false : duration > ctx.videoLongMinutes * 60);
   if (isLong && !o.confirmed) { await save({ analysis_status: "needs_confirm", analysis_error: null }); return "needs_confirm"; }
 
+  let geminiFile: string | null = null;
   try {
     await save({ analysis_status: "analyzing", analysis_attempts: v.analysis_attempts + 1 });
     const a: Actor = { supabase, workspaceId, userId: v.user_id, timezone: ctx.timezone };
@@ -108,13 +133,25 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
       supabase.from("video_categories").select("id, name").eq("workspace_id", workspaceId),
     ]);
     const useText = textOnly || light;
-    const info = `Título: ${v.title}\nAutor: ${v.channel ?? "desconocido"}\nEnlace: ${v.url}${description ? `\nDescripción: ${description}` : ""}`;
-    const parts = useText ? [{ text: info }] : [{ fileData: { fileUri: v.url } }, { text: `Analiza este vídeo.\n${info}` }];
-    const estimated = useText ? 0 : await estimateVideoCost(ctx, duration);
+    const tags = v.source === "tiktok" ? hashtags(v.title) : [];
+    const info = `${v.source === "tiktok" ? "Descripción" : "Título"}: ${v.title}\nAutor: ${v.channel ?? "desconocido"}\nEnlace: ${v.url}${description ? `\nDescripción: ${description}` : ""}${tags.length ? `\nHashtags: ${tags.map((t) => `#${t}`).join(" ")}` : ""}${v.notes ? `\nNota de la persona (tenla en cuenta): ${v.notes.slice(0, 1500)}` : ""}`;
+    // TikTok sin vídeo: la portada va como imagen (oficial vía oEmbed; nunca se descarga el vídeo de TikTok).
+    const cover = useText && v.source === "tiktok" ? await fetchCoverImage(v.thumbnail_url) : null;
+    let parts: unknown[];
+    if (upload) {
+      const file = await admin.storage.from("video-uploads").download(v.upload_path!);
+      if (file.error || !file.data) throw new Error("No se encontró el vídeo subido. Vuelve a subirlo.");
+      const bytes = Buffer.from(await file.data.arrayBuffer());
+      const mimeType = file.data.type || "video/mp4";
+      if (bytes.length <= INLINE_VIDEO_MAX) parts = [{ inlineData: { mimeType, data: bytes.toString("base64") } }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }];
+      else { const g = await uploadGeminiFile(bytes, mimeType); geminiFile = g.name; parts = [{ fileData: { fileUri: g.uri, mimeType } }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }]; }
+    } else if (useText) parts = cover ? [{ text: `${info}\nTe adjunto la imagen de portada del vídeo.` }, { inlineData: cover }] : [{ text: info }];
+    else parts = [{ fileData: { fileUri: v.url } }, { text: `Analiza este vídeo.\n${info}` }];
+    const estimated = useText ? 0 : await estimateVideoCost(ctx, upload ? v.upload_duration_sec : duration);
     const res = await runAi(ctx, light ? "video_light" : useText ? "video_light" : "video", {
       model: useText ? ctx.models.fast : ctx.models.video,
-      system: buildVideoPrompt({ businesses: biz.data ?? [], categories: (cats.data ?? []).map((c) => c.name), textOnly: useText, light }),
-      contents: [{ role: "user", parts }], jsonSchema: videoAnalysisJsonSchema(), temperature: 0.2, maxOutputTokens: 1500,
+      system: buildVideoPrompt({ businesses: biz.data ?? [], categories: (cats.data ?? []).map((c) => c.name), textOnly: useText, light, cover: !!cover }),
+      contents: [{ role: "user", parts: parts as never }], jsonSchema: videoAnalysisJsonSchema(), temperature: 0.2, maxOutputTokens: 1500,
     }, { estimatedMicros: estimated });
     const an = parseVideoAnalysis(res.text);
     if (!an) throw new Error("La IA no devolvió un análisis válido");
@@ -128,10 +165,12 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     const b = await resolveBusiness(a, an.business);
     await save({
       analysis_status: "ready", analysis_mode: useText ? (light && !textOnly ? "light" : "text") : "video", analysis_error: null, analysis_next_try_at: null,
+      analysis_basis: upload || !useText ? "video_completo" : cover ? "texto_portada" : "texto",
       analysis_cost_micros: v.analysis_cost_micros + res.costMicros, summary: an.summary, key_points: an.key_points as unknown as Json, actions: an.actions as unknown as Json,
       utility: an.utility, category_id: categoryId, business_id: b?.id ?? null, business_reason: b ? an.business_reason : null,
     });
     if (an.tags.length) await addTagsTo(a, "video", videoId, an.tags);
+    if (upload) await dropUpload(admin, videoId, v.upload_path!);
     return "ready";
   } catch (e) {
     if (e instanceof AiBlockedError) {
@@ -141,10 +180,25 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     }
     const attempts = v.analysis_attempts + 1;
     const msg = (e instanceof Error ? e.message : "Error de IA").slice(0, 300);
-    if (attempts >= 4) { await save({ analysis_status: "error", analysis_error: msg, analysis_next_try_at: null }); return "error"; }
+    if (attempts >= 4) {
+      await save({ analysis_status: "error", analysis_error: msg, analysis_next_try_at: null });
+      if (upload) await dropUpload(admin, videoId, v.upload_path!); // no se guarda el vídeo si no se puede analizar
+      return "error";
+    }
     await save({ analysis_status: "pending", analysis_error: msg, analysis_next_try_at: new Date(Date.now() + RETRY_MINUTES[attempts - 1] * 60_000).toISOString() });
     return "retry";
+  } finally {
+    if (geminiFile) await deleteGeminiFile(geminiFile).catch(() => {});
   }
+}
+
+/** Hasta este tamaño el vídeo va dentro de la petición (Gemini admite ~20 MB por petición; base64 ocupa un 33 % más). */
+export const INLINE_VIDEO_MAX = 14 * 1024 * 1024;
+
+/** Borra el archivo subido y la referencia (el vídeo solo se guarda mientras se analiza). */
+async function dropUpload(admin: AdminClient, videoId: string, path: string) {
+  await admin.storage.from("video-uploads").remove([path]).catch(() => null);
+  await admin.from("saved_videos").update({ upload_path: null }).eq("id", videoId);
 }
 
 /** Contexto de IA de un usuario concreto, con la clave de servicio (cola en segundo plano). */

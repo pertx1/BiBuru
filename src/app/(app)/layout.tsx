@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { OfflineBanner } from "@/components/layout/offline-banner";
 import { Sidebar } from "@/components/layout/sidebar";
 import { CaptureProvider } from "@/components/capture/capture-provider";
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="min-w-0 flex-1 px-4 pt-safe pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 md:pb-8">
         <div className="mx-auto w-full max-w-5xl py-6">{children}</div>
       </main>
+      <PullToRefresh />
       <BottomNav inboxCount={inboxCount} tabs={nav.tabs} showCapture={nav.showCapture} />
     </div>
     <SearchPalette />

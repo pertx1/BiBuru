@@ -16,7 +16,7 @@ export default async function NotaPage({ params }: { params: Promise<{ id: strin
   const lite = (t: { id: string; name: string; color: string }) => ({ id: t.id, name: t.name, color: t.color });
   return (
     <>
-      <Link href={note.folder_id ? `/notas?carpeta=${note.folder_id}` : "/notas"} className="mb-3 inline-block text-sm text-muted hover:text-foreground">← Notas</Link>
+      <Link href={note.folder_id ? `/notas?carpeta=${note.folder_id}` : "/notas"} className="mb-1 inline-flex min-h-11 items-center text-sm text-muted hover:text-foreground">← Notas</Link>
       <NoteEditor key={note.id} note={note} folders={folders} businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} tags={note.tags.map(lite)} allTags={tags.map(lite)} />
     </>
   );

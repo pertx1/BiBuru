@@ -20,7 +20,7 @@ export function ProductionNav({ id }: { id: string }) {
         const active = pathname === href;
         return (
           <Link key={i.slug} href={href} aria-current={active ? "page" : undefined}
-            className={cn("flex min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm", active ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>
+            className={cn("flex min-h-11 md:min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm", active ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>
             {i.label}
           </Link>
         );

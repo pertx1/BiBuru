@@ -25,7 +25,7 @@ export function ThemeToggle() {
           aria-checked={mounted && theme === o.value}
           onClick={() => setTheme(o.value)}
           className={cn(
-            "min-h-10 rounded-md px-3 text-sm font-medium text-muted md:min-h-8",
+            "min-h-11 md:min-h-10 rounded-md px-3 text-sm font-medium text-muted md:min-h-8",
             mounted && theme === o.value && "bg-surface-2 text-foreground",
           )}
         >

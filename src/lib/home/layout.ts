@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 export type WidgetSize = "s" | "m" | "l";
-export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "noticias" | "ia";
+export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "noticias" | "correo" | "redes" | "ia";
 export type PreviewKind = "finance" | "line" | "number" | "list" | "ring" | "bars" | "input" | "agenda" | "calendar" | "text";
 
 /** Ajustes editables de un widget (el formulario de ajustes se genera a partir de esto). */
@@ -30,7 +30,7 @@ export type WidgetMeta = {
 
 export const GROUP_LABELS: Record<WidgetGroup, string> = {
   negocios: "Negocios", tareas: "Tareas", calendario: "Calendario", objetivos: "Objetivos",
-  captura: "Captura y notas", favoritos: "Favoritos", noticias: "Noticias", ia: "IA",
+  captura: "Captura y notas", favoritos: "Favoritos", noticias: "Noticias", correo: "Correo", redes: "Redes sociales", ia: "IA",
 };
 
 export const SIZE_LABELS: Record<WidgetSize, string> = { s: "Pequeño", m: "Mediano", l: "Grande" };
@@ -92,6 +92,8 @@ export const WIDGETS: WidgetMeta[] = [
   w("expenses-category", "negocios", "Gastos por categoría", "En qué se va el dinero en el periodo elegido arriba.", "bars", ["m", "l"], [business()]),
   w("orders", "negocios", "Pedidos", "Pedidos pendientes de enviar o los últimos pedidos.", "list", ["m", "l"],
     [business(), { key: "show", label: "Mostrar", kind: "choice", options: [{ value: "pending", label: "Pendientes" }, { value: "latest", label: "Últimos" }] }], { show: "pending" }),
+  w("pending-receivables", "negocios", "Pendiente de cobro", "Cuánto te deben, en cuántos pedidos y quién (de un negocio o de todos).", "number", ["m", "s", "l"], [business()]),
+  w("stock-missing", "negocios", "Stock que falta", "Lo que hay que reponer: pedidos pendientes sin cubrir o por debajo del mínimo.", "list", ["m", "s", "l"], [business()]),
   w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
   w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
   w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),
@@ -113,6 +115,10 @@ export const WIDGETS: WidgetMeta[] = [
   w("news-today", "noticias", "Noticias de hoy", "El resumen de noticias útiles de hoy, con la foto de la principal.", "finance", ["m", "l"]),
   w("news-idea", "noticias", "Idea del día", "Una acción para ganar más o escalar, sacada de las noticias de hoy.", "text", ["m", "l", "s"]),
   w("news-business", "noticias", "Noticias de un negocio", "Las noticias de hoy que aplican a un negocio concreto.", "list", ["m", "l"], [business(false)]),
+  w("mail-unread", "correo", "Correos sin leer", "Cuántos correos de Outlook tienes sin leer y de quién.", "list", ["m", "s", "l"]),
+  w("social-followers", "redes", "Seguidores", "Seguidores de tus cuentas de Instagram y TikTok y su cambio en 7 días.", "list", ["m", "s", "l"]),
+  w("social-best", "redes", "Mejor publicación de la semana", "La publicación con más interacciones de los últimos 7 días.", "text", ["m", "l"]),
+  w("social-upcoming", "redes", "Próximas publicaciones", "Lo que tienes programado en Instagram y TikTok.", "list", ["m", "l", "s"]),
   w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
   w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
   w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),

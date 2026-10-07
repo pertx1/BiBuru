@@ -34,7 +34,7 @@ export default async function ObjetivoPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <Link href="/objetivos" className="mb-3 inline-block text-sm text-muted hover:text-foreground">← Objetivos</Link>
+      <Link href="/objetivos" className="mb-1 inline-flex min-h-11 items-center text-sm text-muted hover:text-foreground">← Objetivos</Link>
       <header className="mb-4 flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">{goal.title}</h1>

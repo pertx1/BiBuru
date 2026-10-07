@@ -15,3 +15,5 @@ Sirven para ver la app funcionando de verdad antes de desplegar. No forman parte
 - `bash scripts/e2e/seed.sh` importa la base de ejemplo de PROFITY (`profity_test`).
 - `shots.mjs` (capturas móvil/escritorio), `browser-flow.mjs` (Fase 2), `phase3.mjs` y `recurring.mjs` (Fase 3), `phase4.mjs`, `phase5.mjs`, `phase67.mjs` (IA y Favoritos, con `fake-gemini.mjs`) y `phase8.mjs`.
 - No uses `pkill -f` con el nombre del servidor dentro de una orden larga: puede matar tu propio shell; `down.sh` ya lo hace bien.
+- Noche (`noche-mejoras`): `orders.mjs`, `stock.mjs` (necesitan `BIZ`), `gestures.mjs`, `tiktok.mjs`, `mail.mjs`, `social.mjs`, `tiktok-business.mjs` y
+  `mobile-audit.mjs` (`npm run test:mobile`; necesita `BIZ`, `NOTE`, `GOAL`; con `SHOTS=docs/movil/despues` guarda capturas).
