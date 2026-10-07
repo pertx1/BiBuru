@@ -16,6 +16,7 @@ import { captureSchema } from "@/lib/notes/schemas";
 import type { ActionResult } from "@/lib/schemas";
 import { getNow } from "@/lib/tasks/data";
 import { parseQuickTask } from "@/lib/tasks/quick-parse";
+import { insertSimpleTask } from "@/lib/tasks/service";
 
 const uuid = z.uuid();
 const refresh = () => { revalidatePath("/bandeja"); revalidatePath("/tareas"); revalidatePath("/notas"); revalidatePath("/"); };
@@ -72,15 +73,14 @@ async function markAccepted(id: string, created: Created) {
 /** Convierte una captura en tarea (entiende fechas: «llamar a Ana mañana a las 10»). */
 export async function acceptInboxAsTask(id: string): Promise<ActionResult & { created?: Created }> {
   if (!uuid.safeParse(id).success) return { ok: false, error: "Captura no válida" };
-  const { supabase, workspaceId, userId } = await getContext();
-  const { data: item } = await supabase.from("inbox_items").select("raw_text, status").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
+  const ctx = await getContext();
+  const { data: item } = await ctx.supabase.from("inbox_items").select("raw_text, status").eq("id", id).eq("workspace_id", ctx.workspaceId).maybeSingle();
   if (!item) return { ok: false, error: "No se encontró la captura" };
   const now = await getNow();
   const q = parseQuickTask(item.raw_text, now.date, now.time);
-  const { data, error } = await supabase.from("tasks").insert({
-    workspace_id: workspaceId, user_id: userId, title: q.title.slice(0, 200), due_date: q.date, due_time: q.time, priority: q.priority, recurrence: q.recurrence ? { ...q.recurrence } : null,
-  }).select("id").single();
-  if (error) { console.error("[inbox] task:", error.message); return { ok: false, error: "No se pudo crear la tarea" }; }
+  const r = await insertSimpleTask(ctx, { title: q.title, date: q.date, time: q.time, priority: q.priority, recurrence: q.recurrence });
+  if ("error" in r) return { ok: false, error: r.error };
+  const data = r;
   const created = { kind: "task" as const, id: data.id };
   await markAccepted(id, created);
   refresh();

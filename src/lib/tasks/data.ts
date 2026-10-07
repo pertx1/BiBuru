@@ -4,16 +4,19 @@ import { addDays, endOfMonth, nowLocal, startOfMonth } from "@/lib/dates";
 import type { Database } from "@/lib/supabase/database.types";
 import { expandEvents, postsToItems, tasksToItems, type CalItem } from "./calendar";
 import { type GoalLike, type Live } from "./goals";
+import { rollRecurring } from "./service";
 
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
-export type TaskWithSubs = Task & { subtasks: Task[] };
+export type Subtask = Database["public"]["Tables"]["subtasks"]["Row"];
+export type TaskWithSubs = Task & { subtasks: Subtask[] };
 export type EventRow = Database["public"]["Tables"]["events"]["Row"];
 export type Goal = Database["public"]["Tables"]["goals"]["Row"];
 export type Milestone = Database["public"]["Tables"]["goal_milestones"]["Row"];
 export type GoalProgressRow = Database["public"]["Tables"]["goal_progress"]["Row"];
 
-export type TaskView = "hoy" | "7dias" | "todas" | "negocio" | "hechas";
-export const TASK_VIEWS: TaskView[] = ["hoy", "7dias", "todas", "negocio", "hechas"];
+/** Filtros de la lista (chips de /tareas, como Antola). «todas» = pendientes, para negocio/objetivo y widgets. */
+export type TaskView = "hoy" | "semana" | "bandeja" | "sinfecha" | "hechas" | "todas";
+export const TASK_VIEWS: TaskView[] = ["hoy", "semana", "bandeja", "sinfecha", "hechas"];
 
 function fail(what: string, e: { message: string } | null): never {
   console.error(`[tasks] ${what}:`, e?.message);
@@ -25,39 +28,51 @@ export async function getNow() {
   return { timezone, ...nowLocal(new Date(), timezone) };
 }
 
-async function attachSubtasks(parents: Task[]): Promise<TaskWithSubs[]> {
-  if (parents.length === 0) return [];
+async function attachSubtasks(tasks: Task[]): Promise<TaskWithSubs[]> {
+  if (tasks.length === 0) return [];
   const { supabase, workspaceId } = await getContext();
-  const { data, error } = await supabase.from("tasks").select("*").eq("workspace_id", workspaceId).in("parent_id", parents.map((p) => p.id)).order("sort_order").order("created_at");
+  const { data, error } = await supabase.from("subtasks").select("*").eq("workspace_id", workspaceId).in("task_id", tasks.map((p) => p.id)).order("position").order("created_at");
   if (error) fail("subtareas", error);
-  const by = new Map<string, Task[]>();
-  for (const s of data) (by.get(s.parent_id!) ?? by.set(s.parent_id!, []).get(s.parent_id!)!).push(s);
-  return parents.map((p) => ({ ...p, subtasks: by.get(p.id) ?? [] }));
+  const by = new Map<string, Subtask[]>();
+  for (const s of data) (by.get(s.task_id) ?? by.set(s.task_id, []).get(s.task_id)!).push(s);
+  return tasks.map((p) => ({ ...p, subtasks: by.get(p.id) ?? [] }));
 }
 
-const PRIORITY_THEN_TIME = (a: Task, b: Task) =>
-  (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") ||
-  (a.due_time ?? "99:99").localeCompare(b.due_time ?? "99:99") ||
-  b.priority - a.priority ||
-  a.created_at.localeCompare(b.created_at);
+/** Pone al día las repetitivas atrasadas (como Antola al abrir Hoy o Tareas). Nunca lanza. */
+export async function rollMine(): Promise<void> {
+  try {
+    const ctx = await getContext();
+    await rollRecurring(ctx);
+  } catch (e) { console.error("[tasks] roll", e instanceof Error ? e.message : e); }
+}
 
-export async function listTasks(view: TaskView, opts: { businessId?: string; goalId?: string } = {}): Promise<TaskWithSubs[]> {
+/**
+ * Tareas según el filtro. Orden de Antola: fecha (sin fecha al final), hora, prioridad (alta primero), creación.
+ * Completadas: las 100 últimas.
+ */
+export async function listTasks(view: TaskView, opts: { businessId?: string; goalId?: string; roll?: boolean } = {}): Promise<TaskWithSubs[]> {
+  if (view !== "hechas" && opts.roll !== false) await rollMine();
   const { supabase, workspaceId } = await getContext();
   const { date: today } = await getNow();
-  let q = supabase.from("tasks").select("*").eq("workspace_id", workspaceId).is("parent_id", null);
+  let q = supabase.from("tasks").select("*").eq("workspace_id", workspaceId);
   if (opts.businessId) q = q.eq("business_id", opts.businessId);
   if (opts.goalId) q = q.eq("goal_id", opts.goalId);
-
-  switch (view) {
-    case "hoy": q = q.eq("status", "open").lte("due_date", today); break;                       // atrasadas + hoy
-    case "7dias": q = q.eq("status", "open").gte("due_date", today).lte("due_date", addDays(today, 6)); break;
-    case "hechas": q = q.eq("status", "done").order("completed_at", { ascending: false }).limit(100); break;
-    default: q = q.eq("status", "open");
+  if (view === "hechas") {
+    const { data, error } = await q.eq("status", "done").order("completed_at", { ascending: false }).limit(100);
+    if (error) fail("tareas", error);
+    return attachSubtasks(data);
   }
-  const { data, error } = await q.limit(1000);
+  q = q.eq("status", "open");
+  switch (view) {
+    case "hoy": q = q.lte("due_date", today); break;                                        // vencidas + hoy
+    case "semana": q = q.gte("due_date", today).lte("due_date", addDays(today, 6)); break;
+    case "bandeja": q = q.is("due_date", null).is("business_id", null); break;
+    case "sinfecha": q = q.is("due_date", null); break;
+  }
+  const { data, error } = await q.order("due_date", { ascending: true, nullsFirst: false }).order("due_time", { ascending: true, nullsFirst: false })
+    .order("priority", { ascending: false }).order("created_at", { ascending: true }).limit(500);
   if (error) fail("tareas", error);
-  const rows = view === "hechas" ? data : [...data].sort(PRIORITY_THEN_TIME);
-  return attachSubtasks(rows);
+  return attachSubtasks(data);
 }
 
 export async function getTask(id: string): Promise<TaskWithSubs | null> {
@@ -67,12 +82,11 @@ export async function getTask(id: string): Promise<TaskWithSubs | null> {
   return data ? (await attachSubtasks([data]))[0] : null;
 }
 
-export async function countOpenTasks() {
+/** Pendientes sin fecha ni negocio (contador del chip «Bandeja»). */
+export async function countTaskInbox(): Promise<number> {
   const { supabase, workspaceId } = await getContext();
-  const { date: today } = await getNow();
-  const base = () => supabase.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "open").is("parent_id", null);
-  const [overdue, dueToday] = await Promise.all([base().lt("due_date", today), base().eq("due_date", today)]);
-  return { overdue: overdue.count ?? 0, today: dueToday.count ?? 0 };
+  const { count } = await supabase.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "open").is("due_date", null).is("business_id", null);
+  return count ?? 0;
 }
 
 /** Eventos (expandidos) y tareas con fecha dentro de un rango, para el calendario. */
@@ -82,7 +96,7 @@ export async function getCalendarItems(from: string, to: string): Promise<CalIte
   const [events, tasks, posts] = await Promise.all([
     // Los no recurrentes que tocan el rango y todos los recurrentes que ya empezaron.
     supabase.from("events").select("*").eq("workspace_id", workspaceId).lte("start_date", to).or(`end_date.gte.${from},recurrence.not.is.null`).limit(2000),
-    supabase.from("tasks").select("id,title,due_date,due_time,business_id,priority,status").eq("workspace_id", workspaceId).is("parent_id", null).gte("due_date", from).lte("due_date", to).limit(2000),
+    supabase.from("tasks").select("id,title,due_date,due_time,business_id,priority,status").eq("workspace_id", workspaceId).gte("due_date", from).lte("due_date", to).limit(2000),
     // Calendario de contenido (Redes). Si la tabla aún no existe (vista previa sin migración), simplemente no salen.
     supabase.from("social_posts").select("id,title,caption,scheduled_at,status,business_id").eq("workspace_id", workspaceId).neq("status", "borrador")
       .gte("scheduled_at", new Date(Date.parse(`${from}T00:00:00Z`) - 86400_000).toISOString())
@@ -113,7 +127,7 @@ async function liveFor(goals: Goal[]): Promise<Map<string, Live>> {
 
   const [ms, tasks] = await Promise.all([
     supabase.from("goal_milestones").select("goal_id, done").eq("workspace_id", workspaceId).in("goal_id", ids),
-    supabase.from("tasks").select("goal_id, status").eq("workspace_id", workspaceId).is("parent_id", null).in("goal_id", ids),
+    supabase.from("tasks").select("goal_id, status").eq("workspace_id", workspaceId).in("goal_id", ids),
   ]);
   if (ms.error) fail("hitos", ms.error);
   if (tasks.error) fail("tareas de objetivos", tasks.error);

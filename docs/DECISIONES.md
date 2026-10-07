@@ -92,3 +92,24 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   en Producción) o bajo el mínimo si le pones uno; **para hoy y prioridad alta**; la cantidad va en la nota y se actualiza sola. Si la tachas y sigue
   faltando, **no vuelve a salir**; cuando hay stock, se suelta y, si estaba pendiente, se completa sola. Tachar ya no pregunta nada (el toast ofrece
   «Apuntar unidades» si quieres). Se ponen al día también al abrir Tareas y Producción (BATU lo hacía cada hora).
+- **Tareas como en Antola**: el apartado Tareas se ha rehecho siguiendo Antola, con el estilo de BiBuru.
+  - **Proyectos = negocios**. Hay un chip por negocio (color e icono), y en el formulario aparece «Proyecto».
+  - **Se mantiene el alta rápida** en lenguaje natural encima de la lista. El **«+» redondo** abre el formulario completo (`/tareas/nueva`).
+  - **La «API» de Antola son Server Actions internas.** Hacen las mismas operaciones y siguen las mismas reglas: una tarea de otro espacio responde «No se encontró la tarea».
+  - **Prioridad**: alta, media o baja (3, 2 o 1). Las que antes no tenían prioridad pasan a **media**.
+  - **Repetición**: no se repite, cada día, días concretos, cada semana o cada mes. Cada tarea repetida pertenece a una serie.
+    - Al completarla se crea la siguiente ocurrencia. Es única por tarea: un doble toque no la duplica.
+    - Deshacer el completado borra esa siguiente ocurrencia si sigue pendiente.
+    - Una repetitiva sin hacer se mueve sola a la ocurrencia de hoy, al abrir Tareas o Inicio y cada hora con el cron de avisos.
+    - Repeticiones antiguas sin equivalente (cada año, cada N días o semanas, «hasta…») se aproximan y se deja una nota en la tarea para que la revises.
+  - **Avisos por tarea**, como en Antola: «A una hora» o «Antes» (a la hora, 5, 10, 15 o 30 min, 1 h, 2 h o 1 día). Sin hora, «antes» se cuenta desde las 9:00.
+    - **Ya no hay antelación global.** En Ajustes queda un interruptor, «Avisos de tareas».
+    - A las tareas abiertas que ya tenían hora se les ha puesto «Antes» con la antelación que tenías configurada.
+    - El alta rápida con hora avisa a esa hora.
+  - **El cron envía cuando llega el `remind_at` de la tarea.** Respeta las horas de silencio y, si el aviso lleva más de 2 h de retraso, no lo envía.
+    - El aviso muestra el título de la tarea y debajo cuándo es («Hoy a las 10:00»). Al tocarlo se abre `/tareas/<id>`.
+    - Después de enviarlo, `remind_at` se borra solo si nadie lo ha cambiado mientras (compare-and-set).
+  - **Posponer** (15 min o 1 h) mueve solo el aviso, no la fecha. **«Mañana»** pasa la tarea a mañana con la misma hora y el mismo aviso.
+  - **Subtareas en su propia tabla** (`subtasks`), como máximo 50. Las tareas hijas que había antes se han copiado como subtareas.
+  - **Clave externa `origen:clave`**, única por espacio. La usan las tareas de Stock (`stock:<negocio>:<artículo>`) y se suelta cuando ya no hace falta.
+  - **Las fechas y horas «de pared» siguen en `due_date`/`due_time`.** Además se guardan los instantes UTC (`due_at`, `reminder_at`, `remind_at`), que son los que usa el cron.

@@ -14,13 +14,12 @@ import { businessOf, type WidgetProps } from "../types";
 
 /** Tareas de hoy y atrasadas; se marcan desde aquí (reutiliza la lista de Tareas). */
 export async function TasksTodayWidget({ w, ctx }: WidgetProps) {
-  const [tasks, goals] = await Promise.all([listTasks("hoy"), listGoals({ status: "active" })]);
-  const biz = new Map(ctx.businesses.map((b) => [b.id, b.name]));
+  const tasks = await listTasks("hoy");
   const max = w.size === "l" ? 12 : 6;
-  const groups = groupTasks("hoy", tasks, ctx.today, biz).map((g) => ({ ...g, tasks: g.tasks.slice(0, max) }));
+  const groups = groupTasks("hoy", tasks, ctx.today).map((g) => ({ ...g, tasks: g.tasks.slice(0, max) }));
   return (
     <WidgetCard title="Tareas de hoy" href="/tareas">
-      <TaskList groups={groups} businesses={ctx.businesses} goals={goals.map((g) => ({ id: g.id, title: g.title }))} today={ctx.today} emptyText="Nada pendiente para hoy. 🎉" />
+      <TaskList groups={groups} businesses={ctx.businesses} today={ctx.today} empty={{ title: "Nada pendiente para hoy", text: "Disfruta del día o adelanta algo de la semana." }} compact />
     </WidgetCard>
   );
 }

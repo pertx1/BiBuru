@@ -39,8 +39,8 @@ ok(await task.isVisible(), "tarea «Pedir …» en Tareas → Hoy");
 ok(await page.locator("li", { has: task }).getByText("Stock", { exact: true }).isVisible(), "con la etiqueta Stock");
 
 // Se tacha como cualquier tarea; mientras siga faltando, no vuelve a salir.
-await page.locator("li", { has: task }).locator('input[type="checkbox"]').click();
-await page.getByText("Hecha ✔").last().waitFor();
+await page.getByRole("button", { name: new RegExp(`Completar «Pedir ${name}»`) }).click();
+await page.getByText("¡Hecho! ✓").last().waitFor();
 ok(true, "se tacha como cualquier tarea");
 await page.goto(`${base}/tareas`, { waitUntil: "networkidle" });
 ok(!(await page.getByText(`Pedir ${name}`, { exact: true }).count()), "tachada y aún faltando: no vuelve a salir");

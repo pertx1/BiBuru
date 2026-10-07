@@ -29,8 +29,8 @@ export function NotificationSettingsForm({ initial }: { initial: NotificationSet
 
   return (
     <form className="flex flex-col gap-1" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await saveNotificationSettings({ ...s, daily_digest_time: s.daily_digest_time.slice(0, 5), overdue_alert_time: s.overdue_alert_time.slice(0, 5), weekly_review_time: s.weekly_review_time.slice(0, 5), quiet_hours_start: s.quiet_hours_start.slice(0, 5), quiet_hours_end: s.quiet_hours_end.slice(0, 5) }); setMsg(r.ok ? "Guardado" : r.error); }); }}>
-      <Row label="Tareas con hora">
-        <Select aria-label="Antelación de tareas" value={s.task_lead_minutes} onChange={(e) => set("task_lead_minutes", Number(e.target.value))} className="w-full sm:w-44">{lead(s.task_lead_minutes).map(([m, l]) => <option key={m} value={m}>{l}</option>)}</Select>
+      <Row label="Avisos de tareas (cada tarea elige cuándo, en su «Recordatorio»)">
+        <input type="checkbox" className="size-5" aria-label="Avisos de tareas" checked={s.task_reminders_enabled} onChange={(e) => set("task_reminders_enabled", e.target.checked)} />
       </Row>
       <Row label="Eventos con hora">
         <Select aria-label="Antelación de eventos" value={s.event_lead_minutes} onChange={(e) => set("event_lead_minutes", Number(e.target.value))} className="w-full sm:w-44">{lead(s.event_lead_minutes).map(([m, l]) => <option key={m} value={m}>{l}</option>)}</Select>

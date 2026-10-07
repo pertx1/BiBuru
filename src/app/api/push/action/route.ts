@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { completeReminder, snoozeReminder } from "@/app/(app)/aviso/actions";
-import { snoozeTask, toggleTask } from "@/app/(app)/tareas/actions";
+import { completeTask, snoozeTask } from "@/app/(app)/tareas/actions";
 import { createClient } from "@/lib/supabase/server";
 
 const schema = z.object({ kind: z.enum(["task", "reminder"]), refId: z.uuid(), action: z.enum(["done", "snooze"]) });
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   const { kind, refId, action } = p.data;
   const r = kind === "task"
-    ? action === "done" ? await toggleTask(refId, true) : await snoozeTask(refId, "1h")
+    ? action === "done" ? await completeTask(refId) : await snoozeTask(refId, 60)
     : action === "done" ? await completeReminder(refId) : await snoozeReminder(refId, "1h");
   return NextResponse.json({ ok: r.ok }, { status: r.ok ? 200 : 400 });
 }

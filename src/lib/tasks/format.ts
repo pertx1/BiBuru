@@ -17,3 +17,23 @@ export function dueLabel(date: string | null, time: string | null, today: string
 
 export const PRIORITY_LABELS = ["Sin prioridad", "Baja", "Media", "Alta"] as const;
 export const PRIORITY_COLORS = ["", "#3b82f6", "#f59e0b", "#ef4444"] as const;
+
+const WEEKDAY_NAMES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+/** Día relativo como Antola: «Hoy», «Mañana», «Ayer», «Hace 3 días», «Viernes 9», «20/10/2026». */
+export function relativeDay(date: string, today: string): string {
+  const d = diffDays(today, date);
+  if (d === 0) return "Hoy";
+  if (d === 1) return "Mañana";
+  if (d === -1) return "Ayer";
+  if (d < 0) return `Hace ${-d} días`;
+  if (d < 7) return `${WEEKDAY_NAMES[dowOf(date)]} ${+date.slice(8, 10)}`;
+  return formatDate(date);
+}
+
+/** «Hoy a las 10:00», «Mañana» (texto de los avisos). */
+export function whenLabel(date: string | null, time: string | null, today: string): string | null {
+  if (!date) return null;
+  const day = relativeDay(date, today);
+  return time ? `${day} a las ${time.slice(0, 5)}` : day;
+}

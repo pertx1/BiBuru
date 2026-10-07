@@ -1,8 +1,9 @@
 import "server-only";
 import { addDays, nowLocal } from "@/lib/dates";
+import { rollAllRecurring } from "@/lib/tasks/service";
 import type { AdminClient } from "@/lib/supabase/admin";
 import {
-  eventOccurrences, inQuietHours, planDailyDigest, planMailPushes, planNewsPush, planEventReminders, planOverdueAlert, planTaskReminders, planWeeklyReview, type Prefs, type Push,
+  eventOccurrences, inQuietHours, planDailyDigest, planMailPushes, planNewsPush, planEventReminders, planOverdueAlert, planTaskPushes, planWeeklyReview, type Prefs, type Push,
 } from "./planning";
 import type { PushPayload, PushSub, Sender } from "./push";
 import { notificationText, type DigestContent, type DigestStatus } from "@/lib/news/digest";
@@ -18,6 +19,8 @@ type Profile = Prefs & { user_id: string; default_workspace_id: string | null; t
  */
 export async function runReminders(admin: AdminClient, send: Sender, now: Date = new Date()): Promise<CronSummary> {
   const summary: CronSummary = { users: 0, sent: 0, failed: 0, quiet: 0, removedSubscriptions: 0 };
+  // Una vez por hora: repetitivas atrasadas a su ocurrencia de hoy (con su aviso), aunque no abras la app (como Antola).
+  if (now.getUTCMinutes() === 0) await rollAllRecurring(admin, now).catch((e) => console.error("[cron] roll", e instanceof Error ? e.message : e));
 
   const { data: subs, error } = await admin.from("push_subscriptions").select("id, user_id, endpoint, p256dh, auth");
   if (error) throw new Error(`push_subscriptions: ${error.message}`);
@@ -38,14 +41,19 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
     if (inQuietHours(local.time, p.quiet_hours_start.slice(0, 5), p.quiet_hours_end.slice(0, 5))) { summary.quiet++; continue; }
 
     // ------- candidatos
-    const pushes: Push[] = [];
+    const pushes: (Push & { remindAt?: string })[] = [];
     const [tasks, events] = await Promise.all([
-      admin.from("tasks").select("id,title,due_date,due_time,status,parent_id,updated_at").eq("workspace_id", ws).eq("status", "open").not("due_time", "is", null)
-        .gte("due_date", addDays(local.date, -1)).lte("due_date", addDays(local.date, 1)).limit(500),
+      // Tareas: cada una guarda su próximo aviso (remind_at, UTC). Como Antola: pendientes con remind_at ≤ ahora.
+      p.task_reminders_enabled === false ? Promise.resolve({ data: [] }) :
+        admin.from("tasks").select("id,title,due_date,due_time,remind_at").eq("workspace_id", ws).eq("status", "open").not("remind_at", "is", null)
+          .lte("remind_at", now.toISOString()).order("remind_at").limit(50),
       admin.from("events").select("id,title,location,all_day,start_date,start_time,end_date,recurrence").eq("workspace_id", ws)
         .lte("start_date", addDays(local.date, 1)).or(`end_date.gte.${local.date},recurrence.not.is.null`).limit(1000),
     ]);
-    pushes.push(...planTaskReminders((tasks.data ?? []).map((t) => ({ ...t, updatedLocal: nowLocal(new Date(t.updated_at), p.timezone) })), p, local));
+    const { pushes: taskPushes, stale } = planTaskPushes(tasks.data ?? [], p.timezone, now);
+    pushes.push(...taskPushes);
+    // Demasiado antiguos (p. ej. tras las horas de silencio): se descartan sin avisar.
+    for (const t of stale) await admin.from("tasks").update({ remind_at: null }).eq("id", t.id).eq("remind_at", t.remind_at);
     pushes.push(...planEventReminders(eventOccurrences(events.data ?? [], local.date, addDays(local.date, 1)), p, local));
 
     // Resumen, atrasadas y revisión: solo se consultan si su ventana horaria aplica.
@@ -54,8 +62,8 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
     const overdueDue = planOverdueAlert(p, local, 1) !== null;
     if (digestDue || overdueDue) {
       const [today, overdue] = await Promise.all([
-        admin.from("tasks").select("title,due_time").eq("workspace_id", ws).eq("status", "open").is("parent_id", null).eq("due_date", local.date).order("due_time", { nullsFirst: false }).limit(50),
-        admin.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ws).eq("status", "open").is("parent_id", null).lt("due_date", local.date),
+        admin.from("tasks").select("title,due_time").eq("workspace_id", ws).eq("status", "open").eq("due_date", local.date).order("due_time", { nullsFirst: false }).limit(50),
+        admin.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ws).eq("status", "open").lt("due_date", local.date),
       ]);
       const overdueCount = overdue.count ?? 0;
       const digest = planDailyDigest(p, local, {
@@ -110,8 +118,14 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
     for (const n of pushes) {
       const { data: claimed, error: cerr } = await admin.from("notification_log")
         .upsert({ user_id: p.user_id, dedupe_key: n.key, kind: n.kind }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }).select("id");
-      if (cerr || !claimed || claimed.length === 0) continue; // ya enviado (o error: se reintenta en el siguiente minuto)
-      const ok = await deliver({ title: n.title, body: n.body, url: n.url, kind: n.kind, refId: n.refId, tag: n.key, image: n.image ?? undefined });
+      if (cerr || !claimed || claimed.length === 0) {
+        // Ya enviado (otra pasada): apaga el aviso de la tarea para no volver a mirarlo.
+        if (!cerr && n.kind === "task" && n.remindAt) await admin.from("tasks").update({ remind_at: null }).eq("id", n.refId!).eq("remind_at", n.remindAt);
+        continue; // (o error: se reintenta en el siguiente minuto)
+      }
+      const ok = await deliver({ title: n.title, body: n.body, url: n.url, kind: n.kind, refId: n.refId, tag: n.tag ?? n.key, image: n.image ?? undefined });
+      // Aviso de tarea enviado: se apaga solo si nadie lo ha cambiado mientras (compare-and-set sobre remind_at).
+      if (ok && n.kind === "task" && n.remindAt) await admin.from("tasks").update({ remind_at: null }).eq("id", n.refId!).eq("remind_at", n.remindAt);
       if (ok && n.kind === "mail" && mailIds.length) { await admin.from("mail_messages").update({ notified_at: now.toISOString() }).in("id", mailIds); mailIds = []; }
       if (ok && n.kind === "news" && newsDigestId) await admin.from("news_digests").update({ notified_at: now.toISOString() }).eq("id", newsDigestId);
       if (ok) summary.sent++;

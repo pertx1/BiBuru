@@ -1,6 +1,6 @@
 // Revisión móvil: recorre las pantallas principales a 375, 390 y 430 px (iPhone emulado) y comprueba
 // desplazamiento horizontal, zonas táctiles < 44 px, campos con letra < 16 px (zoom en iOS) y elementos que se salen.
-// Uso: USER_ID=<uuid> BIZ=<uuid> NOTE=<uuid> GOAL=<uuid> [SHOTS=docs/movil/antes] [STRICT=1] node scripts/e2e/mobile-audit.mjs
+// Uso: USER_ID=<uuid> BIZ=<uuid> NOTE=<uuid> GOAL=<uuid> [TASK=<uuid>] [SHOTS=docs/movil/antes] [STRICT=1] node scripts/e2e/mobile-audit.mjs
 // Con STRICT=1 falla (código 1) si alguna pantalla tiene desplazamiento horizontal.
 // WebKit no está disponible en este entorno: se emula iPhone (agente, táctil, DPR 3) con Chromium.
 import { chromium } from "playwright-core";
@@ -8,9 +8,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { sessionCookie } from "./session.mjs";
 
 const base = process.env.BASE ?? "http://localhost:3100";
-const { BIZ, NOTE, GOAL } = process.env;
+const { BIZ, NOTE, GOAL, TASK } = process.env;
 export const ROUTES = [
-  ["inicio", "/"], ["tareas", "/tareas"], ["calendario", "/calendario"], ["objetivos", "/objetivos"], ["objetivo", `/objetivos/${GOAL}`],
+  ["inicio", "/"], ["tareas", "/tareas"], ["tarea-nueva", "/tareas/nueva"], ...(TASK ? [["tarea", `/tareas/${TASK}`]] : []), ["calendario", "/calendario"], ["objetivos", "/objetivos"], ["objetivo", `/objetivos/${GOAL}`],
   ["noticias", "/noticias"], ["notas", "/notas"], ["nota", `/notas/${NOTE}`], ["favoritos", "/favoritos"], ["bandeja", "/bandeja"],
   ["chat", "/chat"], ["ajustes", "/ajustes"], ["mas", "/mas"], ["negocios", "/negocios"], ["negocio", `/negocios/${BIZ}`],
   ["pedidos", `/negocios/${BIZ}/pedidos`], ["deudas", `/negocios/${BIZ}/pedidos?vista=deudas`], ["gastos", `/negocios/${BIZ}/gastos`],

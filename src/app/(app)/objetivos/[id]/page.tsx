@@ -59,7 +59,7 @@ export default async function ObjetivoPage({ params }: { params: Promise<{ id: s
         <section>
           <h2 className="mb-2 text-sm font-semibold">Tareas vinculadas</h2>
           <div className="mb-3"><QuickAdd today={now.date} nowTime={now.time} goalId={id} businessId={goal.business_id ?? undefined} placeholder="Nueva tarea para este objetivo…" /></div>
-          <TaskList groups={groupTasks("todas", tasks, now.date, new Map())} businesses={bizOptions} goals={[{ id, title: goal.title }]} today={now.date} emptyText="Sin tareas vinculadas. Las que añadas aquí cuentan para el progreso si eliges «Tareas vinculadas»." />
+          <TaskList groups={groupTasks("todas", tasks, now.date)} businesses={bizOptions} today={now.date} empty={{ title: "Sin tareas vinculadas", text: "Las que añadas aquí cuentan para el progreso si eliges «Tareas vinculadas»." }} />
         </section>
       </div>
     </>

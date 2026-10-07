@@ -93,7 +93,7 @@ export async function syncStockTasks(businessId: string): Promise<{ created: num
     if (plan.create.length) {
       const { error: e } = await supabase.from("tasks").insert(plan.create.map((c) => ({
         workspace_id: workspaceId, user_id: userId, business_id: businessId, title: c.title, notes: c.notes, due_date: today, priority: 3,
-        stock_key: c.key, stock_missing: c.missing,
+        stock_key: c.key, stock_missing: c.missing, external_key: `stock:${businessId}:${c.key}`, // «origen:clave» como Antola
       })));
       if (e && e.code !== "23505") throw new Error(e.message); // 23505: otra pasada la creó a la vez
     }
@@ -102,8 +102,8 @@ export async function syncStockTasks(businessId: string): Promise<{ created: num
     for (const r of plan.release) {
       const t = (tasks ?? []).find((x) => x.id === r.id);
       await supabase.from("tasks").update(r.complete
-        ? { stock_key: null, status: "done", completed_at: now.toISOString(), stock_missing: 0, notes: `${t?.notes ?? ""}\nCompletada sola: ya hay stock.`.trim().slice(0, 5000) }
-        : { stock_key: null }).eq("id", r.id).eq("workspace_id", workspaceId);
+        ? { stock_key: null, external_key: null, status: "done", completed_at: now.toISOString(), remind_at: null, stock_missing: 0, notes: `${t?.notes ?? ""}\nCompletada sola: ya hay stock.`.trim().slice(0, 5000) }
+        : { stock_key: null, external_key: null }).eq("id", r.id).eq("workspace_id", workspaceId);
       if (r.complete) completed++;
     }
     return { created: plan.create.length, updated: plan.update.length, completed };

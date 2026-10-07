@@ -75,10 +75,11 @@ const ok = makeSub("ok");
 await q("insert into push_subscriptions (workspace_id,user_id,endpoint,p256dh,auth,user_agent) values ($1,$2,$3,$4,$5,'iPhone')", [ws, USER_ID, ok.endpoint, ok.p256dh, ok.auth]);
 const now = local();
 const dow = (new Date(now.date + "T00:00:00Z").getUTCDay() + 6) % 7;
-await q(`update profiles set quiet_hours_start='00:00', quiet_hours_end='00:00', task_lead_minutes=5, event_lead_minutes=30,
+await q(`update profiles set quiet_hours_start='00:00', quiet_hours_end='00:00', event_lead_minutes=30,
   daily_digest_enabled=true, daily_digest_time=$2, overdue_alert_enabled=true, overdue_alert_time=$2, weekly_review_enabled=true, weekly_review_dow=$3, weekly_review_time=$2 where user_id=$1`, [USER_ID, plus(-5).time, dow]);
 const t2 = plus(2), ev = plus(10), od = await q("select ($1::date - 2)::text d", [now.date]);
-await q("insert into tasks (workspace_id,user_id,title,due_date,due_time,business_id) values ($1,$2,'Llamar a la imprenta',$3,$4,$5)", [ws, USER_ID, t2.date, t2.time, biz]);
+// Cada tarea guarda su próximo aviso (remind_at): aquí, «5 min antes», que ya ha llegado.
+await q("insert into tasks (workspace_id,user_id,title,due_date,due_time,business_id,reminder_mode,reminder_minutes_before,remind_at) values ($1,$2,'Llamar a la imprenta',$3,$4,$5,'before',5,now() - interval '10 seconds')", [ws, USER_ID, t2.date, t2.time, biz]);
 await q("insert into tasks (workspace_id,user_id,title,due_date) values ($1,$2,'Revisar cuentas (sin hora)',$3)", [ws, USER_ID, now.date]);
 await q("insert into tasks (workspace_id,user_id,title,due_date) values ($1,$2,'Tarea atrasada',$3)", [ws, USER_ID, od.rows[0].d]);
 await q("insert into events (workspace_id,user_id,title,start_date,end_date,start_time,end_time,location) values ($1,$2,'Reunión con Ana',$3,$3,$4,$5,'Taller')", [ws, USER_ID, ev.date, ev.time, plus(70).time]);
@@ -127,12 +128,12 @@ await ctx.addCookies([sessionCookie(USER_ID)]);
 const page = await ctx.newPage();
 const errors = []; page.on("pageerror", (e) => errors.push(e.message)); page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 160)));
 const task = (await q("select id from tasks where title='Llamar a la imprenta'")).rows[0].id;
-await page.goto(`${base}/aviso/task/${task}`); await page.waitForSelector("h1"); await page.waitForTimeout(500);
+await page.goto(`${base}/aviso/task/${task}`); await page.waitForURL(/\/tareas\//); await page.waitForSelector("h1"); await page.waitForTimeout(500);
 await page.screenshot({ path: "/tmp/shots5/1-aviso-tarea.png" });
-await page.getByRole("button", { name: "Mañana", exact: true }).click(); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: "Mañana", exact: true }).first().click(); await page.waitForTimeout(1500);
 console.log("posponer desde el aviso →", (await q("select due_date::text d, due_time::text t from tasks where id=$1", [task])).rows[0]);
 await page.goto(base + "/tareas"); await page.waitForSelector("h1");
-await page.getByLabel("Nueva tarea", { exact: true }).fill("recuérdame el viernes a las 9 pedir presupuesto a la imprenta");
+await page.getByRole("textbox", { name: "Nueva tarea" }).fill("recuérdame el viernes a las 9 pedir presupuesto a la imprenta");
 await page.waitForTimeout(300); await page.screenshot({ path: "/tmp/shots5/2-recuerdame.png" });
 await page.keyboard.press("Enter"); await page.waitForTimeout(1500);
 console.log("recordatorio creado por texto:", (await q("select title, remind_at at time zone 'Europe/Madrid' as local from reminders where title like 'Pedir presupuesto a%'")).rows);

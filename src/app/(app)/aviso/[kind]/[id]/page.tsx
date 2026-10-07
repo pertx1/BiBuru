@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { NoticeActions } from "@/components/notifications/notice-actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { getContext } from "@/lib/context";
 import { formatDate, nowLocal } from "@/lib/dates";
-import { getEvent, getTask } from "@/lib/tasks/data";
-import { dueLabel } from "@/lib/tasks/format";
+import { getEvent } from "@/lib/tasks/data";
 
 export const metadata = { title: "Aviso" };
 
@@ -15,20 +14,8 @@ export default async function AvisoPage({ params, searchParams }: { params: Prom
   const [{ kind, id }, sp] = await Promise.all([params, searchParams]);
   if (!z.uuid().safeParse(id).success || !["task", "event", "reminder"].includes(kind)) notFound();
   const { supabase, workspaceId, timezone } = await getContext();
-  const today = nowLocal(new Date(), timezone).date;
 
-  if (kind === "task") {
-    const t = await getTask(id);
-    if (!t) notFound();
-    const due = dueLabel(t.due_date, t.due_time, today);
-    return (
-      <>
-        <PageHeader title={t.title} subtitle={[due.text, t.notes].filter(Boolean).join(" · ")} />
-        <NoticeActions kind="task" id={id} done={t.status === "done"} />
-        <Link href={`/tareas?v=todas&abrir=${id}`} className="mt-4 inline-block text-sm text-accent underline">Abrir la tarea completa</Link>
-      </>
-    );
-  }
+  if (kind === "task") redirect(`/tareas/${id}`); // los avisos de tareas abren su detalle (como Antola)
   if (kind === "event") {
     const e = await getEvent(id);
     if (!e) notFound();

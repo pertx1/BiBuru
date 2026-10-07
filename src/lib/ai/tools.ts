@@ -3,7 +3,10 @@ import { addDays, endOfMonth, isValidISO, nowLocal, startOfMonth } from "@/lib/d
 import { formatDecimal } from "@/lib/money";
 import { normalizeText } from "@/lib/production/text";
 import { ORDER_STATUSES, expenseSchema } from "@/lib/schemas";
+import { z } from "zod";
 import { expandEvents } from "@/lib/tasks/calendar";
+import { fieldsToRow, taskToFields } from "@/lib/tasks/input";
+import { completeTask, uncompleteTask } from "@/lib/tasks/service";
 import { createEvent, createNote, createReminderAt, createTask, resolveBusiness, resolveExpense, resolveOrder, type Actor, type Created, type ExpenseIn, type OrderIn } from "./actors";
 import type { FunctionDecl } from "./provider";
 
@@ -28,8 +31,8 @@ export const TOOL_DECLARATIONS: FunctionDecl[] = [
   { name: "list_tasks", description: "Lista tareas. Sin fechas devuelve las abiertas. Para «hoy» o «mañana» usa from=to=esa fecha.", parametersJsonSchema: obj({ from: date, to: date, status: { type: "string", enum: ["open", "done"] }, business: str }) },
   { name: "list_events", description: "Lista eventos del calendario entre dos fechas (incluye recurrentes).", parametersJsonSchema: obj({ from: date, to: date }, ["from", "to"]) },
   { name: "business_summary", description: "Ingresos, gastos y beneficio de un periodo. Sin `business` devuelve todos los negocios, uno por uno. Incluye lo más vendido si es de un negocio.", parametersJsonSchema: obj({ business: str, from: date, to: date }, ["from", "to"]) },
-  { name: "create_task", description: "Crea una tarea.", parametersJsonSchema: obj({ title: str, date, time, priority: { type: "integer", description: "0 a 3" }, business: str, notes: str }, ["title"]) },
-  { name: "update_task", description: "Cambia una tarea existente (usa su id de list_tasks/search). Para completarla pon done=true.", parametersJsonSchema: obj({ id: str, title: str, date, time, priority: { type: "integer" }, done: { type: "boolean" } }, ["id"]) },
+  { name: "create_task", description: "Crea una tarea.", parametersJsonSchema: obj({ title: str, date, time, priority: { type: "integer", description: "1 baja, 2 media (por defecto), 3 alta" }, business: str, notes: str }, ["title"]) },
+  { name: "update_task", description: "Cambia una tarea existente (usa su id de list_tasks/search). Para completarla pon done=true.", parametersJsonSchema: obj({ id: str, title: str, date, time, priority: { type: "integer", description: "1 baja, 2 media, 3 alta" }, done: { type: "boolean" } }, ["id"]) },
   { name: "create_note", description: "Crea una nota o guarda una idea (title y body).", parametersJsonSchema: obj({ title: str, body: str, business: str }, ["title"]) },
   { name: "append_to_note", description: "Añade texto al final de una nota existente (id de search).", parametersJsonSchema: obj({ id: str, text: str }, ["id", "text"]) },
   { name: "create_event", description: "Crea un evento en el calendario. Sin time es de todo el día.", parametersJsonSchema: obj({ title: str, date, time, end_time: time, location: str, business: str }, ["title", "date"]) },
@@ -66,7 +69,7 @@ export async function executeTool(ctx: Ctx, name: string, args: Record<string, u
     case "list_tasks": {
       const biz = await resolveBusiness(a, text(args.business));
       const status = args.status === "done" ? "done" : "open";
-      let q = supabase.from("tasks").select("id, title, due_date, due_time, priority, business_id, status").eq("workspace_id", workspaceId).eq("status", status).is("parent_id", null).order("due_date", { nullsFirst: false }).limit(40);
+      let q = supabase.from("tasks").select("id, title, due_date, due_time, priority, business_id, status").eq("workspace_id", workspaceId).eq("status", status).order("due_date", { nullsFirst: false }).limit(40);
       const from = iso(args.from), to = iso(args.to);
       if (from) q = q.gte("due_date", from);
       if (to) q = q.lte("due_date", to);
@@ -105,17 +108,19 @@ export async function executeTool(ctx: Ctx, name: string, args: Record<string, u
     }
     case "update_task": {
       const id = text(args.id, 40);
-      if (!id) return { result: { error: "Falta el id" } };
-      const patch: Record<string, unknown> = {};
-      if (text(args.title, 200)) patch.title = text(args.title, 200);
-      if (iso(args.date)) patch.due_date = iso(args.date);
-      if (text(args.time, 5) && /^([01]\d|2[0-3]):[0-5]\d$/.test(String(args.time))) patch.due_time = args.time;
-      if (num(args.priority) !== null) patch.priority = Math.max(0, Math.min(3, Math.trunc(num(args.priority)!)));
-      if (typeof args.done === "boolean") { patch.status = args.done ? "done" : "open"; patch.completed_at = args.done ? new Date().toISOString() : null; }
-      if (Object.keys(patch).length === 0) return { result: { error: "Nada que cambiar" } };
-      const { data, error } = await supabase.from("tasks").update(patch as never).eq("id", id).eq("workspace_id", workspaceId).select("id, title").maybeSingle();
-      if (error || !data) return { result: { error: "No encontré esa tarea" } };
-      return { result: { updated: data.title }, created: { kind: "task", id: data.id, label: data.title, href: `/tareas?v=todas&abrir=${data.id}` } };
+      if (!id || !z.uuid().safeParse(id).success) return { result: { error: "Falta el id" } };
+      const { data: t } = await supabase.from("tasks").select("*").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
+      if (!t) return { result: { error: "No encontré esa tarea" } };
+      const f = taskToFields(t, a.timezone);
+      let changed = false;
+      if (text(args.title, 300)) { f.title = text(args.title, 300)!; changed = true; }
+      if (iso(args.date)) { f.dueDate = iso(args.date); changed = true; }
+      if (text(args.time, 5) && /^([01]\d|2[0-3]):[0-5]\d$/.test(String(args.time)) && f.dueDate) { f.time = String(args.time); changed = true; }
+      if (num(args.priority) !== null) { f.priority = Math.max(1, Math.min(3, Math.trunc(num(args.priority)!) || 2)); changed = true; }
+      if (changed) await supabase.from("tasks").update(fieldsToRow(f, a.timezone)).eq("id", id).eq("workspace_id", workspaceId);
+      if (typeof args.done === "boolean") { await (args.done ? completeTask(a, id) : uncompleteTask(a, id)); changed = true; }
+      if (!changed) return { result: { error: "Nada que cambiar" } };
+      return { result: { updated: f.title }, created: { kind: "task", id, label: f.title, href: `/tareas/${id}` } };
     }
     case "create_note": {
       const c = await createNote(a, { title: text(args.title, 200) ?? "", body: text(args.body, 20000), business: text(args.business) });
