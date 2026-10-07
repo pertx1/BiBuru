@@ -82,17 +82,14 @@ export async function deleteStockItem(id: string, businessId: string): Promise<A
   return { ok: true };
 }
 
-/**
- * Completar a mano una tarea «Reponer»: registra la entrada de las unidades que han llegado y la cierra.
- * Si aún faltan, la próxima pasada abre otra con lo que quede.
- */
+/** Tras tachar una tarea «Pedir …»: apunta en Stock las unidades que han llegado (y la deja hecha). */
 export async function receiveForTask(input: { taskId: string; units: number }): Promise<ActionResult> {
   const p = z.object({ taskId: z.uuid(), units: int(1000000) }).safeParse(input);
   if (!p.success) return { ok: false, error: "Cantidad no válida" };
   const { supabase, workspaceId } = await getContext();
   const { data: t } = await supabase.from("tasks").select("id, business_id, stock_key, title").eq("id", p.data.taskId).eq("workspace_id", workspaceId).maybeSingle();
   if (!t?.stock_key || !t.business_id) return { ok: false, error: "No es una tarea de stock" };
-  const label = t.title.replace(/^Reponer: /, "").replace(/, faltan \d+$/, "");
+  const label = t.title.replace(/^(Pedir|Reponer:) /, "").replace(/, faltan \d+$/, "");
   if (p.data.units > 0) {
     const err = await moveStock(t.business_id, t.stock_key, { delta: p.data.units }, "entrada", "Reposición (tarea completada)", label);
     if (err) return { ok: false, error: err };

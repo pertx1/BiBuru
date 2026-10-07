@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
-import { addPayment, deletePayment } from "@/app/(app)/negocios/payments-actions";
+import { addPayment, deletePayment, markOrderUnpaid } from "@/app/(app)/negocios/payments-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/dates";
@@ -69,6 +69,9 @@ export function OrderPayments({ order, today }: { order: OrderLite; today: strin
             </li>
           ))}
         </ul>
+      )}
+      {(st === "paid" || st === "partial") && !adding && (
+        <Button type="button" variant="ghost" disabled={pending} onClick={() => { if (confirm("¿Marcar como no pagado? Se quitan los cobros apuntados de este pedido.")) start(async () => { await markOrderUnpaid(order.id); router.refresh(); }); }}>Marcar como no pagado</Button>
       )}
       {st !== "cancelled" && (adding
         ? <PaymentForm order={order} today={today} onDone={() => { setAdding(false); router.refresh(); }} />

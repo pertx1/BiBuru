@@ -4,7 +4,8 @@ import { Check, Plus, Wallet } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { setOrderStatus } from "@/app/(app)/negocios/actions";
-import { markOrderPaid } from "@/app/(app)/negocios/payments-actions";
+import { markOrderPaid, markOrderUnpaid, restorePayments } from "@/app/(app)/negocios/payments-actions";
+import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import type { Order, Product } from "@/lib/data";
@@ -35,6 +36,18 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
   const [creating, setCreating] = useState(false);
   const [paying, setPaying] = useState<Order | null>(null);
   const [busy, start] = useTransition();
+  const toast = useToast();
+
+  /** Cambiar el estado de pago desde la lista: «Pagado» apunta un cobro por lo que falte; «Pendiente» quita los cobros (con «Deshacer»). */
+  const setPay = (o: Order, to: "paid" | "pending") => start(async () => {
+    if (to === "paid") { const r = await markOrderPaid(o.id); toast({ message: r.ok ? "Marcado como pagado" : r.error }); }
+    else {
+      const r = await markOrderUnpaid(o.id);
+      if (r.ok) toast({ message: "Marcado como no pagado", actionLabel: "Deshacer", onAction: () => void restorePayments(o.id, (r.removed ?? []) as never).then(() => router.refresh()) });
+      else toast({ message: r.error });
+    }
+    router.refresh();
+  });
 
   const go = (set: Record<string, string | null>) => {
     const next = new URLSearchParams(sp.toString());
@@ -78,7 +91,16 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
                 >
                   {ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}
                 </select>
-                {st !== "cancelled" && <span className={cn("inline-flex min-h-8 items-center rounded-full border px-2 text-xs font-semibold", PAY_CLASS[st])} title="Estado de pago">{PAY_LABEL[st]}</span>}
+                {st !== "cancelled" && (
+                  <select aria-label="Estado de pago" value={st === "paid" ? "paid" : st === "unreviewed" ? "unreviewed" : st === "partial" ? "partial" : "pending"} disabled={busy}
+                    onChange={(e) => setPay(o, e.target.value as "paid" | "pending")}
+                    className={cn("min-h-11 shrink-0 rounded-lg border bg-surface px-2 text-base font-semibold md:min-h-10 md:text-xs", PAY_CLASS[st])}>
+                    {st === "unreviewed" && <option value="unreviewed" disabled>{PAY_LABEL.unreviewed}</option>}
+                    <option value="pending">{PAY_LABEL.pending}</option>
+                    {st === "partial" && <option value="partial" disabled>{PAY_LABEL.partial}</option>}
+                    <option value="paid">{PAY_LABEL.paid}</option>
+                  </select>
+                )}
                 {st !== "paid" && st !== "cancelled" && (
                   <>
                     <button type="button" disabled={busy} onClick={() => start(async () => { await markOrderPaid(o.id); router.refresh(); })}

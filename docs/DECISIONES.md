@@ -84,3 +84,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Subida de archivo en un solo trozo (archivos de 50 MB como mucho): no hace falta verificar un dominio en TikTok (sí haría falta para «PULL_FROM_URL»).
 - El aviso de publicación asistida no respeta las horas de silencio: lo has programado tú a esa hora.
 - Un fallo con una cuenta (token roto…) ya no para el cron de las demás.
+
+## Cambios pedidos después (7/10)
+- **Pagado ↔ no pagado**: el estado de pago de la lista es un selector. «Pagado» apunta un cobro por lo que falte; «Pendiente» quita los cobros del pedido
+  (con «Deshacer», que los vuelve a poner). En el detalle hay «Marcar como no pagado».
+- **Tareas de Stock como en BATU (Antola + Profity)**: se crea «Pedir <artículo>» cuando lo disponible está **a 0 o por debajo** (lo mismo que «Pedir ya»
+  en Producción) o bajo el mínimo si le pones uno; **para hoy y prioridad alta**; la cantidad va en la nota y se actualiza sola. Si la tachas y sigue
+  faltando, **no vuelve a salir**; cuando hay stock, se suelta y, si estaba pendiente, se completa sola. Tachar ya no pregunta nada (el toast ofrece
+  «Apuntar unidades» si quieres). Se ponen al día también al abrir Tareas y Producción (BATU lo hacía cada hora).

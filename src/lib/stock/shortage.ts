@@ -1,9 +1,8 @@
 /**
- * Stock que falta: lógica pura (probada en tests), válida en cliente y servidor.
- * Disponible = lo que tienes − lo reservado por pedidos pendientes. Falta = lo que haga falta para cubrir los pedidos
- * y además llegar al mínimo: max(0, mínimo − disponible).
+ * Stock que falta: lógica pura (probada en tests), válida en cliente y servidor. Mismo criterio que BATU (Antola) con Profity:
+ * hay que pedir un artículo cuando lo disponible (lo que tienes − lo reservado por pedidos pendientes) está a 0 o por debajo,
+ * o por debajo de su mínimo si le has puesto uno.
  */
-import { addDays } from "@/lib/dates";
 import { normalizeText } from "@/lib/production/text";
 
 export type StockGroup = "prendas" | "dtf" | "articulos";
@@ -12,61 +11,66 @@ export const GROUP_LABEL: Record<StockGroup, string> = { prendas: "Prendas", dtf
 export type StockEntry = {
   key: string;            // tshirt|modelo|talla · dtf|diseño|variante · item|<id>
   group: StockGroup;
-  label: string;          // «Camiseta negra · talla M»
+  label: string;          // «Camiseta negra M»
   base: number;           // lo que tienes
   min: number;
   reserved: number;       // lo que piden los pedidos pendientes
   oldestOrder: string | null;  // pedido pendiente más antiguo que lo necesita
 };
-export type StockLine = StockEntry & { available: number; missing: number };
-
-/** Días que se da de margen desde el pedido más antiguo que espera el artículo (no hay fecha de entrega en los pedidos). */
-export const DUE_MARGIN_DAYS = 3;
-/** Si solo está bajo el mínimo (ningún pedido espera), la tarea vence en una semana. */
-export const MIN_ONLY_DAYS = 7;
+/** `needed`: hay que pedirlo. `missing`: unidades para cubrir los pedidos y llegar al mínimo (0 = «se ha quedado a 0»). */
+export type StockLine = StockEntry & { available: number; missing: number; needed: boolean };
 
 export function withMissing(e: StockEntry): StockLine {
   const available = e.base - e.reserved;
-  return { ...e, available, missing: Math.max(0, e.min - available) };
+  return { ...e, available, missing: Math.max(0, -available, e.min - available), needed: available <= 0 || available < e.min };
 }
 
-/** Lo que falta, de más urgente (más unidades por pedidos) a menos. */
+/** Lo que hay que pedir, de más urgente (más negativo) a menos. */
 export function shortages(entries: StockEntry[]): StockLine[] {
-  return entries.map(withMissing).filter((l) => l.missing > 0)
-    .sort((a, b) => Number(b.reserved > b.base) - Number(a.reserved > a.base) || (a.oldestOrder ?? "9999").localeCompare(b.oldestOrder ?? "9999") || b.missing - a.missing);
+  return entries.map(withMissing).filter((l) => l.needed)
+    .sort((a, b) => a.available - b.available || (a.oldestOrder ?? "9999").localeCompare(b.oldestOrder ?? "9999") || a.label.localeCompare(b.label, "es"));
 }
 
-/** Fecha límite de la tarea: según el pedido más antiguo que lo espera (+ margen), nunca antes de hoy. */
-export function dueFor(l: Pick<StockLine, "oldestOrder" | "reserved" | "base">, today: string): string {
-  if (!l.oldestOrder || l.reserved <= l.base) return addDays(today, MIN_ONLY_DAYS);
-  const d = addDays(l.oldestOrder, DUE_MARGIN_DAYS);
-  return d < today ? today : d;
+/** Título fijo (como en BATU): «Pedir Camiseta negra M». La cantidad va en las notas y se actualiza sola. */
+export const taskTitle = (l: Pick<StockLine, "label">) => `Pedir ${l.label}`.slice(0, 200);
+
+/** Nota de la tarea: cuánto falta (como `profityNotes` de BATU, con el mínimo si lo hay). */
+export function taskNotes(l: Pick<StockLine, "available" | "missing" | "min">): string {
+  const state = l.available < 0 ? `Faltan ${-l.available} para cubrir los pedidos pendientes.`
+    : l.available === 0 ? "Se ha quedado a 0."
+    : `Quedan ${l.available} y el mínimo es ${l.min}.`;
+  const toMin = l.min > 0 && l.missing > Math.max(0, -l.available) ? ` Para llegar al mínimo (${l.min}) pide ${l.missing}.` : "";
+  return `${state}${toMin}\nDesde Stock: la tarea se actualiza sola y se completa cuando hay stock.`;
 }
 
-export const taskTitle = (l: Pick<StockLine, "label" | "missing">) => `Reponer: ${l.label}, faltan ${l.missing}`.slice(0, 200);
-
-export type OpenStockTask = { id: string; stock_key: string; stock_missing: number | null; title: string; due_date: string | null };
+export type StockTask = { id: string; stock_key: string; stock_missing: number | null; notes: string | null; status: string };
 export type TaskPlan = {
-  create: { key: string; title: string; missing: number; due: string }[];
-  update: { id: string; title: string; missing: number; due: string }[];
-  complete: { id: string; key: string }[];
+  create: { key: string; title: string; notes: string; missing: number }[];
+  update: { id: string; notes: string; missing: number }[];
+  /** Ya hay stock: se suelta la clave y, si seguía pendiente, se completa sola. */
+  release: { id: string; key: string; complete: boolean }[];
 };
 
-/** Qué hacer con las tareas: una abierta por artículo; si cambia la cantidad se actualiza; si ya no falta, se completa. */
-export function planTasks(lines: StockLine[], open: OpenStockTask[], today: string): TaskPlan {
-  const plan: TaskPlan = { create: [], update: [], complete: [] };
-  const byKey = new Map(lines.map((l) => [l.key, l]));
-  const seen = new Set<string>();
-  for (const t of open) {
-    const l = byKey.get(t.stock_key);
-    if (!l || seen.has(t.stock_key)) { plan.complete.push({ id: t.id, key: t.stock_key }); continue; }
-    seen.add(t.stock_key);
-    const title = taskTitle(l), due = dueFor(l, today);
-    // La fecha solo se adelanta (si la cambias tú a más tarde, se respeta salvo que llegue un pedido más urgente).
-    const newDue = t.due_date && t.due_date <= due ? t.due_date : due;
-    if (t.stock_missing !== l.missing || t.title !== title || t.due_date !== newDue) plan.update.push({ id: t.id, title, missing: l.missing, due: newDue });
+/**
+ * Igual que `applyItems` de BATU: una tarea por artículo (clave `stock_key`).
+ * - Falta y no hay tarea → se crea (para hoy, prioridad alta).
+ * - Falta y la tarea está abierta → se actualiza la nota si cambió la cantidad.
+ * - Falta y la tachaste → NO vuelve a salir mientras siga faltando.
+ * - Ya hay stock → se suelta la clave; si estaba pendiente, se completa sola. Si vuelve a faltar, sale otra.
+ */
+export function planTasks(lines: StockLine[], tasks: StockTask[]): TaskPlan {
+  const plan: TaskPlan = { create: [], update: [], release: [] };
+  const wanted = new Map(lines.map((l) => [l.key, l]));
+  const held = new Set<string>();
+  for (const t of tasks) {
+    const l = wanted.get(t.stock_key);
+    if (!l || held.has(t.stock_key)) { plan.release.push({ id: t.id, key: t.stock_key, complete: t.status !== "done" && !l }); continue; }
+    held.add(t.stock_key);
+    if (t.status === "done") continue;
+    const notes = taskNotes(l);
+    if (notes !== t.notes || t.stock_missing !== l.missing) plan.update.push({ id: t.id, notes, missing: l.missing });
   }
-  for (const l of lines) if (!seen.has(l.key)) plan.create.push({ key: l.key, title: taskTitle(l), missing: l.missing, due: dueFor(l, today) });
+  for (const l of lines) if (!held.has(l.key)) plan.create.push({ key: l.key, title: taskTitle(l), notes: taskNotes(l), missing: l.missing });
   return plan;
 }
 

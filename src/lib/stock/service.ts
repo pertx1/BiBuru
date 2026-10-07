@@ -74,33 +74,39 @@ export async function loadInventory(businessId: string): Promise<{ lines: StockL
 }
 
 /**
- * Mantiene las tareas «Reponer: …» del negocio: crea las que faltan, actualiza cantidad/fecha y completa las repuestas.
+ * Mantiene las tareas «Pedir …» del negocio como BATU con Profity (ver `planTasks`): crea las que faltan (para hoy, prioridad alta),
+ * actualiza la nota con la cantidad, no repite las que tachaste mientras siga faltando y completa solas las que ya tienen stock.
  * Nunca lanza: si algo falla (p. ej. base sin la migración de stock) se registra y la acción que la llamó sigue.
  */
 export async function syncStockTasks(businessId: string): Promise<{ created: number; updated: number; completed: number } | null> {
   try {
     const { supabase, workspaceId, userId, timezone } = await getContext();
-    const today = nowLocal(new Date(), timezone).date;
-    const [{ lines }, { data: open, error }] = await Promise.all([
+    const now = new Date();
+    const today = nowLocal(now, timezone).date;
+    const [{ lines }, { data: tasks, error }] = await Promise.all([
       loadInventory(businessId),
-      supabase.from("tasks").select("id, stock_key, stock_missing, title, due_date").eq("workspace_id", workspaceId).eq("business_id", businessId).eq("status", "open").not("stock_key", "is", null),
+      // Abiertas y tachadas: una tachada «guarda» su artículo para no volver a crearlo mientras siga faltando.
+      supabase.from("tasks").select("id, stock_key, stock_missing, notes, status").eq("workspace_id", workspaceId).eq("business_id", businessId).not("stock_key", "is", null).limit(2000),
     ]);
     if (error) throw new Error(error.message);
-    const plan = planTasks(shortages(lines), (open ?? []).map((t) => ({ ...t, stock_key: t.stock_key! })), today);
+    const plan = planTasks(shortages(lines), (tasks ?? []).map((t) => ({ ...t, stock_key: t.stock_key! })));
     if (plan.create.length) {
       const { error: e } = await supabase.from("tasks").insert(plan.create.map((c) => ({
-        workspace_id: workspaceId, user_id: userId, business_id: businessId, title: c.title, due_date: c.due, priority: 2,
+        workspace_id: workspaceId, user_id: userId, business_id: businessId, title: c.title, notes: c.notes, due_date: today, priority: 3,
         stock_key: c.key, stock_missing: c.missing,
-        notes: "Tarea automática de Stock: se actualiza sola y se completa cuando repones. Al completarla a mano te preguntará cuántas unidades han entrado.",
       })));
       if (e && e.code !== "23505") throw new Error(e.message); // 23505: otra pasada la creó a la vez
     }
-    for (const u of plan.update) await supabase.from("tasks").update({ title: u.title, stock_missing: u.missing, due_date: u.due }).eq("id", u.id).eq("workspace_id", workspaceId);
-    if (plan.complete.length) {
-      await supabase.from("tasks").update({ status: "done", completed_at: new Date().toISOString(), stock_missing: 0 })
-        .in("id", plan.complete.map((c) => c.id)).eq("workspace_id", workspaceId);
+    for (const u of plan.update) await supabase.from("tasks").update({ notes: u.notes, stock_missing: u.missing }).eq("id", u.id).eq("workspace_id", workspaceId);
+    let completed = 0;
+    for (const r of plan.release) {
+      const t = (tasks ?? []).find((x) => x.id === r.id);
+      await supabase.from("tasks").update(r.complete
+        ? { stock_key: null, status: "done", completed_at: now.toISOString(), stock_missing: 0, notes: `${t?.notes ?? ""}\nCompletada sola: ya hay stock.`.trim().slice(0, 5000) }
+        : { stock_key: null }).eq("id", r.id).eq("workspace_id", workspaceId);
+      if (r.complete) completed++;
     }
-    return { created: plan.create.length, updated: plan.update.length, completed: plan.complete.length };
+    return { created: plan.create.length, updated: plan.update.length, completed };
   } catch (e) {
     console.error("[stock] sync", e instanceof Error ? e.message : e);
     return null;
@@ -130,4 +136,17 @@ export async function moveStock(businessId: string, key: string, change: { delta
   if (delta === 0) return null;
   await supabase.from("stock_movements").insert({ workspace_id: workspaceId, user_id: userId, business_id: businessId, item_key: key, label: label.slice(0, 200), kind, delta, reason, moved_on: nowLocal(new Date(), timezone).date });
   return null;
+}
+
+/** Todos los negocios activos que tienen inventario (Producción activa o artículos de Stock). Nunca lanza. */
+export async function syncAllStockTasks() {
+  try {
+    const { supabase, workspaceId } = await getContext();
+    const [{ data: biz }, { data: items }] = await Promise.all([
+      supabase.from("businesses").select("id, production_enabled").eq("workspace_id", workspaceId).eq("archived", false),
+      supabase.from("stock_items").select("business_id").eq("workspace_id", workspaceId).limit(5000),
+    ]);
+    const withItems = new Set((items ?? []).map((i) => i.business_id));
+    await Promise.all((biz ?? []).filter((b) => b.production_enabled || withItems.has(b.id)).map((b) => syncStockTasks(b.id)));
+  } catch (e) { console.error("[stock] syncAll", e instanceof Error ? e.message : e); }
 }

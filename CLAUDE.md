@@ -173,9 +173,12 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 ## Stock
 - Reutiliza `tshirt_stocks`/`dtf_stocks` (Producción, con `min_quantity`) y añade `stock_items` (genéricos, vínculo opcional con pedidos por producto o nombre)
   y `stock_movements`. Claves de artículo: `tshirt|modelo|talla`, `dtf|diseño|variante`, `item|<id>`.
-- Falta = `max(0, mínimo − (tienes − reservado))`; reservan los pedidos `sin_hacer` y `sin_llegar`. Lógica pura en `src/lib/stock/shortage.ts`.
-- `syncStockTasks(businessId)` mantiene UNA tarea abierta por artículo (`tasks.stock_key`, índice único parcial); se llama tras tocar pedidos o stock y al
-  abrir Stock (sin cron). Nunca lanza. Completar a mano → `receiveForTask` (pregunta unidades y registra la entrada).
+- Hay que pedir cuando disponible (`tienes − reservado`) ≤ 0 o < mínimo (como «Pedir ya» y BATU); reservan los pedidos `sin_hacer` y `sin_llegar`.
+  Lógica pura en `src/lib/stock/shortage.ts` (`planTasks` = `applyItems` de BATU).
+- `syncStockTasks(businessId)`: tarea «Pedir …» para hoy y prioridad alta por artículo (`tasks.stock_key`); una tachada que sigue faltando no se repite;
+  con stock se suelta la clave (y la pendiente se completa sola). Se llama tras tocar pedidos o stock y al abrir Stock, Producción y Tareas
+  (`syncAllStockTasks`). Nunca lanza.
+- Pago: `markOrderUnpaid` / `restorePayments` (selector de estado de pago en la lista, con «Deshacer»).
 
 ## Correo (Outlook)
 - `src/lib/mail/graph.ts` (OAuth `common`, solo `offline_access User.Read Mail.Read`, delta de la bandeja), `service.ts` (token cifrado y rotado, sync),

@@ -57,6 +57,33 @@ export async function markOrderPaid(orderId: string, method: (typeof PAYMENT_MET
   return { ok: true };
 }
 
+type SavedPayment = { paid_on: string; amount_cents: number; method: string; note: string | null };
+
+/**
+ * «No pagado»: borra los cobros del pedido (vuelve a «Pendiente») y los devuelve para poder deshacer.
+ */
+export async function markOrderUnpaid(orderId: string): Promise<ActionResult & { removed?: SavedPayment[] }> {
+  if (!z.uuid().safeParse(orderId).success) return { ok: false, error: "Datos no válidos" };
+  const { supabase, workspaceId } = await getContext();
+  const { data: removed, error } = await supabase.from("order_payments").delete().eq("order_id", orderId).eq("workspace_id", workspaceId).select("paid_on, amount_cents, method, note");
+  if (error) return { ok: false, error: "No se pudo marcar como no pagado" };
+  await supabase.from("orders").update({ payment_reviewed: true }).eq("id", orderId).eq("workspace_id", workspaceId);
+  refresh();
+  return { ok: true, removed: removed ?? [] };
+}
+
+/** «Deshacer» de `markOrderUnpaid`: vuelve a poner los cobros borrados. */
+export async function restorePayments(orderId: string, payments: SavedPayment[]): Promise<ActionResult> {
+  const p = z.object({ orderId: z.uuid(), payments: z.array(z.object({ paid_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), amount_cents: z.number().int().positive().max(100_000_000), method: z.enum(PAYMENT_METHODS), note: z.string().max(300).nullable() })).max(200) }).safeParse({ orderId, payments });
+  if (!p.success) return { ok: false, error: "Datos no válidos" };
+  if (!p.data.payments.length) return { ok: true };
+  const { supabase, workspaceId, userId } = await getContext();
+  const { error } = await supabase.from("order_payments").insert(p.data.payments.map((x) => ({ ...x, workspace_id: workspaceId, user_id: userId, order_id: p.data.orderId })));
+  if (error) return { ok: false, error: "No se pudo deshacer" };
+  refresh();
+  return { ok: true };
+}
+
 /**
  * Pedidos «sin revisar» (anteriores a los cobros) en bloque: o se dan por pagados (se registra un cobro por lo que faltara,
  * con la fecha del pedido y la nota «Regularización») o pasan a pendientes de cobro.

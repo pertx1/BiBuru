@@ -34,12 +34,13 @@ export function TaskList({
 
   function toggle(t: TaskWithSubs) {
     const completing = t.status !== "done";
-    // Tarea «Reponer» de Stock: antes de cerrarla se pregunta cuántas unidades han entrado.
-    if (completing && t.stock_key) { setUnits(String(t.stock_missing ?? "")); setReceiving(t); return; }
     start(async () => {
       hide(t.id);
       const r = await toggleTask(t.id, completing);
-      if (r.ok) {
+      if (r.ok && completing && t.stock_key) {
+        // Tarea «Pedir …» de Stock: se tacha como cualquier otra (como en BATU); si quieres, apuntas lo que ha llegado.
+        toast({ message: "Hecha ✔", actionLabel: "Apuntar unidades", onAction: () => { setUnits(String(t.stock_missing || "")); setReceiving(t); } });
+      } else if (r.ok) {
         toast({
           message: completing ? "Hecha ✔" : "Reabierta", actionLabel: "Deshacer",
           onAction: () => void (completing ? undoComplete(t.id, r.nextId) : toggleTask(t.id, true)).then(() => router.refresh()),
@@ -107,16 +108,15 @@ export function TaskList({
             e.preventDefault();
             const t = receiving;
             start(async () => {
-              hide(t.id); setReceiving(null);
+              setReceiving(null);
               const r = await receiveForTask({ taskId: t.id, units: Math.max(0, parseInt(units, 10) || 0) });
-              toast({ message: r.ok ? "Entrada registrada y tarea hecha ✔" : r.error });
+              toast({ message: r.ok ? "Entrada apuntada en Stock ✔" : r.error });
               router.refresh();
             });
           }}>
-            <p className="text-sm text-muted">{receiving.title}. Se sumarán al stock y la tarea se cerrará. Si aún faltan, se abrirá otra con lo que quede.</p>
+            <p className="text-sm text-muted">{receiving.title}: se sumarán al stock.</p>
             <Input inputMode="numeric" value={units} onChange={(e) => setUnits(e.target.value)} aria-label="Unidades que han entrado" autoFocus />
-            <Button type="submit">Registrar entrada y completar</Button>
-            <Button type="button" variant="secondary" onClick={() => { const t = receiving; setUnits("0"); start(async () => { hide(t.id); setReceiving(null); await receiveForTask({ taskId: t.id, units: 0 }); router.refresh(); }); }}>Completar sin registrar nada</Button>
+            <Button type="submit">Apuntar entrada</Button>
           </form>
         )}
       </Sheet>

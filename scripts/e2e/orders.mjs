@@ -34,18 +34,30 @@ const id = new URL(page.url()).searchParams.get("nuevo");
 const row = page.locator(`#pedido-${id}`);
 ok(await row.isVisible(), "el pedido nuevo aparece en la lista");
 ok((await row.getAttribute("class")).includes("ring-accent"), "y está destacado");
-ok(await row.getByText("Pendiente", { exact: true }).isVisible(), "nace pendiente de cobro");
+ok(await row.getByLabel("Estado de pago").inputValue() === "pending", "nace pendiente de cobro");
 
 // Añadir cobro parcial y luego marcar como pagado.
 await row.getByRole("button", { name: "Añadir cobro" }).click();
 await page.getByLabel("Importe (€)").fill("10");
 await page.getByRole("button", { name: "Guardar cobro" }).click();
 await page.waitForTimeout(1500);
-ok(await row.getByText("Pago parcial").isVisible(), "cobro parcial → «Pago parcial»");
+ok(await row.getByLabel("Estado de pago").inputValue() === "partial", "cobro parcial → «Pago parcial»");
 ok(await row.getByText("Falta cobrar 15,00 €").isVisible(), "pendiente calculado (15 €)");
 await row.getByRole("button", { name: "Marcar como pagado" }).click();
 await page.waitForTimeout(1500);
-ok(await row.getByText("Pagado", { exact: true }).isVisible(), "«Marcar como pagado» → Pagado");
+const pay = row.getByLabel("Estado de pago");
+ok(await pay.inputValue() === "paid", "«Marcar como pagado» → Pagado");
+await pay.selectOption("pending");
+await page.waitForTimeout(1500);
+ok(await pay.inputValue() === "pending" && await row.getByText("Falta cobrar 25,00 €").isVisible(), "de Pagado a no pagado → Pendiente (se quitan los cobros)");
+await page.getByRole("button", { name: "Deshacer" }).click();
+await page.waitForTimeout(1500);
+ok(await pay.inputValue() === "paid", "«Deshacer» lo deja pagado otra vez");
+await pay.selectOption("pending");
+await page.waitForTimeout(1200);
+await pay.selectOption("paid");
+await page.waitForTimeout(1500);
+ok(await pay.inputValue() === "paid", "y de Pendiente a Pagado con el mismo selector");
 
 // Quién me debe.
 await page.goto(`${url}?vista=deudas`, { waitUntil: "networkidle" });
