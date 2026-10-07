@@ -18,8 +18,11 @@ function Kpi({ label, value, delta, sub }: { label: string; value: string; delta
 }
 const n = (v: number | null | undefined) => (v == null ? "—" : v.toLocaleString("es-ES"));
 
-/** Estadísticas de una cuenta: seguidores y su evolución, alcance, visualizaciones e interacciones, ranking y mejores momentos. */
-export function SocialStats({ account, accounts, days, daily, media, from, to, prevFrom }: { account: Acc; accounts: Acc[]; days: number; daily: Daily[]; media: MediaRow[]; from: string; to: string; prevFrom: string }) {
+/**
+ * Estadísticas de una cuenta o de todas a la vez (suma de todas las redes del negocio): seguidores y su evolución, alcance,
+ * visualizaciones e interacciones, ranking y mejores momentos.
+ */
+export function SocialStats({ current, accounts, days, daily, media, from, to, prevFrom, href }: { current: string | null; accounts: Acc[]; days: number; daily: Daily[]; media: MediaRow[]; from: string; to: string; prevFrom: string; href: (o: Record<string, string | undefined>) => string }) {
   const cur = dailySeries(daily.filter((d) => d.day >= from), from, to);
   const now = periodTotals(cur), before = periodTotals(daily.filter((d) => d.day >= prevFrom && d.day < from));
   const hasData = cur.some((d) => d.followers != null || d.reach != null);
@@ -27,13 +30,15 @@ export function SocialStats({ account, accounts, days, daily, media, from, to, p
   const top = rankMedia(inPeriod.length ? inPeriod : media, "interactions", 5);
   const times = bestTimes(media);
   const maxDay = Math.max(1, ...times.days.map((d) => d.avg));
-  const qs = (o: Record<string, string>) => `/redes?${new URLSearchParams({ vista: "estadisticas", cuenta: account.id, dias: String(days), ...o })}`;
+  const qs = href;
+  const chip = (on: boolean) => cn("inline-flex min-h-11 items-center rounded-full border border-border bg-surface px-3 text-sm md:min-h-9", on && "border-accent bg-accent text-accent-foreground");
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {accounts.length > 1 && accounts.map((a) => <Link key={a.id} href={qs({ cuenta: a.id })} className={cn("inline-flex min-h-11 items-center rounded-full border px-3 text-sm md:min-h-9", a.id === account.id ? "border-accent bg-accent/15 font-semibold" : "border-border text-muted")}>{a.platform === "tiktok" ? "TikTok" : "IG"} · @{a.username}</Link>)}
+        {accounts.length > 1 && <Link href={qs({ cuenta: undefined })} className={chip(!current)}>Todas · suma</Link>}
+        {accounts.length > 1 && accounts.map((a) => <Link key={a.id} href={qs({ cuenta: a.id })} className={chip(a.id === current)}>{a.platform === "tiktok" ? "TikTok" : "IG"} · @{a.username}</Link>)}
         <span className="flex-1" />
-        {[7, 30, 90].map((d) => <Link key={d} href={qs({ dias: String(d) })} className={cn("inline-flex min-h-11 items-center rounded-full border px-3 text-sm md:min-h-9", d === days ? "border-accent bg-accent/15 font-semibold" : "border-border text-muted")}>{d} días</Link>)}
+        {[7, 30, 90].map((d) => <Link key={d} href={qs({ dias: String(d) })} className={chip(d === days)}>{d} días</Link>)}
       </div>
       {!hasData && <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted">Aún no hay fotos diarias de esta cuenta. La primera se guarda en unos minutos y después una cada día; el histórico empieza hoy. (Instagram solo da seguidores diarios a cuentas con 100 o más.)</p>}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">

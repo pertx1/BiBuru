@@ -20,6 +20,7 @@ import { ProfityImport } from "@/components/account/profity-import";
 import { DataSettings } from "@/components/account/data-settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MailSettings } from "@/components/mail/mail-settings";
+import { SocialSettings } from "@/components/social/social-settings";
 import { listMailAccounts, mailConfigured } from "@/lib/mail/data";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -101,6 +102,9 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         </Section>
         <div id="correo" className="scroll-mt-20"><Section title="Correo de Outlook">
           <MailSettings configured={mailConfigured()} accounts={mailAccounts} businesses={mailBusinesses} aiAllowed={!!mailAi} result={sp.outlook} />
+        </Section></div>
+        <div id="redes" className="scroll-mt-20"><Section title="Redes y mensajes">
+          <SocialSettings aiConfigured={hasGeminiKey()} initial={{ inbox_ai_suggest: p?.inbox_ai_suggest ?? false, inbox_push_enabled: p?.inbox_push_enabled ?? true, social_alerts_enabled: p?.social_alerts_enabled ?? false }} />
         </Section></div>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Noticias">

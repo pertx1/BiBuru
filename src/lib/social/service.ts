@@ -57,18 +57,24 @@ export async function snapshotAccount(admin: AdminClient, acc: SocialAccount, no
       workspace_id: acc.workspace_id, account_id: acc.id, day: yesterday, followers: profile.followers, reach: ins.reach ?? null, views: ins.views ?? null,
       interactions: ins.total_interactions ?? null, likes: ins.likes ?? null, comments: ins.comments ?? null, shares: ins.shares ?? null, saves: ins.saves ?? null, profile_views: ins.profile_views ?? null,
     }, { onConflict: "account_id,day" });
-    const media = await igRecentMedia(token, 30, fetch, acc.external_id);
-    const recent = media.filter((m) => now.getTime() - new Date(m.postedAt).getTime() < 45 * 86400_000);
-    const rows = [];
-    for (const m of media) {
-      const mi = recent.includes(m) ? await igMediaInsights(token, m.id) : {};
-      rows.push({ workspace_id: acc.workspace_id, account_id: acc.id, external_id: m.id, caption: m.caption, media_type: m.mediaType, permalink: m.permalink?.startsWith("https://") ? m.permalink : null,
-        thumbnail_url: m.thumbnail?.startsWith("https://") ? m.thumbnail.slice(0, 4000) : null, posted_at: m.postedAt, likes: m.likes, comments: m.comments,
-        reach: mi.reach ?? null, views: mi.views ?? null, saves: mi.saved ?? null, shares: mi.shares ?? null, interactions: mi.total_interactions ?? (m.likes ?? 0) + (m.comments ?? 0) });
-    }
-    if (rows.length) await admin.from("social_media").upsert(rows, { onConflict: "account_id,external_id" });
+    await upsertIgMedia(admin, acc, token, now);
     await admin.from("social_accounts").update({ last_snapshot_on: yesterday, last_media_sync_at: now.toISOString(), username: profile.username, display_name: profile.name, avatar_url: profile.avatar?.startsWith("https://") ? profile.avatar.slice(0, 2000) : null, status: tokenState(acc.token_expires_at, now) === "ok" ? "ok" : "expiring", last_error: null }).eq("id", acc.id);
   } catch (e) { await markError(admin, acc, e); }
+}
+
+/** Publicaciones recientes de Instagram con sus métricas (las de los últimos 45 días con estadísticas detalladas). */
+export async function upsertIgMedia(admin: AdminClient, acc: SocialAccount, token: string, now = new Date()) {
+  const media = await igRecentMedia(token, 30, fetch, acc.external_id);
+  const recent = media.filter((m) => now.getTime() - new Date(m.postedAt).getTime() < 45 * 86400_000);
+  const rows = [];
+  for (const m of media) {
+    const mi = recent.includes(m) ? await igMediaInsights(token, m.id) : {};
+    rows.push({ workspace_id: acc.workspace_id, account_id: acc.id, external_id: m.id, caption: m.caption, media_type: m.mediaType, permalink: m.permalink?.startsWith("https://") ? m.permalink : null,
+      thumbnail_url: m.thumbnail?.startsWith("https://") ? m.thumbnail.slice(0, 4000) : null, posted_at: m.postedAt, likes: m.likes, comments: m.comments,
+      reach: mi.reach ?? null, views: mi.views ?? null, saves: mi.saved ?? null, shares: mi.shares ?? null, interactions: mi.total_interactions ?? (m.likes ?? 0) + (m.comments ?? 0) });
+  }
+  if (rows.length) await admin.from("social_media").upsert(rows, { onConflict: "account_id,external_id" });
+  return rows.length;
 }
 
 export type PostRow = { id: string; workspace_id: string; user_id: string; caption: string; hashtags: string; media_kind: string; scheduled_at: string | null; status: string; title: string | null };
@@ -122,7 +128,7 @@ export function overallStatus(targets: { status: string }[]): "programada" | "pu
 
 /** Cron: publica lo que toque (con reintentos), hace la foto diaria, renueva tokens y borra archivos viejos. */
 export async function runSocialCron(admin: AdminClient, now = new Date()) {
-  const out = { published: 0, steps: 0, snapshots: 0, cleaned: 0 };
+  const out: Record<string, number> = { published: 0, steps: 0, snapshots: 0, cleaned: 0 };
   // 1) Publicaciones vencidas.
   const { data: due } = await admin.from("social_posts").select("id, workspace_id, user_id, caption, hashtags, media_kind, scheduled_at, status, title")
     .in("status", ["programada", "publicando"]).lte("scheduled_at", now.toISOString()).order("scheduled_at").limit(10);
@@ -155,6 +161,12 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
     try { await snapshotAccount(admin, acc, now); out.snapshots++; }
     catch (e) { await markError(admin, acc, e); await admin.from("social_accounts").update({ last_snapshot_on: yesterday }).eq("id", acc.id); }
   }
+  // 2b) Actualización de cada cuenta (seguidores, publicaciones y bandeja) cada hora; unas pocas por pasada.
+  try {
+    const { syncDue } = await import("@/lib/sync/service");
+    const r = await syncDue(admin, { limit: 3, staleMinutes: 60, now });
+    Object.assign(out, { synced: r.accounts, limited: r.limited, messages: r.messages });
+  } catch (e) { console.error("[cron] sync:", e instanceof Error ? e.message : e); }
   // 3) Renovar tokens que caducan pronto aunque no toque foto.
   const soon = new Date(now.getTime() + 10 * 86400_000).toISOString();
   const { data: expiring } = await admin.from("social_accounts").select(ACC_FIELDS).neq("status", "expired").lt("token_expires_at", soon).limit(3);

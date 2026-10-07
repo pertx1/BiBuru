@@ -11,6 +11,7 @@ const TABS = [
   { slug: "ingresos", label: "Ingresos" },
   { slug: "productos", label: "Productos" },
   { slug: "stock", label: "Stock" },
+  { slug: "redes", label: "Redes" },
   { slug: "estadisticas", label: "Estadísticas" },
   { slug: "tareas", label: "Tareas" },
   { slug: "objetivos", label: "Objetivos" },
