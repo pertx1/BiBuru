@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 type Acc = { id: string; platform: string; username: string | null; display_name: string | null; avatar_url: string | null; business_id: string | null; status: string; last_error: string | null; token_expires_at: string | null; account_type: string | null };
-const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadísticas tardan unos minutos.", cancelado: "Has cancelado la conexión.", estado: "La conexión caducó: vuelve a intentarlo.", error: "No se pudo conectar. Vuelve a intentarlo.", "sin-configurar": "Falta conectar: la app aún no está registrada (mira la guía)." };
+const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadísticas tardan unos minutos.", cancelado: "Has cancelado la conexión.", estado: "La conexión caducó: vuelve a intentarlo.", error: "No se pudo conectar. Vuelve a intentarlo.", "sin-configurar": "Falta conectar: la app aún no está registrada (mira la guía).", "sin-pagina": "Tu Instagram profesional no está vinculado a una página de Facebook (o no la marcaste al dar permiso). Vincúlalo y vuelve a conectar." };
 const PLAT = { instagram: "Instagram", tiktok: "TikTok" } as const;
 
 /** Cuentas conectadas: estado del token (aviso si caduca), negocio, actualizar y desconectar; botones para conectar. */

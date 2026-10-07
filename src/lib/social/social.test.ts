@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { igAuthUrl, igContainerStatus, igCreateContainer, igDayInsights, igExchangeCode, IgError, igPublish } from "./instagram";
+import { igAuthUrl, igContainerStatus, igCreateContainer, igDayInsights, igExchangeCode, IgError, igProfile, igPublish, igRecentMedia, igRefresh } from "./instagram";
 import { bestOfWeek, bestTimes, composeCaption, dailySeries, nextRetry, pctChange, periodTotals, rankMedia, tokenState, type MediaRow } from "./stats";
 import { overallStatus } from "./service";
 import { tiktokModeFor } from "./tiktok-mode";
@@ -7,6 +7,51 @@ import { postsToItems } from "@/lib/tasks/calendar";
 
 vi.mock("@/lib/ai/gemini", () => ({}));
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "content-type": "application/json" } });
+
+describe("Instagram con inicio de sesión de Facebook (INSTAGRAM_LOGIN=facebook)", () => {
+  const fb = () => { vi.stubEnv("INSTAGRAM_LOGIN", "facebook"); vi.stubEnv("INSTAGRAM_APP_ID", "1"); vi.stubEnv("INSTAGRAM_APP_SECRET", "s"); };
+  it("abre el diálogo de Facebook con los permisos de Instagram y páginas, o con config_id si lo hay", () => {
+    fb();
+    const u = new URL(igAuthUrl({ appId: "1", redirectUri: "https://bi-buru.vercel.app/api/instagram/callback", state: "s" }));
+    expect(u.origin + u.pathname).toMatch(/^https:\/\/www\.facebook\.com\/v[\d.]+\/dialog\/oauth$/);
+    expect(u.searchParams.get("scope")).toContain("instagram_content_publish");
+    vi.stubEnv("INSTAGRAM_FB_CONFIG_ID", "999");
+    const c = new URL(igAuthUrl({ appId: "1", redirectUri: "https://x/cb", state: "s" }));
+    expect(c.searchParams.get("config_id")).toBe("999");
+    expect(c.searchParams.get("scope")).toBeNull();
+    vi.unstubAllEnvs();
+  });
+  it("código → token de usuario largo → token de la página que tiene Instagram (no caduca)", async () => {
+    fb();
+    const f = vi.fn(async (url: string) => {
+      if (url.includes("/oauth/access_token") && url.includes("fb_exchange_token")) return json({ access_token: "userLong" });
+      if (url.includes("/oauth/access_token")) return json({ access_token: "userShort" });
+      if (url.includes("/me/accounts")) return json({ data: [{ access_token: "p0" }, { access_token: "pageTok", instagram_business_account: { id: "1784", username: "akerra" } }] });
+      return json({ data: [{ permission: "instagram_basic", status: "granted" }, { permission: "ads_read", status: "declined" }] });
+    });
+    const r = await igExchangeCode("abc", "https://x/cb", f as never);
+    expect(r).toMatchObject({ accessToken: "pageTok", userId: "1784", scopes: "instagram_basic" });
+    expect(r.expiresIn).toBeGreaterThan(5 * 365 * 86400);
+    expect((await igRefresh("pageTok")).accessToken).toBe("pageTok");
+    vi.unstubAllEnvs();
+  });
+  it("sin Instagram vinculado a una página: error claro, sin reintentos", async () => {
+    fb();
+    const f = vi.fn(async (url: string) => url.includes("/me/accounts") ? json({ data: [{ access_token: "p0" }] }) : json({ access_token: "t" }));
+    await expect(igExchangeCode("abc", "https://x/cb", f as never)).rejects.toMatchObject({ retryable: false });
+    vi.unstubAllEnvs();
+  });
+  it("perfil y publicaciones por el id de Instagram, en graph.facebook.com", async () => {
+    fb();
+    const urls: string[] = [];
+    const f = vi.fn(async (url: string) => { urls.push(url); return url.includes("/media?") ? json({ data: [] }) : json({ instagram_business_account: { id: "1784", username: "akerra", followers_count: 120 } }); });
+    expect(await igProfile("pageTok", f as never)).toMatchObject({ id: "1784", username: "akerra", followers: 120, accountType: "BUSINESS" });
+    await igRecentMedia("pageTok", 30, f as never, "1784");
+    expect(urls.every((u) => u.startsWith("https://graph.facebook.com/"))).toBe(true);
+    expect(urls[1]).toContain("/1784/media?");
+    vi.unstubAllEnvs();
+  });
+});
 
 describe("Instagram: inicio de sesión y token", () => {
   it("pide solo lo necesario (perfil, publicar y estadísticas)", () => {

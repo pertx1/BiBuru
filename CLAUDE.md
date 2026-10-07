@@ -204,6 +204,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `src/lib/social/instagram.ts` (graph.instagram.com, contenedor → estado → publicar) y `tiktok.ts` (Login Kit, Display API, Content Posting con subida de
   archivo en un trozo). `service.ts` es el cron común (`/api/cron/social`, cada 5 min); TikTok se registra con `registerSocialHooks` desde `tiktok-service.ts`
   (impórtalo donde haga falta TikTok). Cada cuenta/destino va en su try/catch: un fallo no para a los demás.
+- Instagram tiene dos variantes según la app de Meta: inicio de sesión de Instagram (por defecto, graph.instagram.com) o con Facebook (`INSTAGRAM_LOGIN=facebook`, graph.facebook.com, token de la página vinculada que no caduca, `INSTAGRAM_FB_CONFIG_ID` opcional). Todo en `instagram.ts` con `igMode()`.
 - TikTok sin auditoría = privado: por defecto no se pide `video.publish`; modo con `tiktokModeFor` (directa solo con `TIKTOK_DIRECT_POST_AUDITED=1`).
 - Las publicaciones salen en el Calendario (`postsToItems`) y se arrastran con `@dnd-kit` (asa `touch-none`, pulsación larga en táctil).
 
