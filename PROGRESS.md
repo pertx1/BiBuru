@@ -150,6 +150,26 @@
 - **Sin verificar con servicios reales**: que los feeds precargados respondan (el entorno de desarrollo no sale a internet; se comprueban solos en producción)
   y que `pg_cron` esté activo en tu Supabase.
 
+## Trabajo nocturno (rama `noche-mejoras`)
+Guía para ti: `docs/QUE-TENGO-QUE-HACER.md` (y `.pdf`, `npm run guide:pdf`). Decisiones: `docs/DECISIONES.md`. Móvil: `docs/movil/CAMBIOS.md`.
+- **Pedidos**: estado de pago (Pendiente / Pago parcial / Pagado / Sin revisar), cobros por pedido, «Marcar como pagado», «Añadir cobro», «Me deben»,
+  «Quién me debe» con gráficos (cobrado/pendiente por mes y antigüedad), tarea para reclamar, filtros con etiquetas y totales, «Nuevo pedido» aparte con
+  borrador y pedido destacado. Widget «Pendiente de cobro».
+- **Stock**: mínimos, materiales y productos, movimientos, tareas «Reponer» automáticas (una por artículo, se actualizan y se completan solas; al completarlas
+  a mano preguntan las unidades). Pantalla Stock y widget «Stock que falta».
+- **Móvil**: auditoría de 31 pantallas a 375/390/430 px sin scroll horizontal, zonas de 44 px, letra de 16 px, campo enfocado visible con teclado,
+  deslizar tareas, tirar para actualizar, esqueleto de carga en negocios. Test `npm run test:mobile`.
+- **Favoritos de TikTok**: pegar uno o varios enlaces (botón «Pegar», también desde la captura rápida), análisis con descripción, hashtags, autor, portada
+  (como imagen) y tu nota; «No disponible» si es privado/borrado; «Subir el vídeo» para el análisis completo con coste estimado; reintento con un toque.
+- **Correo de Outlook**: solo lectura con Microsoft Graph, varias cuentas por negocio, bandeja unificada con filtros, lector seguro, adjuntos bajo demanda,
+  Crear tarea / Guardar como nota / Responder en Outlook, aviso de correo nuevo (apagado), IA opcional. **Falta conectar** (registro en Microsoft).
+- **Instagram**: estadísticas diarias, ranking, mejores días y horas, comparación, programación (foto/carrusel/reel) con reintentos, calendario de
+  contenido con arrastrar, «Usar como idea», widgets. **Falta conectar** (app de Meta en modo desarrollo).
+- **TikTok de negocio**: estadísticas diarias y programación en tres niveles (directa si se audita, borrador en TikTok, asistida con aviso). **Falta conectar**.
+- Extras: `/privacidad` y `/terminos`; los avisos ya se ven encima de las hojas abiertas.
+- **Sin probar con servicios reales** (no hay internet ni claves en el entorno): Microsoft, Meta, TikTok, subida a Storage. Todo lo demás, con pruebas
+  unitarias, de base de datos (permisos) y de extremo a extremo en local (`scripts/e2e/{orders,stock,gestures,tiktok,mail,social,tiktok-business}.mjs`).
+
 ### Decisiones y diferencias respecto a PROFITY
 - Beneficio = ingresos (pedidos no cancelados + ingresos sueltos) − gastos, igual que PROFITY. El coste unitario de
   los pedidos es informativo (no se resta otra vez para no contar dos veces).

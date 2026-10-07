@@ -162,3 +162,40 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Cron `biburu-news` cada 15 min (`/api/cron/news`): recoge 12 fuentes por pasada y genera desde 20 min antes de `profiles.news_time`.
   Respaldo: abrir Noticias genera con `after()` si ya tocaba. Una llamada a Gemini por día y usuario (`feature = 'news'`, cuenta en el presupuesto).
 - Fuentes precargadas se crean «sin comprobar»; la primera recogida las marca `ok` o `down`. Las nuevas se comprueban antes de guardarse.
+
+## Pedidos: cobros y deuda
+- `order_payments` (por espacio) + `orders.paid_cents` (trigger `refresh_order_paid`) + `orders.due_cents` (columna generada: total − cobrado; 0 si
+  `payment_reviewed = false` o cancelado). Pedidos anteriores a los cobros = «Sin revisar» (no son deuda) hasta `reviewOldOrders`.
+- Lógica pura en `src/lib/orders/payments.ts` (estado de pago, «Quién me debe», antigüedad, filtros de la URL); lecturas en `src/lib/orders/data.ts`.
+- Filtros en la URL (`q, estado, pago, fecha, desde, hasta, cliente, producto, canal`); el último se recuerda en `localStorage`. Detalle con `?abrir=`, nuevo destacado con `?nuevo=`.
+- `Sheet variant="panel"`: pantalla completa en móvil y panel lateral en escritorio (formularios largos).
+
+## Stock
+- Reutiliza `tshirt_stocks`/`dtf_stocks` (Producción, con `min_quantity`) y añade `stock_items` (genéricos, vínculo opcional con pedidos por producto o nombre)
+  y `stock_movements`. Claves de artículo: `tshirt|modelo|talla`, `dtf|diseño|variante`, `item|<id>`.
+- Falta = `max(0, mínimo − (tienes − reservado))`; reservan los pedidos `sin_hacer` y `sin_llegar`. Lógica pura en `src/lib/stock/shortage.ts`.
+- `syncStockTasks(businessId)` mantiene UNA tarea abierta por artículo (`tasks.stock_key`, índice único parcial); se llama tras tocar pedidos o stock y al
+  abrir Stock (sin cron). Nunca lanza. Completar a mano → `receiveForTask` (pregunta unidades y registra la entrada).
+
+## Correo (Outlook)
+- `src/lib/mail/graph.ts` (OAuth `common`, solo `offline_access User.Read Mail.Read`, delta de la bandeja), `service.ts` (token cifrado y rotado, sync),
+  `sanitize.ts` (HTML limpio + iframe `sandbox` con CSP que bloquea imágenes remotas). Solo cabeceras en BD; el cuerpo se pide al abrir.
+- `mail_accounts` es credencial personal (RLS por `user_id`, sin lectura de `refresh_token_enc`/`delta_link`). Cron `biburu-mail` cada 10 min.
+- La IA solo ve un correo con `profiles.mail_ai_allowed` y a petición («Resumir con IA», `feature = 'mail'`).
+
+## Redes (Instagram y TikTok)
+- Tablas comunes: `social_accounts` (tokens cifrados, ilegibles desde la app; visibles para el espacio), `social_daily` (foto diaria), `social_media`,
+  `social_posts` + `social_post_targets` (una fila por red; `mode` direct/draft/assisted) + `social_post_files` (bucket privado `social-media`, carpeta del espacio).
+- `src/lib/social/instagram.ts` (graph.instagram.com, contenedor → estado → publicar) y `tiktok.ts` (Login Kit, Display API, Content Posting con subida de
+  archivo en un trozo). `service.ts` es el cron común (`/api/cron/social`, cada 5 min); TikTok se registra con `registerSocialHooks` desde `tiktok-service.ts`
+  (impórtalo donde haga falta TikTok). Cada cuenta/destino va en su try/catch: un fallo no para a los demás.
+- TikTok sin auditoría = privado: por defecto no se pide `video.publish`; modo con `tiktokModeFor` (directa solo con `TIKTOK_DIRECT_POST_AUDITED=1`).
+- Las publicaciones salen en el Calendario (`postsToItems`) y se arrastran con `@dnd-kit` (asa `touch-none`, pulsación larga en táctil).
+
+## Móvil
+- `npm run test:mobile` (con la app local levantada, ver `scripts/e2e/README.md`) falla si alguna pantalla tiene scroll horizontal; informa de zonas < 44 px y letra < 16 px.
+- Zonas de 44 px solo en móvil (`min-h-11 md:min-h-…`). Gestos: `SwipeRow` (tareas) y `PullToRefresh` (layout).
+- Los avisos (`ToastProvider`) se muestran como `popover` para quedar encima de los `<dialog>` abiertos.
+
+## Páginas públicas
+- `/privacidad` y `/terminos` (las piden Meta y TikTok); están en `PUBLIC_PATHS` del proxy.
