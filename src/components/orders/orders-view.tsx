@@ -27,13 +27,15 @@ function summary(o: Order) {
  * (en móvil, flotante sobre la barra inferior). El formulario se abre aparte (pantalla completa / panel lateral).
  * El detalle se abre con `?abrir=<id>` (lo carga el servidor con sus cobros); el pedido recién creado llega en `?nuevo=<id>`.
  */
-export function OrdersView({ businessId, orders, products, today, openOrder, highlightId, hideList = false }: {
+export function OrdersView({ businessId, orders, products, today, openOrder, highlightId, hideList = false, prefill }: {
   businessId: string; orders: Order[]; products: Product[]; today: string; openOrder?: OrderWithPayments | null; highlightId?: string | null; hideList?: boolean;
+  /** «Crear pedido» desde la Bandeja de Redes: abre el alta con el cliente y el canal rellenados. */
+  prefill?: { customer?: string; channel?: string } | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(!!prefill);
   const [paying, setPaying] = useState<Order | null>(null);
   const [busy, start] = useTransition();
   const toast = useToast();
@@ -130,7 +132,7 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
 
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nuevo pedido" variant="panel">
         {creating && (
-          <OrderForm key="new" businessId={businessId} order={null} products={products} today={today}
+          <OrderForm key="new" businessId={businessId} order={null} products={products} today={today} prefill={prefill ?? undefined}
             onDone={(id) => { setCreating(false); if (id) go({ nuevo: id, abrir: null }); router.refresh(); }} />
         )}
       </Sheet>

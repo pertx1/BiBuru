@@ -12,7 +12,7 @@ import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/n
 import { PendingReceivablesWidget } from "./widgets/receivables";
 import { StockMissingWidget } from "./widgets/stock";
 import { MailUnreadWidget } from "./widgets/mail";
-import { SocialBestPostWidget, SocialFollowersWidget, SocialUpcomingWidget } from "./widgets/social";
+import { SocialBestPostWidget, SocialFollowersWidget, SocialInboxWidget, SocialUpcomingWidget } from "./widgets/social";
 import type { WidgetProps } from "./types";
 
 /**
@@ -58,6 +58,7 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "social-followers": SocialFollowersWidget,
   "social-best": SocialBestPostWidget,
   "social-upcoming": SocialUpcomingWidget,
+  "social-inbox": SocialInboxWidget,
   "ai-ask": AiAskWidget,
   "ai-brief": AiBriefWidget,
   "ai-usage": AiUsageWidget,

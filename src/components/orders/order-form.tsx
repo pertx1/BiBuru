@@ -36,7 +36,7 @@ export function orderToPayload(o: Order): OrderPayload {
   };
 }
 
-type FormProps = { businessId: string; order: (Order & Partial<Pick<OrderWithPayments, "order_payments">>) | null; products: Product[]; today: string; onDone: (savedId?: string) => void };
+type FormProps = { businessId: string; order: (Order & Partial<Pick<OrderWithPayments, "order_payments">>) | null; products: Product[]; today: string; onDone: (savedId?: string) => void; prefill?: { customer?: string; channel?: string } };
 
 /** «Descartar» el borrador vuelve a montar el formulario en blanco. */
 export function OrderForm(props: FormProps) {
@@ -44,7 +44,7 @@ export function OrderForm(props: FormProps) {
   return <OrderFormInner key={k} {...props} onDiscard={() => { clearDraft(props.businessId); setK((n) => n + 1); }} />;
 }
 
-function OrderFormInner({ businessId, order, products, today, onDone, onDiscard }: FormProps & { onDiscard: () => void }) {
+function OrderFormInner({ businessId, order, products, today, onDone, onDiscard, prefill }: FormProps & { onDiscard: () => void }) {
   const toast = useToast();
   const [draft] = useState<Draft | null>(() => (order ? null : readDraft(businessId)));
   const v = (k: string, fallback: string) => draft?.fields[k] ?? fallback;
@@ -132,9 +132,9 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
             {ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}
           </Select>
         </Field>
-        <Field label="Cliente" htmlFor="o-customer"><Input id="o-customer" name="customer" defaultValue={v("customer", order?.customer ?? "")} maxLength={120} autoComplete="off" /></Field>
+        <Field label="Cliente" htmlFor="o-customer"><Input id="o-customer" name="customer" defaultValue={v("customer", order?.customer ?? prefill?.customer ?? "")} maxLength={120} autoComplete="off" /></Field>
         <Field label="Nº de pedido" htmlFor="o-number"><Input id="o-number" name="order_number" defaultValue={v("order_number", order?.order_number ?? "")} maxLength={40} autoComplete="off" /></Field>
-        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" /></Field>
+        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? prefill?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" /></Field>
       </div>
 
       <fieldset className="flex flex-col gap-3">

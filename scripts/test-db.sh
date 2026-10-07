@@ -3,4 +3,4 @@
 #   DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:db
 set -euo pipefail
 . scripts/db-setup.sh
-DATABASE_TEST_URL="$TEST_URL" npx vitest run --no-file-parallelism tests/rls.test.ts tests/business.test.ts tests/production.test.ts tests/tasks.test.ts tests/tasks-antola.test.ts tests/notes.test.ts tests/notifications.test.ts tests/ai.test.ts tests/favorites.test.ts tests/account.test.ts tests/home.test.ts tests/news.test.ts tests/payments.test.ts tests/stock.test.ts tests/mail.test.ts tests/social.test.ts
+DATABASE_TEST_URL="$TEST_URL" npx vitest run --no-file-parallelism tests/rls.test.ts tests/business.test.ts tests/production.test.ts tests/tasks.test.ts tests/tasks-antola.test.ts tests/notes.test.ts tests/notifications.test.ts tests/ai.test.ts tests/favorites.test.ts tests/account.test.ts tests/home.test.ts tests/news.test.ts tests/payments.test.ts tests/stock.test.ts tests/mail.test.ts tests/social.test.ts tests/inbox.test.ts

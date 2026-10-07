@@ -71,7 +71,8 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
         </>
       )}
 
-      <OrdersView businessId={id} orders={debtsView ? [] : orders} products={products} today={today} openOrder={openOrder} highlightId={sp.nuevo && UUID.test(sp.nuevo) ? sp.nuevo : null} hideList={debtsView} />
+      <OrdersView businessId={id} orders={debtsView ? [] : orders} products={products} today={today} openOrder={openOrder} highlightId={sp.nuevo && UUID.test(sp.nuevo) ? sp.nuevo : null} hideList={debtsView}
+        prefill={sp.crear === "1" ? { customer: sp.para?.slice(0, 120), channel: sp.via?.slice(0, 60) } : null} />
       {!debtsView && (
         <div className="flex items-center justify-between text-sm">
           {orders.length >= limit ? <Link href={`?${more}`} scroll={false} className="text-accent">Ver más pedidos</Link> : <span className="text-muted">{orders.length} pedidos</span>}

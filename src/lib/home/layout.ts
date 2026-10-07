@@ -119,6 +119,7 @@ export const WIDGETS: WidgetMeta[] = [
   w("social-followers", "redes", "Seguidores", "Seguidores de tus cuentas de Instagram y TikTok y su cambio en 7 días.", "list", ["m", "s", "l"]),
   w("social-best", "redes", "Mejor publicación de la semana", "La publicación con más interacciones de los últimos 7 días.", "text", ["m", "l"]),
   w("social-upcoming", "redes", "Próximas publicaciones", "Lo que tienes programado en Instagram y TikTok.", "list", ["m", "l", "s"]),
+  w("social-inbox", "redes", "Mensajes sin responder", "Mensajes y comentarios de Instagram que esperan respuesta (de todos o de un negocio).", "list", ["m", "s", "l"], [business()]),
   w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
   w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
   w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),
