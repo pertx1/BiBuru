@@ -82,7 +82,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         {p && (
           <Section title="Qué avisos quieres">
             <NotificationSettingsForm initial={{
-              task_lead_minutes: p.task_lead_minutes, event_lead_minutes: p.event_lead_minutes, quiet_hours_start: p.quiet_hours_start, quiet_hours_end: p.quiet_hours_end,
+              task_reminders_enabled: p.task_reminders_enabled, event_lead_minutes: p.event_lead_minutes, quiet_hours_start: p.quiet_hours_start, quiet_hours_end: p.quiet_hours_end,
               daily_digest_enabled: p.daily_digest_enabled, daily_digest_time: p.daily_digest_time, overdue_alert_enabled: p.overdue_alert_enabled, overdue_alert_time: p.overdue_alert_time,
               weekly_review_enabled: p.weekly_review_enabled, weekly_review_dow: p.weekly_review_dow, weekly_review_time: p.weekly_review_time,
             }} />

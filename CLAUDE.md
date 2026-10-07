@@ -77,14 +77,23 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 ## Tareas, calendario y objetivos (Fase 3)
 - Fechas y horas «de pared»: `date` + `time` en la zona del perfil, sin convertir a UTC. El cron (Fase 5) las interpreta con `profiles.timezone`.
   Es lo que evita saltos al cambiar la hora y hace triviales las recurrencias.
-- Recurrencias propias (`src/lib/tasks/recurrence.ts`) sobre fechas ISO: diaria, semanal (días, semana desde lunes), mensual y anual,
-  sin derivar el día 31 ni el 29 de febrero. Guardadas como jsonb `{freq, interval, byweekday, until}`. No se usa `rrule` por sus problemas
-  con zonas horarias; el motor está cubierto por tests.
-- Alta rápida: parser determinista (`quick-parse.ts`). `chrono-node` se probó y falla con «pasado mañana» o «5 de la tarde».
-  La IA (Fase 6) puede reutilizar el mismo parser como base.
-- Completar una tarea recurrente crea la siguiente ocurrencia (desde hoy si se completó tarde); eso permite deshacer borrando la creada.
+- **Tareas como Antola** (migración `20261025000001_tasks_antola.sql`).
+  - Prioridad 3/2/1 (alta/media/baja).
+  - `repeat` (none/daily/weekdays/weekly/monthly) y `repeat_days` (0 = domingo).
+  - `series_id` y `spawned_from_id` (único): completar crea la siguiente ocurrencia, y deshacer la borra si sigue pendiente.
+  - `external_key` («origen:clave», única por espacio).
+  - Subtareas en la tabla `subtasks` (máx. 50). `parent_id` ya no se usa.
+- Lógica pura de tareas (con tests en `antola.test.ts`):
+  - `src/lib/tasks/repeat.ts`: `stepRecurrence`, `nextOccurrence`, `currentOccurrence`. El día 31 pasa al último día de los meses cortos.
+  - `timing.ts`: `computeTaskTiming` (hora local → `due_at`/`reminder_at`/`remind_at` en UTC; «antes» sin hora cuenta desde las 9:00).
+  - `input.ts`: esquema Zod del formulario y `fieldsToRow`.
+- Operaciones en `src/lib/tasks/service.ts`: completar, deshacer, `rollRecurring` (al abrir y cada hora en el cron), posponer y reprogramar. Las Server Actions están en `tareas/actions.ts`.
+- La recurrencia jsonb (`recurrence.ts`) queda **solo para eventos** y para lo que entiende el alta rápida (`repeatFromQuick` la convierte).
+- Pantallas:
+  - `/tareas?f=hoy|semana|bandeja|sinfecha|hechas|<negocio>`. Los negocios hacen de proyectos; un negocio ajeno redirige a `/tareas`.
+  - `/tareas/nueva` (admite `?negocio=&objetivo=&fecha=&volver=`).
+  - `/tareas/[id]`: el detalle, que es adonde lleva la notificación.
 - Valores de objetivos en punto fijo ×100 (euros = céntimos). Progreso automático calculado al leer; el histórico guarda un punto por día.
-- Subtareas: un solo nivel, forzado por trigger.
 
 ## Captura, notas y búsqueda (Fase 4)
 - Una captura nunca depende de la red ni de la IA: `enqueue` (IndexedDB) → `captureItem` (idempotente por `client_id`) → bandeja. La IA (Fase 6)
@@ -101,8 +110,11 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   recibe por un fallo temporal se libera la reclamación (reintento al minuto siguiente); 404/410 borran la suscripción.
 - El cron usa la clave de servicio (`createAdminClient`, solo servidor) porque no hay sesión de usuario. `/api/cron/*` y `/api/antola/*`
   son públicos para el proxy de sesión pero exigen su propio secreto (comparación en tiempo constante).
-- Tareas y eventos NO materializan recordatorios: se calculan en cada pasada (una sola fuente de verdad, sin sincronizaciones que olvidar).
-  `reminders` solo guarda los recordatorios sueltos. Un aviso de tarea solo se envía si al editarla su hora era futura.
+- Tareas: cada una guarda su próximo aviso en `remind_at` (UTC). Lo calcula la app al guardar; si ya ha pasado, no se programa.
+  - El cron (`planTaskPushes`) envía con la clave `task:<id>:<remind_at>` y la etiqueta `task:<id>`, y abre `/tareas/<id>`.
+  - Después pone `remind_at = null` con compare-and-set. Con más de 2 h de retraso lo descarta.
+  - Respeta `profiles.task_reminders_enabled` y las horas de silencio.
+- Eventos: los recordatorios se calculan en cada pasada. `reminders` solo guarda los recordatorios sueltos.
 - El service worker muestra SIEMPRE una notificación por cada push (obligatorio en iOS) y abre `/aviso/<tipo>/<id>`.
 
 ## Seguridad

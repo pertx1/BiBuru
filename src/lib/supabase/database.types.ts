@@ -790,13 +790,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"task_reminders_enabled": boolean,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -1137,6 +1137,31 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"subtasks": {
+                  Row: {
+                    "created_at": string,"done": boolean,"id": string,"position": number,"task_id": string,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"done"?: boolean,"id"?: string,"position"?: number,"task_id": string,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"done"?: boolean,"id"?: string,"position"?: number,"task_id"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "subtasks_task_id_workspace_id_fkey"
+      columns: ["task_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "subtasks_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"taggings": {
                   Row: {
                     "created_at": string,"id": string,"item_id": string,"item_type": string,"tag_id": string,"updated_at": string,"user_id": string,"workspace_id": string
@@ -1183,13 +1208,13 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_date": string | null,"due_time": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"sort_order": number,"status": string,"stock_key": string | null,"stock_missing": number | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_at": string | null,"due_date": string | null,"due_time": string | null,"external_key": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"remind_at": string | null,"reminder_at": string | null,"reminder_minutes_before": number | null,"reminder_mode": string,"repeat": string,"repeat_days": (number)[],"series_id": string | null,"sort_order": number,"spawned_from_id": string | null,"status": string,"stock_key": string | null,"stock_missing": number | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"due_time"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"sort_order"?: number,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1213,6 +1238,12 @@ isOneToOne: false
     },{
       foreignKeyName: "tasks_parent_id_workspace_id_fkey"
       columns: ["parent_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tasks_spawned_from_fk"
+      columns: ["spawned_from_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "tasks"
       referencedColumns: ["id","workspace_id"]

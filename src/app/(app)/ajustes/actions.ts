@@ -53,7 +53,7 @@ export async function sendTestPush(): Promise<ActionResult & { sent?: number }> 
 }
 
 const settingsSchema = z.object({
-  task_lead_minutes: z.number().int().min(0).max(1440),
+  task_reminders_enabled: z.boolean(),
   event_lead_minutes: z.number().int().min(0).max(1440),
   quiet_hours_start: hhmm, quiet_hours_end: hhmm,
   daily_digest_enabled: z.boolean(), daily_digest_time: hhmm,

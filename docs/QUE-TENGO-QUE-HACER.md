@@ -25,6 +25,7 @@ Hola. Esta noche he trabajado en BiBuru mientras dormías. Aquí tienes **todo l
 | 5. Correo de Outlook | **Hecha a medias** | Todo está construido, pero **falta conectar**: tienes que registrar la app en Microsoft (bloque D). |
 | 6. Instagram de negocio | **Hecha a medias** | Estadísticas, ranking y programación hechas; **falta conectar** la app de Meta (bloque E). |
 | 7. TikTok de negocio | **Hecha a medias** | Estadísticas y programación (borrador o aviso) hechas; **falta conectar** la app de TikTok (bloque F). |
+| Tareas como en Antola | **Hecha** | Filtros (Hoy, 7 días, Bandeja…), «+» con formulario completo, repetir, avisos por tarea y pantalla de detalle. La base de datos se actualiza sola al publicar. |
 | Extra: Política de privacidad | **Hecha** | Ya existen **https://bi-buru.vercel.app/privacidad** y **/terminos** (Meta y TikTok los piden). |
 | Extra: avisos encima de las hojas | **Hecha** | Los mensajes («Guardado ✔», errores…) ya no quedan escondidos detrás de las ventanas abiertas. |
 
@@ -366,6 +367,15 @@ Abre BiBuru desde el icono de tu pantalla de inicio.
 1. **Negocios → Akerra → Stock** → **Añadir artículo** con **Tienes ahora 0**.
 2. En **Tareas → Hoy** aparece **Pedir …** (en la nota: «Se ha quedado a 0»).
 3. Táchala: se completa como cualquier tarea y no vuelve a salir mientras siga a 0. Si quieres, pulsa **Apuntar unidades** en el aviso.
+
+**Tareas (como Antola)**
+
+1. Pulsa el **+** redondo de **Tareas**, escribe algo, elige **Hoy**, una hora y **Recordatorio → Antes → 15 min antes**. Pulsa **Crear tarea**: sale **Tarea creada**.
+2. Toca el **círculo** de la tarea: sale **¡Hecho! ✓** con **Deshacer** durante 5 segundos.
+3. Crea otra con **Repetir → Días concretos** (por ejemplo, **L** y **X**). Al completarla aparece la siguiente.
+4. Cuando llegue el aviso, tócalo: se abre la tarea con **Hecho**, **Mañana**, **Posponer 15 min** y **Posponer 1 h**.
+5. Lo que crees con **+** sin fecha ni proyecto aparece en el chip **Bandeja** (con su número).
+6. **Ajustes → Qué avisos quieres → Avisos de tareas** los apaga todos de golpe.
 
 **Móvil**
 

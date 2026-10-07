@@ -5,15 +5,13 @@ import { CheckSquare, ChevronLeft, ChevronRight, GripVertical, Plus } from "luci
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { loadTask } from "@/app/(app)/tareas/actions";
 import { reschedulePost } from "@/app/(app)/redes/actions";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
-import { TaskSheet } from "@/components/tasks/task-sheet";
 import { addDays, addMonths, endOfMonth, formatDate, startOfMonth, startOfWeek } from "@/lib/dates";
 import { itemsForDay, layoutDay, type CalItem } from "@/lib/tasks/calendar";
-import type { EventRow, TaskWithSubs } from "@/lib/tasks/data";
+import type { EventRow } from "@/lib/tasks/data";
 import { cn } from "@/lib/utils";
 import { EventSheet, type EventDraft } from "./event-sheet";
 
@@ -46,9 +44,9 @@ function DragPost({ id, children }: { id: string; children: React.ReactNode }) {
 }
 
 export function CalendarClient({
-  view, focus, today, items, events, businesses, goals,
+  view, focus, today, items, events, businesses,
 }: {
-  view: CalView; focus: string; today: string; items: CalItem[]; events: EventRow[]; businesses: Biz[]; goals: { id: string; title: string }[];
+  view: CalView; focus: string; today: string; items: CalItem[]; events: EventRow[]; businesses: Biz[]; goals?: { id: string; title: string }[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -63,7 +61,6 @@ export function CalendarClient({
   }
   const [dayOpen, setDayOpen] = useState<string | null>(null);
   const [eventOpen, setEventOpen] = useState<{ event: EventRow | null; draft: EventDraft | null } | null>(null);
-  const [task, setTask] = useState<{ t: TaskWithSubs | null; open: boolean; date?: string }>({ t: null, open: false });
   const bizById = new Map(businesses.map((b) => [b.id, b]));
   const eventById = new Map(events.map((e) => [e.id, e]));
   const colorOf = (i: CalItem) => (i.businessId ? bizById.get(i.businessId)?.color : undefined) ?? ACCENT;
@@ -73,10 +70,7 @@ export function CalendarClient({
     if (i.kind === "event") {
       const e = eventById.get(i.id);
       if (e) setEventOpen({ event: e, draft: null });
-    } else {
-      const t = await loadTask(i.id);
-      if (t) setTask({ t, open: true });
-    }
+    } else router.push(`/tareas/${i.id}`);
   }
   const newEvent = (draft: EventDraft) => { setDayOpen(null); setEventOpen({ event: null, draft }); };
 
@@ -231,13 +225,12 @@ export function CalendarClient({
             {itemsForDay(items, dayOpen).length === 0 && <p className="text-sm text-muted">No hay nada este día.</p>}
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => newEvent({ start_date: dayOpen })}><Plus className="size-4" aria-hidden /> Evento</Button>
-              <Button variant="secondary" onClick={() => { const d = dayOpen; setDayOpen(null); setTask({ t: null, open: true, date: d }); }}><Plus className="size-4" aria-hidden /> Tarea</Button>
+              <Button variant="secondary" onClick={() => router.push(`/tareas/nueva?fecha=${dayOpen}&volver=${encodeURIComponent(`/calendario?d=${dayOpen}`)}`)}><Plus className="size-4" aria-hidden /> Tarea</Button>
             </div>
           </div>
         )}
       </Sheet>
       <EventSheet open={eventOpen !== null} onClose={() => setEventOpen(null)} event={eventOpen?.event ?? null} draft={eventOpen?.draft ?? null} businesses={businesses} />
-      <TaskSheet task={task.t} open={task.open} onClose={() => { setTask({ t: null, open: false }); router.refresh(); }} businesses={businesses} goals={goals} today={today} defaultDate={task.date} />
     </div>
   );
 }

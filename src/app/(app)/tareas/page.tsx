@@ -1,55 +1,78 @@
+import { Plus } from "lucide-react";
 import Link from "next/link";
-import { QuickAdd } from "@/components/tasks/quick-add";
-import { NewTaskButton } from "@/components/tasks/new-task-button";
-import { TaskList } from "@/components/tasks/task-list";
-import { PageHeader } from "@/components/layout/page-header";
-import { listBusinesses } from "@/lib/data";
+import { redirect } from "next/navigation";
 import { z } from "zod";
+import { BusinessIcon } from "@/components/businesses/business-icon";
+import { PageHeader } from "@/components/layout/page-header";
 import { ReminderList } from "@/components/notifications/reminder-list";
+import { QuickAdd } from "@/components/tasks/quick-add";
+import { TaskList } from "@/components/tasks/task-list";
+import { listBusinesses } from "@/lib/data";
 import { nowLocal } from "@/lib/dates";
 import { syncAllStockTasks } from "@/lib/stock/service";
-import { getNow, getTask, listGoals, listReminders, listTasks, TASK_VIEWS, type TaskView } from "@/lib/tasks/data";
+import { countTaskInbox, getNow, listReminders, listTasks, TASK_VIEWS, type TaskView } from "@/lib/tasks/data";
 import { groupTasks } from "@/lib/tasks/groups";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Tareas" };
 
-const LABELS: Record<TaskView, string> = { hoy: "Hoy", "7dias": "Próximos 7 días", todas: "Todas", negocio: "Por negocio", hechas: "Hechas" };
-const EMPTY: Record<TaskView, string> = {
-  hoy: "Nada para hoy. Escribe arriba lo que se te ocurra y pulsa Enter.",
-  "7dias": "No hay nada planificado en los próximos 7 días.",
-  todas: "No tienes tareas pendientes. ¡Bien!",
-  negocio: "No tienes tareas pendientes.",
-  hechas: "Todavía no has completado ninguna tarea.",
+const LABELS: Record<TaskView, string> = { hoy: "Hoy", semana: "Próximos 7 días", bandeja: "Bandeja", sinfecha: "Sin fecha", hechas: "Completadas", todas: "Pendientes" };
+const EMPTY: Record<TaskView, { title: string; text?: string }> = {
+  hoy: { title: "Nada pendiente para hoy", text: "Disfruta del día o adelanta algo de la semana." },
+  semana: { title: "Semana despejada", text: "No hay nada con fecha en los próximos 7 días." },
+  bandeja: { title: "Bandeja vacía", text: "Lo que apuntes con «+» sin fecha ni proyecto aparecerá aquí." },
+  sinfecha: { title: "Todo tiene fecha", text: "Las tareas sin fecha aparecerán aquí." },
+  hechas: { title: "Aún no has completado ninguna tarea" },
+  todas: { title: "Nada pendiente en este proyecto", text: "Pulsa «+» para añadir una tarea." },
 };
+const OLD: Record<string, string> = { "7dias": "semana", hechas: "hechas", todas: "hoy", negocio: "hoy", hoy: "hoy" };
 
-export default async function TareasPage({ searchParams }: { searchParams: Promise<{ v?: string; abrir?: string }> }) {
-  const { v, abrir } = await searchParams;
-  const view = (TASK_VIEWS.find((x) => x === v) ?? "hoy") as TaskView;
+export default async function TareasPage({ searchParams }: { searchParams: Promise<{ f?: string; v?: string; abrir?: string }> }) {
+  const sp = await searchParams;
+  // Enlaces antiguos (?v=…, ?abrir=…) siguen funcionando.
+  if (sp.abrir && z.uuid().safeParse(sp.abrir).success) redirect(`/tareas/${sp.abrir}`);
+  if (!sp.f && sp.v && OLD[sp.v]) redirect(OLD[sp.v] === "hoy" ? "/tareas" : `/tareas?f=${OLD[sp.v]}`);
+
+  const businesses = await listBusinesses();
+  const project = sp.f && z.uuid().safeParse(sp.f).success ? businesses.find((b) => b.id === sp.f) : undefined;
+  if (sp.f && z.uuid().safeParse(sp.f).success && !project) redirect("/tareas"); // proyecto que no es tuyo (o no existe)
+  const view: TaskView = project ? "todas" : (TASK_VIEWS.find((x) => x === sp.f) ?? "hoy");
+
   // Tareas «Pedir …» de Stock al día antes de enseñar la lista (BATU lo hacía cada hora con Profity).
   await syncAllStockTasks();
-  const [now, tasks, businesses, goals, openTask, reminders] = await Promise.all([getNow(), listTasks(view), listBusinesses(), listGoals({ status: "active" }), abrir && z.uuid().safeParse(abrir).success ? getTask(abrir) : Promise.resolve(null), view === "hoy" ? listReminders() : Promise.resolve([])]);
-  const biz = new Map(businesses.map((b) => [b.id, b.name]));
-  const bizOptions = businesses.map((b) => ({ id: b.id, name: b.name, color: b.color }));
-  const goalOptions = goals.map((g) => ({ id: g.id, title: g.title }));
+  const [now, tasks, inbox, reminders] = await Promise.all([
+    getNow(), listTasks(view, { businessId: project?.id }), countTaskInbox(), view === "hoy" ? listReminders() : Promise.resolve([]),
+  ]);
+  const bizOptions = businesses.map((b) => ({ id: b.id, name: b.name, color: b.color, icon: b.icon }));
+  const chip = (active: boolean) => cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm md:min-h-10", active ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface hover:bg-surface-2");
 
   return (
     <>
       <PageHeader title="Tareas" subtitle="Lo que tienes que hacer, sin que se te escape nada." />
       <div className="mb-4 flex flex-col gap-3">
-        <QuickAdd today={now.date} nowTime={now.time} />
-        <div className="flex items-center justify-between gap-2">
-          <nav aria-label="Vistas" className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
-            {TASK_VIEWS.map((x) => (
-              <Link key={x} href={`/tareas?v=${x}`} aria-current={x === view ? "page" : undefined}
-                className={cn("flex min-h-11 md:min-h-10 shrink-0 items-center rounded-full border border-border px-3.5 text-sm", x === view ? "border-accent bg-accent text-accent-foreground" : "bg-surface hover:bg-surface-2")}>{LABELS[x]}</Link>
-            ))}
-          </nav>
-          <NewTaskButton businesses={bizOptions} goals={goalOptions} today={now.date} />
-        </div>
+        <QuickAdd today={now.date} nowTime={now.time} businessId={project?.id} />
+        <nav aria-label="Filtros" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
+          {TASK_VIEWS.map((x) => (
+            <Link key={x} href={x === "hoy" ? "/tareas" : `/tareas?f=${x}`} aria-current={x === view && !project ? "page" : undefined} className={chip(x === view && !project)}>
+              {LABELS[x]}
+              {x === "bandeja" && inbox > 0 && <span className={cn("rounded-full px-1.5 text-xs font-semibold tabular-nums", x === view ? "bg-accent-foreground/20" : "bg-surface-2")}>{inbox}</span>}
+            </Link>
+          ))}
+          {businesses.map((b) => (
+            <Link key={b.id} href={`/tareas?f=${b.id}`} aria-current={project?.id === b.id ? "page" : undefined} className={chip(project?.id === b.id)}>
+              <BusinessIcon name={b.icon} color={b.color} className="size-5 rounded-md" />{b.name}
+            </Link>
+          ))}
+        </nav>
       </div>
-      <ReminderList today={now.date} reminders={reminders.map((r) => ({ id: r.id, title: r.title, status: r.status, local: nowLocal(new Date(r.remind_at), now.timezone) }))} />
-      <TaskList groups={groupTasks(view, tasks, now.date, biz)} businesses={bizOptions} goals={goalOptions} today={now.date} emptyText={EMPTY[view]} openTask={openTask} />
+      {view === "hoy" && <ReminderList today={now.date} reminders={reminders.map((r) => ({ id: r.id, title: r.title, status: r.status, local: nowLocal(new Date(r.remind_at), now.timezone) }))} />}
+      <div className="pb-24 md:pb-20">
+        <TaskList groups={groupTasks(view, tasks, now.date)} businesses={bizOptions} today={now.date} empty={EMPTY[view]} />
+      </div>
+      <Link href={project ? `/tareas/nueva?negocio=${project.id}` : "/tareas/nueva"} aria-label="Nueva tarea"
+        className="fixed right-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 flex size-14 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-lg hover:opacity-90 md:right-8 md:bottom-8">
+        <Plus className="size-7" aria-hidden />
+      </Link>
     </>
   );
 }

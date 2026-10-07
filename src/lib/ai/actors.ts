@@ -7,6 +7,7 @@ import { expenseSchema, orderSchema } from "@/lib/schemas";
 import type { Database } from "@/lib/supabase/database.types";
 import { eventSchema, goalSchema, taskSchema } from "@/lib/tasks/schemas";
 import { noteSchema } from "@/lib/notes/schemas";
+import { insertSimpleTask } from "@/lib/tasks/service";
 
 type Db = SupabaseClient<Database>;
 export type Actor = { supabase: Db; workspaceId: string; userId: string; timezone: string };
@@ -60,13 +61,14 @@ export async function createTask(a: Actor, i: TaskIn): Promise<Created> {
   const biz = await resolveBusiness(a, i.business);
   const p = taskSchema.safeParse({ title: i.title, notes: i.notes ?? "", due_date: i.date ?? "", due_time: i.date ? (i.time ?? "") : "", priority: i.priority ?? 0, business_id: biz?.id ?? null });
   if (!p.success) return fail(first(p.error));
-  const { data, error } = await a.supabase.from("tasks").insert({
-    workspace_id: a.workspaceId, user_id: a.userId, title: p.data.title, notes: p.data.notes ?? null, due_date: p.data.due_date ?? null, due_time: p.data.due_time ?? null,
-    priority: p.data.priority, business_id: p.data.business_id ?? null, folder_id: await resolveFolder(a, i.folder),
-  }).select("id").single();
-  if (error) return fail("No se pudo crear la tarea");
+  const r = await insertSimpleTask(a, {
+    title: p.data.title, notes: p.data.notes ?? null, date: p.data.due_date ?? null, time: p.data.due_time ?? null,
+    priority: p.data.priority, businessId: p.data.business_id ?? null, folderId: await resolveFolder(a, i.folder),
+  });
+  if ("error" in r) return fail("No se pudo crear la tarea");
+  const data = r;
   if (i.tags?.length) await addTagsTo(a, "task", data.id, i.tags);
-  return { kind: "task", id: data.id, label: p.data.title, href: `/tareas?v=todas&abrir=${data.id}` };
+  return { kind: "task", id: data.id, label: p.data.title, href: `/tareas/${data.id}` };
 }
 
 export type NoteIn = { title: string; body?: string | null; business?: string | null; folder?: string | null; tags?: string[] };

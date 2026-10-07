@@ -3,13 +3,14 @@
  * usuario), sin red ni base de datos. El cron la ejecuta cada minuto; cada aviso lleva una clave de
  * deduplicación (`key`) para que reintentos y minutos sucesivos no lo envíen dos veces.
  */
-import { addDays, diffDays } from "@/lib/dates";
+import { addDays, diffDays, todayISO } from "@/lib/dates";
+import { whenLabel } from "@/lib/tasks/format";
 import { occurrencesBetween, parseRecurrence } from "@/lib/tasks/recurrence";
 
 export type Local = { date: string; time: string }; // time "HH:MM"
 
 export type Prefs = {
-  task_lead_minutes: number;
+  task_reminders_enabled?: boolean;
   event_lead_minutes: number;
   quiet_hours_start: string; // "HH:MM[:SS]"
   quiet_hours_end: string;
@@ -27,6 +28,7 @@ export type Prefs = {
 
 export type Push = {
   key: string;
+  tag?: string; // etiqueta de la notificación si no es la clave (una tarea reemplaza su aviso anterior)
   kind: "task" | "event" | "digest" | "overdue" | "weekly" | "news" | "mail";
   refId?: string;
   title: string;
@@ -67,30 +69,30 @@ const dayLabel = (d: string) => {
   return `${names[dow]} ${+d.slice(8, 10)} de ${months[+d.slice(5, 7) - 1]}`;
 };
 
-export type TaskRow = { id: string; title: string; due_date: string | null; due_time: string | null; status: string; parent_id: string | null; updatedLocal: Local };
+/** Avisos de tarea con más de 2 h de retraso (horas de silencio, cron caído) ya no se envían. */
+export const TASK_MAX_DELAY_MS = 2 * 3600_000;
+
+type DueTask = { id: string; title: string; due_date: string | null; due_time: string | null; remind_at: string | null };
 
 /**
- * Recordatorio de tareas con hora: se avisa `task_lead_minutes` antes (0 = a su hora).
- * - Solo si la tarea se fijó para el futuro en su última edición (no avisa de lo ya pasado al importar o editar).
- * - Si estaba en horas de silencio, se envía al terminar éstas, siempre que no hayan pasado más de 6 h.
+ * Avisos de tareas como Antola: título = la tarea; debajo, cuándo («Hoy a las 10:00», «Mañana»). Clave idempotente
+ * `task:<id>:<remind_at ISO>`, etiqueta `task:<id>` (un aviso nuevo de la misma tarea reemplaza al anterior) y abre `/tareas/<id>`.
  */
-export function planTaskReminders(tasks: TaskRow[], prefs: Prefs, now: Local): Push[] {
-  const out: Push[] = [];
+export function planTaskPushes(tasks: DueTask[], timeZone: string, now: Date): { pushes: (Push & { remindAt?: string })[]; stale: { id: string; remind_at: string }[] } {
+  const today = todayISO(now, timeZone);
+  const pushes: (Push & { remindAt?: string })[] = [];
+  const stale: { id: string; remind_at: string }[] = [];
   for (const t of tasks) {
-    if (t.status !== "open" || t.parent_id || !t.due_date || !t.due_time) continue;
-    const due: Local = { date: t.due_date, time: hm(t.due_time) };
-    const remind = addMinutes(due, -prefs.task_lead_minutes);
-    if (stamp(remind.date, remind.time) > stamp(now.date, now.time)) continue; // aún no
-    if (stamp(due.date, due.time) < stamp(t.updatedLocal.date, t.updatedLocal.time)) continue; // ya estaba vencida al editarla
-    if (!withinWindow(now, due, 6 * 60) && stamp(now.date, now.time) > stamp(due.date, due.time)) continue; // demasiado tarde
-    const lead = prefs.task_lead_minutes;
-    out.push({
-      key: `task:${t.id}:${stamp(due.date, due.time)}`, kind: "task", refId: t.id,
-      title: lead > 0 ? `Tarea en ${lead >= 60 ? `${Math.round(lead / 60)} h` : `${lead} min`} · ${due.time}` : `Tarea · ${due.time}`,
-      body: t.title, url: `/aviso/task/${t.id}`,
+    if (!t.remind_at) continue;
+    const at = new Date(t.remind_at);
+    if (at.getTime() > now.getTime()) continue;
+    if (now.getTime() - at.getTime() > TASK_MAX_DELAY_MS) { stale.push({ id: t.id, remind_at: t.remind_at }); continue; }
+    pushes.push({
+      key: `task:${t.id}:${at.toISOString()}`, tag: `task:${t.id}`, kind: "task", refId: t.id, remindAt: t.remind_at,
+      title: t.title, body: whenLabel(t.due_date, t.due_time, today) ?? "Tarea pendiente", url: `/tareas/${t.id}`,
     });
   }
-  return out;
+  return { pushes, stale };
 }
 
 export type EventOcc = { id: string; title: string; date: string; startTime: string | null; location: string | null };

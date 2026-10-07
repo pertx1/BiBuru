@@ -1,31 +1,36 @@
 import { describe, expect, it } from "vitest";
+import { relativeDay, whenLabel } from "./format";
 import { groupTasks } from "./groups";
 import type { TaskWithSubs } from "./data";
 
-const t = (id: string, due: string | null, biz: string | null = null): TaskWithSubs =>
-  ({ id, due_date: due, business_id: biz, status: "open", subtasks: [] } as unknown as TaskWithSubs);
+const t = (id: string, due: string | null): TaskWithSubs => ({ id, due_date: due, business_id: null, status: "open", subtasks: [] } as unknown as TaskWithSubs);
 const today = "2026-10-05";
 
-describe("agrupar tareas por vista", () => {
-  it("Hoy: las atrasadas van aparte, marcadas como atrasadas", () => {
-    const g = groupTasks("hoy", [t("a", "2026-10-01"), t("b", "2026-10-05")], today, new Map());
-    expect(g[0]).toMatchObject({ title: "Atrasadas", tone: "danger" });
+describe("agrupar tareas por filtro", () => {
+  it("Hoy: «Vencidas» aparte (en rojo) y luego «Hoy»", () => {
+    const g = groupTasks("hoy", [t("a", "2026-10-01"), t("b", "2026-10-05")], today);
+    expect(g[0]).toMatchObject({ title: "Vencidas", tone: "danger" });
     expect(g[0].tasks.map((x) => x.id)).toEqual(["a"]);
+    expect(g[1]).toMatchObject({ title: "Hoy" });
     expect(g[1].tasks.map((x) => x.id)).toEqual(["b"]);
   });
-  it("7 días: un grupo por día, hoy primero", () => {
-    const g = groupTasks("7dias", [t("a", "2026-10-06"), t("b", "2026-10-05")], today, new Map());
-    expect(g).toHaveLength(7);
-    expect(g[0].title).toBe("Hoy");
-    expect(g[1].title).toBe("Mañana");
+  it("Próximos 7 días: un grupo por día relativo", () => {
+    const g = groupTasks("semana", [t("a", "2026-10-06"), t("b", "2026-10-05")], today);
+    expect(g.map((x) => x.title)).toEqual(["Hoy", "Mañana", "Miércoles 7", "Jueves 8", "Viernes 9", "Sábado 10", "Domingo 11"]);
     expect(g[1].tasks[0].id).toBe("a");
   });
-  it("Todas: atrasadas, con fecha y sin fecha", () => {
-    const g = groupTasks("todas", [t("a", "2026-10-01"), t("b", "2026-12-01"), t("c", null)], today, new Map());
+  it("Pendientes de un negocio: vencidas, con fecha y sin fecha", () => {
+    const g = groupTasks("todas", [t("a", "2026-10-01"), t("b", "2026-12-01"), t("c", null)], today);
     expect(g.map((x) => x.tasks.map((y) => y.id))).toEqual([["a"], ["b"], ["c"]]);
   });
-  it("Por negocio: alfabético y «Sin negocio» al final", () => {
-    const g = groupTasks("negocio", [t("a", null, null), t("b", null, "z"), t("c", null, "y")], today, new Map([["z", "Akerra"], ["y", "Vinted"]]));
-    expect(g.map((x) => x.title)).toEqual(["Akerra", "Vinted", "Sin negocio"]);
+});
+
+describe("días relativos", () => {
+  it("como Antola", () => {
+    expect(relativeDay("2026-10-04", today)).toBe("Ayer");
+    expect(relativeDay("2026-10-01", today)).toBe("Hace 4 días");
+    expect(relativeDay("2026-10-20", today)).toBe("20/10/2026");
+    expect(whenLabel("2026-10-05", "10:00:00", today)).toBe("Hoy a las 10:00");
+    expect(whenLabel("2026-10-06", null, today)).toBe("Mañana");
   });
 });
