@@ -161,11 +161,11 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
     try { await snapshotAccount(admin, acc, now); out.snapshots++; }
     catch (e) { await markError(admin, acc, e); await admin.from("social_accounts").update({ last_snapshot_on: yesterday }).eq("id", acc.id); }
   }
-  // 2b) Actualización de cada cuenta (seguidores, publicaciones y bandeja) cada hora; unas pocas por pasada.
+  // 2b) Actualización de cada cuenta (seguidores y publicaciones) cada hora; unas pocas por pasada.
   try {
     const { syncDue } = await import("@/lib/sync/service");
     const r = await syncDue(admin, { limit: 3, staleMinutes: 60, now });
-    Object.assign(out, { synced: r.accounts, limited: r.limited, messages: r.messages });
+    Object.assign(out, { synced: r.accounts, limited: r.limited });
   } catch (e) { console.error("[cron] sync:", e instanceof Error ? e.message : e); }
   // 3) Renovar tokens que caducan pronto aunque no toque foto.
   const soon = new Date(now.getTime() + 10 * 86400_000).toISOString();

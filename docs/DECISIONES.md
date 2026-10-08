@@ -173,3 +173,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - **IA en la Revisión:** solo un párrafo a petición, con las cifras (feature `review` en `ai_usage`).
 - **«Sin fecha» y «Revisión de hoy» en Inicio:** en la disposición por defecto y, en un Inicio ya personalizado, se añaden una vez (`user_ui_prefs.seeded_widgets`); si los quitas no vuelven. Las tareas sin fecha también salen en el resumen de la mañana («N sin fecha esperando») y en la revisión diaria.
 - **Rama `negocios-revision` sobre `mejoras-todo`** (PR #6 sin fusionar): el PR va a la rama principal y ya lleva dentro el #6.
+
+## Sin mensajes de Instagram y TikTok (8/10)
+- **Quitados a petición**: Bandeja de Redes, hilos, respuestas, webhook de Meta (`/api/webhooks/meta`), permisos de mensajes («Activar mensajes»),
+  aviso de mensajes nuevos e IA de respuestas. Las tablas y columnas (`social_threads`, `social_messages`, `social_saved_replies`, `profiles.inbox_*`,
+  `social_accounts.webhook_subscribed`/`inbox_synced_at`) se quedan sin usar: las migraciones son solo aditivas.
+- La pestaña **Mensajes** de cada negocio y el widget «Mensajes sin responder» son solo **correo**. La Revisión cuenta solo correos.
+- Los enlaces antiguos a `/redes/mensajes/<id>` llevan a Redes; Redes abre en «Contenido».
+- Si en Meta quedó configurado el webhook, ahora recibirá un 404: se puede borrar en la app de Meta (no hace falta).

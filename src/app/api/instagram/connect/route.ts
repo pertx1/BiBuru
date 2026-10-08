@@ -11,8 +11,7 @@ export async function GET(request: NextRequest) {
   const cfg = instagramConfig();
   if (!cfg || !process.env.TOKEN_ENCRYPTION_KEY) return NextResponse.redirect(new URL("/redes?instagram=sin-configurar", request.nextUrl.origin));
   const state = randomBytes(24).toString("base64url");
-  // ?mensajes=1: pide también los permisos de la bandeja (mensajes y comentarios).
-  const res = NextResponse.redirect(igAuthUrl({ appId: cfg.appId, redirectUri: igRedirectUri(request.nextUrl.origin), state, inbox: request.nextUrl.searchParams.get("mensajes") === "1" }));
+  const res = NextResponse.redirect(igAuthUrl({ appId: cfg.appId, redirectUri: igRedirectUri(request.nextUrl.origin), state }));
   res.cookies.set("ig_oauth_state", state, { httpOnly: true, secure: true, sameSite: "lax", path: "/api/instagram", maxAge: 600 });
   return res;
 }

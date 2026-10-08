@@ -100,7 +100,7 @@ await page.keyboard.press("Escape");
 
 // ------------------------------------------------------------ Mensajes, Revisión e Inicio
 await go(`/negocios/${biz}/mensajes`);
-ok(await page.getByText(/Falta conectar o asignar cuentas/).isVisible(), "Mensajes sin cuentas: aviso «Falta conectar»");
+ok(await page.getByText(/Ninguna cuenta de correo asignada/).isVisible(), "Mensajes sin cuenta de correo: aviso");
 await shot("06-mensajes");
 await go("/revision");
 ok(await page.getByRole("heading", { name: "Dinero" }).isVisible(), "revisión diaria");

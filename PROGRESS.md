@@ -12,6 +12,9 @@
 | 7 · Favoritos (vídeos) | Pendiente |
 | 8 · Pulido | Pendiente |
 
+## Sin mensajes de Instagram y TikTok (rama `quitar-mensajes-redes`)
+- Quitada la bandeja de redes (pantallas, acciones, webhook, sincronización de mensajes, ajustes). «Mensajes» del negocio = correo. Datos y tablas intactos.
+
 ## Negocios, stock, revisiones y tareas sin fecha (rama `negocios-revision`)
 - **Cada pedido resta del stock** (transacción en BD; editar = diferencia; cancelar/borrar devuelve), vínculo por línea, aviso de falta, historial por artículo y «Recalcular desde pedidos».
 - **Revisión diaria/semanal/mensual**: sección nueva, generación y aviso a su hora, histórico, interactiva, «Revisado», prioridades, IA opcional, filtro por negocio, widget.

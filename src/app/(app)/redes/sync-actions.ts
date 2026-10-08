@@ -16,16 +16,16 @@ export async function refreshAll(): Promise<{ ok: true; message: string } | { ok
   try {
     const r = await syncWorkspaceNow(workspaceId, userId);
     revalidatePath("/redes", "layout"); revalidatePath("/correo"); revalidatePath("/");
-    const bits = [`${r.accounts} ${r.accounts === 1 ? "cuenta" : "cuentas"}`, r.messages ? `${r.messages} mensajes nuevos` : "", r.mail ? `${r.mail} correos` : "", r.limited ? `${r.limited} con límite (sigue luego)` : "", r.errors ? `${r.errors} con error` : ""].filter(Boolean);
+    const bits = [`${r.accounts} ${r.accounts === 1 ? "cuenta" : "cuentas"}`, r.mail ? `${r.mail} correos` : "", r.limited ? `${r.limited} con límite (sigue luego)` : "", r.errors ? `${r.errors} con error` : ""].filter(Boolean);
     return { ok: true, message: `Actualizado: ${bits.join(" · ")}` };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "No se pudo actualizar" };
   }
 }
 
-const prefsSchema = z.object({ inbox_ai_suggest: z.boolean(), inbox_push_enabled: z.boolean(), social_alerts_enabled: z.boolean() }).partial();
+const prefsSchema = z.object({ social_alerts_enabled: z.boolean() }).partial();
 
-/** Ajustes → Redes y mensajes: IA para sugerir respuesta (apagada), aviso de mensajes nuevos y alertas de seguidores (apagadas). */
+/** Ajustes → Redes: alertas de seguidores (apagadas por defecto). */
 export async function setSocialPrefs(input: z.infer<typeof prefsSchema>): Promise<{ ok: boolean; error?: string }> {
   const p = prefsSchema.safeParse(input);
   if (!p.success || !Object.keys(p.data).length) return { ok: false, error: "Ajuste no válido" };

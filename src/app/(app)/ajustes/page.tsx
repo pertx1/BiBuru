@@ -120,8 +120,8 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         <div id="correo" className="scroll-mt-20"><Section title="Correo de Outlook">
           <MailSettings configured={mailConfigured()} accounts={mailAccounts} businesses={mailBusinesses} aiAllowed={!!mailAi} result={sp.outlook} />
         </Section></div>
-        <div id="redes" className="scroll-mt-20"><Section title="Redes y mensajes">
-          <SocialSettings aiConfigured={hasGeminiKey()} initial={{ inbox_ai_suggest: p?.inbox_ai_suggest ?? false, inbox_push_enabled: p?.inbox_push_enabled ?? true, social_alerts_enabled: p?.social_alerts_enabled ?? false }} />
+        <div id="redes" className="scroll-mt-20"><Section title="Redes">
+          <SocialSettings initial={{ social_alerts_enabled: p?.social_alerts_enabled ?? false }} />
         </Section></div>
         <Section title="Apariencia"><ThemeToggle /></Section>
         <Section title="Noticias">

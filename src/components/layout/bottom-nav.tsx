@@ -27,13 +27,11 @@ function Tab({ item, pathname, dot, pending }: { item: NavItem; pathname: string
 }
 
 /** Barra inferior del móvil: las secciones elegidas en Ajustes → Navegación + «Más»; el botón + central solo si se activa allí. */
-export function BottomNav({ inboxCount, redesCount = 0, tabs, showCapture }: { inboxCount: number; redesCount?: number; tabs: SectionKey[]; showCapture: boolean }) {
+export function BottomNav({ inboxCount, tabs, showCapture }: { inboxCount: number; tabs: SectionKey[]; showCapture: boolean }) {
   const pathname = usePathname();
   const { left: tabsLeft, right: tabsRight } = splitTabs(mobileTabItems(tabs));
   // El punto de «hay capturas» va en Bandeja si está en la barra; si no, en «Más».
-  const dotOn = (href: string) =>
-    (inboxCount > 0 && (href === "/bandeja" || (href === "/mas" && !tabs.includes("bandeja")))) ||
-    (redesCount > 0 && (href === "/redes" || (href === "/mas" && !tabs.includes("redes"))));
+  const dotOn = (href: string) => inboxCount > 0 && (href === "/bandeja" || (href === "/mas" && !tabs.includes("bandeja")));
   const capture = useCapture();
   return (
     <nav

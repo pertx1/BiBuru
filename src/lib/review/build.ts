@@ -95,18 +95,12 @@ export async function buildReviewData(db: Db, p: ReviewPeriod, today: string, bu
     biz(supabase.from("mail_accounts").select("id, email").eq("user_id", userId)),
     biz(supabase.from("social_accounts").select("id, username, platform").eq("workspace_id", workspaceId)),
   ]);
-  const [mailUnread, socialOpen] = await Promise.all([
-    mailAccs?.length ? supabase.from("mail_messages").select("id, from_name, from_address, subject", { count: "exact" }).eq("user_id", userId).in("account_id", mailAccs.map((a) => a.id))
-      .is("triage", null).eq("is_read", false).order("received_at", { ascending: false }).limit(5) : Promise.resolve({ data: [], count: 0 }),
-    socAccs?.length ? supabase.from("social_threads").select("id, platform, participant_name, participant_username, preview", { count: "exact" }).eq("workspace_id", workspaceId)
-      .eq("status", "sin_responder").in("account_id", socAccs.map((a) => a.id)).order("last_message_at", { ascending: false }).limit(5) : Promise.resolve({ data: [], count: 0 }),
-  ]);
+  // Correo sin responder (los mensajes de Instagram y TikTok se quitaron: `social` queda a 0 para las fotos antiguas).
+  const mailUnread = mailAccs?.length ? await supabase.from("mail_messages").select("id, from_name, from_address, subject", { count: "exact" }).eq("user_id", userId).in("account_id", mailAccs.map((a) => a.id))
+    .is("triage", null).eq("is_read", false).order("received_at", { ascending: false }).limit(8) : { data: [], count: 0 };
   const inbox = {
-    mail: mailUnread.count ?? 0, social: socialOpen.count ?? 0,
-    items: [
-      ...(socialOpen.data ?? []).map((t) => ({ key: `red:${t.id}`, channel: (t.platform === "tiktok" ? "tiktok" : "instagram") as "tiktok" | "instagram", person: t.participant_name || (t.participant_username ? `@${t.participant_username}` : "Alguien"), preview: t.preview ?? "", href: `/redes/mensajes/${t.id}` })),
-      ...(mailUnread.data ?? []).map((m) => ({ key: `correo:${m.id}`, channel: "correo" as const, person: m.from_name || m.from_address || "Desconocido", preview: m.subject ?? "", href: `/correo?abrir=${m.id}` })),
-    ].slice(0, 8),
+    mail: mailUnread.count ?? 0, social: 0,
+    items: (mailUnread.data ?? []).map((m) => ({ key: `correo:${m.id}`, channel: "correo" as const, person: m.from_name || m.from_address || "Desconocido", preview: m.subject ?? "", href: `/correo?abrir=${m.id}` })),
   };
 
   // --------------------------------------------------------------- stock que falta (las tareas «Pedir …» abiertas lo reflejan)

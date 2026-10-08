@@ -116,7 +116,7 @@ export function ReviewView({ data: d, id, reviewedAt, aiSummary, aiConfigured, h
           )}
         </Card>
         <Card title={`Sin responder · ${d.inbox.mail + d.inbox.social}`}>
-          <p className="mb-2 text-xs text-muted">{d.inbox.mail} correos · {d.inbox.social} mensajes y comentarios</p>
+          <p className="mb-2 text-xs text-muted">{d.inbox.mail} correos sin leer ni marcar</p>
           {d.inbox.items.length > 0 && (
             <ul className="flex flex-col divide-y divide-border text-sm">
               {d.inbox.items.map((i) => { const Icon = ICON[i.channel]; return (

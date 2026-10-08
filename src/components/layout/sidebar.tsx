@@ -8,7 +8,7 @@ import { OPEN_SEARCH_EVENT } from "@/components/search/search-palette";
 import { cn } from "@/lib/utils";
 import { isActive, sidebarItems } from "./nav-items";
 
-export function Sidebar({ inboxCount, redesCount = 0 }: { inboxCount: number; redesCount?: number }) {
+export function Sidebar({ inboxCount }: { inboxCount: number }) {
   const pathname = usePathname();
   const capture = useCapture();
   return (
@@ -44,7 +44,6 @@ export function Sidebar({ inboxCount, redesCount = 0 }: { inboxCount: number; re
             <Icon className="size-4" aria-hidden />
             <span className="flex-1">{label}</span>
             {href === "/bandeja" && inboxCount > 0 && <span className="rounded-full bg-accent px-1.5 text-xs font-semibold text-accent-foreground">{inboxCount}</span>}
-            {href === "/redes" && redesCount > 0 && <span className="rounded-full bg-accent px-1.5 text-xs font-semibold text-accent-foreground" aria-label={`${redesCount} mensajes sin responder`}>{redesCount}</span>}
           </Link>
         ))}
       </nav>
