@@ -14,6 +14,7 @@ import { formatEUR } from "@/lib/money";
 import type { OrderWithPayments } from "@/lib/orders/data";
 import { PAY_CLASS, PAY_LABEL, payStatus } from "@/lib/orders/payments";
 import { ORDER_STATUSES, ORDER_STATUS_COLOR, ORDER_STATUS_LABEL, type OrderStatus } from "@/lib/schemas";
+import type { StockLinkContext } from "@/lib/stock/link";
 import { cn } from "@/lib/utils";
 import { OrderForm } from "./order-form";
 import { PaymentForm } from "./order-payments";
@@ -27,8 +28,10 @@ function summary(o: Order) {
  * (en móvil, flotante sobre la barra inferior). El formulario se abre aparte (pantalla completa / panel lateral).
  * El detalle se abre con `?abrir=<id>` (lo carga el servidor con sus cobros); el pedido recién creado llega en `?nuevo=<id>`.
  */
-export function OrdersView({ businessId, orders, products, today, openOrder, highlightId, hideList = false, prefill }: {
+export function OrdersView({ businessId, orders, products, today, openOrder, highlightId, hideList = false, prefill, stock = null }: {
   businessId: string; orders: Order[]; products: Product[]; today: string; openOrder?: OrderWithPayments | null; highlightId?: string | null; hideList?: boolean;
+  /** Artículos del inventario para vincular cada línea (y descontarla del stock). */
+  stock?: StockLinkContext | null;
   /** «Crear pedido» desde la Bandeja de Redes: abre el alta con el cliente y el canal rellenados. */
   prefill?: { customer?: string; channel?: string } | null;
 }) {
@@ -87,7 +90,7 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
               <div className="flex flex-wrap items-center gap-1.5 px-4 md:flex-nowrap md:px-0">
                 <select
                   aria-label="Estado del pedido" value={o.status}
-                  onChange={(e) => start(async () => { await setOrderStatus(o.id, e.target.value); router.refresh(); })}
+                  onChange={(e) => start(async () => { const r = await setOrderStatus(o.id, e.target.value); if (r.ok && r.warning) toast({ message: r.warning }); router.refresh(); })}
                   className="min-h-11 shrink-0 rounded-full border-0 px-3 text-base font-semibold md:min-h-9 md:text-xs"
                   // El texto se mezcla con el color de texto del tema: legible (≥ 4,5:1) en claro y en oscuro.
                   style={{ backgroundColor: `${ORDER_STATUS_COLOR[o.status as OrderStatus]}1f`, color: `color-mix(in srgb, ${ORDER_STATUS_COLOR[o.status as OrderStatus]} 70%, var(--foreground))` }}
@@ -132,12 +135,12 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
 
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nuevo pedido" variant="panel">
         {creating && (
-          <OrderForm key="new" businessId={businessId} order={null} products={products} today={today} prefill={prefill ?? undefined}
+          <OrderForm key="new" businessId={businessId} order={null} products={products} stock={stock} today={today} prefill={prefill ?? undefined}
             onDone={(id) => { setCreating(false); if (id) go({ nuevo: id, abrir: null }); router.refresh(); }} />
         )}
       </Sheet>
       <Sheet open={!!openOrder} onClose={closeDetail} title="Detalle del pedido" variant="panel">
-        {openOrder && <OrderForm key={openOrder.id} businessId={businessId} order={openOrder} products={products} today={today} onDone={() => { closeDetail(); router.refresh(); }} />}
+        {openOrder && <OrderForm key={openOrder.id} businessId={businessId} order={openOrder} products={products} stock={stock} today={today} onDone={() => { closeDetail(); router.refresh(); }} />}
       </Sheet>
       <Sheet open={!!paying} onClose={() => setPaying(null)} title={`Añadir cobro${paying?.customer ? ` · ${paying.customer}` : ""}`}>
         {paying && <PaymentForm order={paying} today={today} onDone={() => { setPaying(null); router.refresh(); }} />}

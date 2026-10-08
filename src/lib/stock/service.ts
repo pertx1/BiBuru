@@ -4,24 +4,28 @@ import { nowLocal } from "@/lib/dates";
 import type { DtfVariant } from "@/lib/production/catalog";
 import { loadBase } from "@/lib/production/data";
 import { garmentLabel, resolveStockEffect } from "@/lib/production/stock";
+import { dtfKey, itemKey, resolveLineStock, stockOptions, tshirtKey, type StockLinkContext } from "./link";
 import { itemLabel, planTasks, reserveGeneric, shortages, withMissing, type GenericItem, type PendingLine, type StockEntry, type StockLine } from "./shortage";
+
+export { dtfKey, itemKey, tshirtKey };
 
 /** Estados de pedido que reservan stock (los mismos que Producción: aún no hecho o sin llegar). */
 export const RESERVING = ["sin_hacer", "sin_llegar"];
 
 const DTF_LABEL: Record<DtfVariant, string> = { UNICO: "", BLANCO: " blanco", NEGRO: " negro" };
-export const tshirtKey = (model: string, size: string) => `tshirt|${model}|${size}`;
-export const dtfKey = (name: string, variant: string) => `dtf|${name}|${variant}`;
-export const itemKey = (id: string) => `item|${id}`;
 
 export type GenericRow = GenericItem & { quantity: number; min_quantity: number };
 
+/**
+ * Líneas de pedidos pendientes que RESERVAN stock: solo las «sin vincular» (pedidos anteriores al descuento automático o texto libre).
+ * Las vinculadas ya se descontaron del stock al crear el pedido: contarlas aquí sería restarlas dos veces.
+ */
 async function pendingLines(businessId: string): Promise<PendingLine[]> {
   const { supabase, workspaceId } = await getContext();
-  const { data, error } = await supabase.from("orders").select("order_date, order_items(product_id, product_name, color, size, quantity)")
+  const { data, error } = await supabase.from("orders").select("order_date, order_items(product_id, product_name, color, size, quantity, stock_effects)")
     .eq("workspace_id", workspaceId).eq("business_id", businessId).in("status", RESERVING).limit(5000);
   if (error) throw new Error(`stock: pedidos pendientes: ${error.message}`);
-  return data.flatMap((o) => o.order_items.map((i) => ({ ...i, order_date: o.order_date })));
+  return data.flatMap((o) => o.order_items.filter((i) => i.stock_effects == null).map(({ stock_effects: _e, ...i }) => ({ ...i, order_date: o.order_date }))); // eslint-disable-line @typescript-eslint/no-unused-vars
 }
 
 /** Todo el inventario de un negocio (prendas y DTF de Producción si está activa + artículos genéricos) con lo reservado. */
@@ -149,4 +153,70 @@ export async function syncAllStockTasks() {
     const withItems = new Set((items ?? []).map((i) => i.business_id));
     await Promise.all((biz ?? []).filter((b) => b.production_enabled || withItems.has(b.id)).map((b) => syncStockTasks(b.id)));
   } catch (e) { console.error("[stock] syncAll", e instanceof Error ? e.message : e); }
+}
+
+/** Catálogo, reglas y artículos del negocio para saber qué descuenta cada línea de pedido (`resolveLineStock`). */
+export async function loadStockLinkContext(businessId: string): Promise<StockLinkContext> {
+  const { supabase, workspaceId } = await getContext();
+  const [{ data: biz }, { data: items }] = await Promise.all([
+    supabase.from("businesses").select("production_enabled").eq("id", businessId).eq("workspace_id", workspaceId).maybeSingle(),
+    supabase.from("stock_items").select("id, name, variant, product_id, match_color, match_size").eq("workspace_id", workspaceId).eq("business_id", businessId).order("name").order("variant"),
+  ]);
+  const generic = (items ?? []) as GenericItem[];
+  if (!biz?.production_enabled) return { production: null, items: generic, options: stockOptions(null, generic) };
+  const base = await loadBase(businessId);
+  return { production: { catalog: base.catalog, rules: base.rules }, items: generic, options: stockOptions(base, generic) };
+}
+
+export type RecalcMode = "pendientes" | "desde";
+export type RecalcPreview = {
+  orders: number;            // pedidos que pasarían a descontar
+  unlinkedLines: number;     // líneas que no encajan con ningún artículo (no descuentan)
+  rows: { key: string; label: string; now: number; minus: number; after: number }[];
+};
+
+/** Pedidos anteriores que aún no descuentan (ninguna línea vinculada), no cancelados, según el modo. */
+async function legacyOrders(businessId: string, mode: RecalcMode, from: string | null) {
+  const { supabase, workspaceId } = await getContext();
+  let q = supabase.from("orders").select("id, order_date, status, order_items(id, product_id, product_name, color, size, quantity, stock_key, stock_effects)")
+    .eq("workspace_id", workspaceId).eq("business_id", businessId).neq("status", "cancelado").order("order_date").limit(3000);
+  q = mode === "pendientes" ? q.in("status", RESERVING) : q.gte("order_date", from ?? "1900-01-01");
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return data.filter((o) => o.order_items.length > 0 && o.order_items.every((i) => i.stock_effects == null));
+}
+
+/** Vista previa de «Recalcular desde pedidos»: cuánto bajaría cada artículo. No cambia nada. */
+export async function recalcPreview(businessId: string, mode: RecalcMode, from: string | null): Promise<RecalcPreview> {
+  const [ctx, orders, inv] = await Promise.all([loadStockLinkContext(businessId), legacyOrders(businessId, mode, from), loadInventory(businessId)]);
+  const minus = new Map<string, { label: string; qty: number }>();
+  let unlinked = 0;
+  for (const o of orders) for (const i of o.order_items) {
+    const eff = resolveLineStock(i, ctx);
+    if (!eff.length) unlinked++;
+    for (const e of eff) { const x = minus.get(e.key); minus.set(e.key, { label: e.label, qty: (x?.qty ?? 0) + e.qty }); }
+  }
+  const base = new Map(inv.lines.map((l) => [l.key, l.base]));
+  const rows = [...minus.entries()].map(([key, v]) => ({ key, label: v.label, now: base.get(key) ?? 0, minus: v.qty, after: (base.get(key) ?? 0) - v.qty }))
+    .sort((a, b) => a.after - b.after || a.label.localeCompare(b.label, "es"));
+  return { orders: orders.length, unlinkedLines: unlinked, rows };
+}
+
+/** Aplica «Recalcular desde pedidos»: vincula las líneas de esos pedidos y descuenta (una vez; repetirlo no descuenta otra vez). */
+export async function applyRecalc(businessId: string, mode: RecalcMode, from: string | null): Promise<{ orders: number; moves: number }> {
+  const { supabase, workspaceId } = await getContext();
+  const [ctx, orders] = await Promise.all([loadStockLinkContext(businessId), legacyOrders(businessId, mode, from)]);
+  let done = 0, moves = 0;
+  for (const o of orders) {
+    const updates = o.order_items.map((i) => ({ id: i.id, effects: resolveLineStock(i, ctx) })).filter((u) => u.effects.length);
+    if (!updates.length) continue;
+    for (const u of updates) {
+      const { error } = await supabase.from("order_items").update({ stock_effects: u.effects }).eq("id", u.id).eq("workspace_id", workspaceId);
+      if (error) throw new Error(error.message);
+    }
+    const { data, error } = await supabase.rpc("apply_order_stock", { p_order: o.id });
+    if (error) throw new Error(error.message);
+    done++; moves += data?.length ?? 0;
+  }
+  return { orders: done, moves };
 }

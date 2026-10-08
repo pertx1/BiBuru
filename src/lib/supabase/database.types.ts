@@ -659,13 +659,13 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
+                    "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"stock_effects": Json | null,"stock_key": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1195,13 +1195,13 @@ isOneToOne: false
                   ]
                 },"stock_movements": {
                   Row: {
-                    "business_id": string,"created_at": string,"delta": number,"id": string,"item_key": string,"kind": string,"label": string,"moved_on": string,"reason": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"delta": number,"id": string,"item_key": string,"kind": string,"label": string,"moved_on": string,"order_id": string | null,"order_label": string | null,"reason": string | null,"source": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"created_at"?: string,"delta": number,"id"?: string,"item_key": string,"kind": string,"label": string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"delta": number,"id"?: string,"item_key": string,"kind": string,"label": string,"moved_on"?: string,"order_id"?: string | null,"order_label"?: string | null,"reason"?: string | null,"source"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"delta"?: number,"id"?: string,"item_key"?: string,"kind"?: string,"label"?: string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"delta"?: number,"id"?: string,"item_key"?: string,"kind"?: string,"label"?: string,"moved_on"?: string,"order_id"?: string | null,"order_label"?: string | null,"reason"?: string | null,"source"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1209,6 +1209,12 @@ isOneToOne: false
       columns: ["business_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_movements_order_fk"
+      columns: ["order_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "orders"
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "stock_movements_workspace_id_fkey"
@@ -1466,6 +1472,11 @@ isOneToOne: false
                            },
 "antola_snapshot":
 { Args: { "p_hash": string }; Returns: Json
+                           },
+"apply_order_stock":
+{ Args: { "p_clear"?: boolean,"p_order": string }; Returns: {
+              "delta": number,"item_key": string,"label": string,"quantity": number
+            }[]
                            },
 "apply_workspace_policies":
 { Args: { "tbl": string }; Returns: undefined
