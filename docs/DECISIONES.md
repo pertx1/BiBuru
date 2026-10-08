@@ -134,3 +134,42 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - **Listas como en Ajustes de iOS**: el separador empieza después del icono o del círculo. «Vencidas» ya no es una caja roja: solo el título en rojo, como en Recordatorios.
 - **Estados de pedido**: cápsulas teñidas sin borde. El texto se mezcla con el color del tema para que se lea en claro y en oscuro.
 - Se quita el subtítulo de relleno de Tareas («Lo que tienes que hacer…»).
+
+## Trabajo autónomo «mejoras-todo» (7/10)
+- **Puntos 1–5 ya estaban hechos** (pull requests anteriores): los he comprobado y no los he rehecho.
+- **Tareas de Stock como en BATU** (a 0 o por debajo del mínimo, «Pedir …» para hoy): se mantiene lo que ya pediste en vez de preguntar otra vez.
+- **Redes por negocio**: misma pantalla para «Todas las redes» (con filtro por negocio) y para la pestaña Redes de cada negocio (`RedesView`), así no hay dos versiones que mantener.
+- **TikTok no tiene API pública de comentarios ni de mensajes** para una app propia (Login Kit no ofrece esos permisos). Su adaptador declara las capacidades a `false` y la app ofrece «Abrir mensajes en TikTok» con la explicación.
+- **Permisos de mensajes de Instagram opcionales** (`/api/instagram/connect?mensajes=1`, botón «Activar mensajes»): pedirlos siempre rompería las conexiones actuales con «Invalid scopes» mientras Meta no los apruebe.
+- **Webhooks + sincronización horaria**: Meta solo envía webhooks a apps en modo **Live**, y los de comentarios exigen **acceso avanzado**. Por eso, además de los webhooks (firma `X-Hub-Signature-256` comprobada), la bandeja se rellena sola cada hora, al abrir Redes (si los datos tienen más de 15 min) y con «Actualizar todo». Así funciona aunque la app siga en desarrollo.
+- **Suscripción de la cuenta a webhooks** solo con `messages,comments` (modo Instagram) o `messages,feed` (modo Facebook): un campo que Meta no admita haría fallar la suscripción entera.
+- **La primera sincronización de la bandeja no avisa** (si no, al conectar llegarían decenas de avisos de mensajes antiguos).
+- **Nada se envía solo**: ni las respuestas guardadas ni la sugerencia de IA; siempre hay que pulsar «Enviar». Las respuestas pasan por «enviando → enviado / error» con «Reintentar».
+- **IA de respuestas con la función `chat`** de `ai_usage` (cuenta en el presupuesto) para no cambiar la restricción de la tabla (migración solo aditiva). Apagada por defecto en Ajustes › Redes y mensajes.
+- **Ventana de 24 h de Instagram** calculada desde el último mensaje recibido (`last_inbound_at`); pasada, se ofrece «Abrir en Instagram».
+- **Mensajes borrados**: si Meta avisa de que un mensaje se borró, se borra también en BiBuru (lo pide su política).
+- **«Crear pedido» desde un mensaje** abre el alta con `?crear=1&para=<nombre>&via=<red>`: los nombres `para`/`via` evitan chocar con los filtros de Pedidos (`cliente`, `canal`).
+- **Sincronización dentro del cron de Redes** (cada 5 min, máx. 3 cuentas que lleven >1 h sin actualizar) en vez de un cron nuevo: Vercel Hobby limita los crons y así cada pasada es corta.
+- **Límites de las redes**: si Instagram o TikTok responden «demasiadas peticiones», esa cuenta descansa 1 h (`rate_limited_until`) y se ve en su tarjeta. «Actualizar todo» funciona como mucho una vez por minuto.
+- **Alertas de redes** (cifra redonda de seguidores, publicación ≥2× la media, caída brusca ≥ 2 %): apagadas por defecto; un aviso por hecho (`notification_log`) y respetan las horas de silencio.
+- **Contador de mensajes** en la barra lateral y en la inferior (punto en «Redes» o en «Más»): cuenta hilos «sin responder» del espacio.
+
+## Negocios, stock, revisiones y tareas sin fecha (8/10)
+- **El stock guardado pasa a ser «lo que tienes ya descontados los pedidos nuevos».** Cada línea vinculada guarda su efecto (`order_items.stock_effects`) y `apply_order_stock` compara lo que debe haber descontado el pedido con lo que ya descontó (sus movimientos) y aplica solo la diferencia, en una transacción con `for update` sobre el pedido. Así editar ajusta la diferencia, cancelar/borrar devuelve, y repetirlo no descuenta dos veces.
+- **Las líneas sin vincular (pedidos anteriores o texto libre) siguen «reservando» como antes** (columna Reservado, «Pedir ya»). Las vinculadas no reservan: ya están restadas. Antola recibe solo las sin vincular como pendientes.
+- **Una línea se vincula sola** si encaja (en Producción: diseño + color + talla → prenda y DTF; si no, un artículo de Stock por producto o nombre) o eligiendo el artículo en la lista. Si no, «sin vincular al stock» y no descuenta.
+- **Stock insuficiente: el pedido se guarda** y queda en negativo; aviso al guardar y la tarea «Pedir …» de siempre (la petición decía «Reponer…»: es la misma tarea, que en BiBuru se llama «Pedir …» como en BATU).
+- **Editar un pedido anterior no lo hace restar**, salvo las líneas en las que eliges un artículo a mano. «Recalcular desde pedidos» (vista previa + aplicar, una vez por pedido) es la forma de hacerlo.
+- **Pedidos creados con la IA** (tras confirmarlos) también descuentan; los importados de PROFITY no (son históricos).
+- **Pestaña Stock = la tabla de Producción** (Pedir ya, prendas por modelo y talla, DTF) **+ Materiales y productos** debajo, para no perder los artículos genéricos. Las acciones Sumar/Restar/Fijar/Mínimo y el historial por artículo.
+- **Pestañas:** se mantiene **Productos** (al final) aunque no estaba en la lista: es el catálogo con precios que usan los pedidos. **Bolsa imprenta, Facturas y Reglas Antola** solo con el módulo de producción, como antes. Las direcciones antiguas redirigen (307, no permanente, por si se vuelve atrás).
+- **Ingresos** se mueve al final de Estadísticas («Ingresos sueltos»), para poder seguir añadiéndolos.
+- **Pedidos por estado como en PROFITY:** no hay acceso a sus pantallas; fila de botones con el número de cada estado, que ya cuenta con el resto de filtros.
+- **Resumen del negocio con el sistema de widgets de Inicio**, guardado por persona en `user_ui_prefs.business_widgets` (objeto por negocio): son preferencias personales, como Inicio. Dentro del negocio el ajuste «Negocio» no se muestra y todos los widgets usan ese negocio. El botón se llama «Editar resumen» (ya había un «Editar» del negocio).
+- **Widgets de acceso** «Tareas del negocio» y «Objetivos activos» abren las secciones filtradas por el negocio. **Resumen de stock**: el valor a coste solo de artículos vinculados a un producto con coste (prendas y DTF no tienen coste guardado).
+- **Mensajes del negocio:** el correo no tiene «respondido» en Outlook con permisos de lectura: se guarda en BiBuru (`mail_messages.triage`). Un correo cuenta como «sin responder» si no está leído ni marcado; leído sin marcar solo sale en «Todos».
+- **Revisión:** tabla `reviews` (una por tipo y periodo y persona). La actual se calcula al momento y su foto se actualiza hasta pulsar «Revisado»; el cron (cada minuto) la genera a su hora aunque no haya avisos activados y avisa una vez (`notification_log`), fuera de horas de silencio. El stock que falta se toma de las tareas «Pedir …» abiertas (sirve igual en el cron).
+- **Semanal:** de viernes a domingo revisa esa semana; de lunes a jueves, la anterior. Por defecto domingo 18:00. Sustituye el aviso antiguo de objetivos si está activa. Las 3 prioridades se crean como tareas de prioridad alta para el lunes siguiente (u hoy si ya pasó). **Mensual:** el día 1 (o el 2-3 si no se pudo) revisa el mes anterior.
+- **IA en la Revisión:** solo un párrafo a petición, con las cifras (feature `review` en `ai_usage`).
+- **«Sin fecha» y «Revisión de hoy» en Inicio:** en la disposición por defecto y, en un Inicio ya personalizado, se añaden una vez (`user_ui_prefs.seeded_widgets`); si los quitas no vuelven. Las tareas sin fecha también salen en el resumen de la mañana («N sin fecha esperando») y en la revisión diaria.
+- **Rama `negocios-revision` sobre `mejoras-todo`** (PR #6 sin fusionar): el PR va a la rama principal y ya lleva dentro el #6.

@@ -79,6 +79,10 @@ describe("resumen diario, atrasadas y revisión semanal", () => {
     expect(p.body).toBe("Hoy: 2 tareas y 1 evento.\nPrimero: 09:00 Reunión\n2 atrasadas.");
     expect(planDailyDigest(prefs, L("2026-10-05", "11:01"), data)).toBeNull(); // margen de 3 h
   });
+  it("las tareas sin fecha se recuerdan cada mañana (sin contar como atrasadas)", () => {
+    expect(planDailyDigest(prefs, L("2026-10-05", "08:00"), { ...data, noDateCount: 3 })!.body).toBe("Hoy: 2 tareas y 1 evento.\nPrimero: 09:00 Reunión\n2 atrasadas.\n3 sin fecha esperando.");
+    expect(planDailyDigest(prefs, L("2026-10-05", "08:00"), { todayTasks: [], overdueCount: 0, todayEvents: [], noDateCount: 1 })!.body).toBe("Hoy no tienes nada con fecha.\n1 sin fecha esperando.");
+  });
   it("no envía resumen vacío ni si está desactivado", () => {
     expect(planDailyDigest(prefs, L("2026-10-05", "08:00"), { todayTasks: [], overdueCount: 0, todayEvents: [] })).toBeNull();
     expect(planDailyDigest({ ...prefs, daily_digest_enabled: false }, L("2026-10-05", "08:00"), data)).toBeNull();

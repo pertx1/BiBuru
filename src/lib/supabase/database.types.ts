@@ -496,13 +496,13 @@ isOneToOne: false
                   ]
                 },"mail_messages": {
                   Row: {
-                    "account_id": string,"created_at": string,"from_address": string | null,"from_name": string | null,"fts": unknown,"graph_id": string,"has_attachments": boolean,"id": string,"is_read": boolean,"notified_at": string | null,"preview": string | null,"received_at": string,"subject": string | null,"updated_at": string,"user_id": string,"web_link": string | null,"workspace_id": string
+                    "account_id": string,"created_at": string,"from_address": string | null,"from_name": string | null,"fts": unknown,"graph_id": string,"has_attachments": boolean,"id": string,"is_read": boolean,"notified_at": string | null,"preview": string | null,"received_at": string,"subject": string | null,"triage": string | null,"updated_at": string,"user_id": string,"web_link": string | null,"workspace_id": string
                   }
                   Insert: {
-                    "account_id": string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id": string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at": string,"subject"?: string | null,"updated_at"?: string,"user_id": string,"web_link"?: string | null,"workspace_id": string
+                    "account_id": string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id": string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at": string,"subject"?: string | null,"triage"?: string | null,"updated_at"?: string,"user_id": string,"web_link"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id"?: string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at"?: string,"subject"?: string | null,"updated_at"?: string,"user_id"?: string,"web_link"?: string | null,"workspace_id"?: string
+                    "account_id"?: string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id"?: string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at"?: string,"subject"?: string | null,"triage"?: string | null,"updated_at"?: string,"user_id"?: string,"web_link"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -659,13 +659,13 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
+                    "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"stock_effects": Json | null,"stock_key": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -790,13 +790,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"task_lead_minutes": number,"task_reminders_enabled": boolean,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"inbox_ai_suggest": boolean,"inbox_push_enabled": boolean,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"review_daily_enabled": boolean,"review_daily_time": string,"review_monthly_enabled": boolean,"review_monthly_time": string,"review_weekly_dow": number,"review_weekly_enabled": boolean,"review_weekly_time": string,"social_alerts_enabled": boolean,"task_lead_minutes": number,"task_reminders_enabled": boolean,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"review_daily_enabled"?: boolean,"review_daily_time"?: string,"review_monthly_enabled"?: boolean,"review_monthly_time"?: string,"review_weekly_dow"?: number,"review_weekly_enabled"?: boolean,"review_weekly_time"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"review_daily_enabled"?: boolean,"review_daily_time"?: string,"review_monthly_enabled"?: boolean,"review_monthly_time"?: string,"review_weekly_dow"?: number,"review_weekly_enabled"?: boolean,"review_weekly_time"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -851,6 +851,25 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "reminders_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"reviews": {
+                  Row: {
+                    "ai_summary": string | null,"created_at": string,"data": NonNullable<Json>,"id": string,"kind": string,"notified_at": string | null,"period_end": string,"period_start": string,"priorities": (string)[],"reviewed_at": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "ai_summary"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"id"?: string,"kind": string,"notified_at"?: string | null,"period_end": string,"period_start": string,"priorities"?: (string)[],"reviewed_at"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "ai_summary"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"id"?: string,"kind"?: string,"notified_at"?: string | null,"period_end"?: string,"period_start"?: string,"priorities"?: (string)[],"reviewed_at"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reviews_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -921,13 +940,13 @@ isOneToOne: false
                   ]
                 },"social_accounts": {
                   Row: {
-                    "access_token_enc": string,"account_type": string | null,"avatar_url": string | null,"business_id": string | null,"created_at": string,"display_name": string | null,"external_id": string,"id": string,"last_error": string | null,"last_media_sync_at": string | null,"last_snapshot_on": string | null,"platform": string,"refresh_expires_at": string | null,"refresh_token_enc": string | null,"scopes": string | null,"status": string,"token_expires_at": string | null,"updated_at": string,"user_id": string,"username": string | null,"workspace_id": string
+                    "access_token_enc": string,"account_type": string | null,"avatar_url": string | null,"business_id": string | null,"created_at": string,"display_name": string | null,"external_id": string,"followers_count": number | null,"id": string,"inbox_synced_at": string | null,"last_error": string | null,"last_media_sync_at": string | null,"last_snapshot_on": string | null,"last_sync_at": string | null,"platform": string,"rate_limited_until": string | null,"refresh_expires_at": string | null,"refresh_token_enc": string | null,"scopes": string | null,"status": string,"sync_error": string | null,"token_expires_at": string | null,"updated_at": string,"user_id": string,"username": string | null,"webhook_subscribed": boolean,"workspace_id": string
                   }
                   Insert: {
-                    "access_token_enc": string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id": string,"id"?: string,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"platform": string,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"workspace_id": string
+                    "access_token_enc": string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id": string,"followers_count"?: number | null,"id"?: string,"inbox_synced_at"?: string | null,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"last_sync_at"?: string | null,"platform": string,"rate_limited_until"?: string | null,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"sync_error"?: string | null,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"webhook_subscribed"?: boolean,"workspace_id": string
                   }
                   Update: {
-                    "access_token_enc"?: string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id"?: string,"id"?: string,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"platform"?: string,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"workspace_id"?: string
+                    "access_token_enc"?: string,"account_type"?: string | null,"avatar_url"?: string | null,"business_id"?: string | null,"created_at"?: string,"display_name"?: string | null,"external_id"?: string,"followers_count"?: number | null,"id"?: string,"inbox_synced_at"?: string | null,"last_error"?: string | null,"last_media_sync_at"?: string | null,"last_snapshot_on"?: string | null,"last_sync_at"?: string | null,"platform"?: string,"rate_limited_until"?: string | null,"refresh_expires_at"?: string | null,"refresh_token_enc"?: string | null,"scopes"?: string | null,"status"?: string,"sync_error"?: string | null,"token_expires_at"?: string | null,"updated_at"?: string,"user_id"?: string,"username"?: string | null,"webhook_subscribed"?: boolean,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -988,6 +1007,31 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "social_media_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_messages": {
+                  Row: {
+                    "attachments": NonNullable<Json>,"author_name": string | null,"body": string,"created_at": string,"direction": string,"error": string | null,"external_id": string | null,"hidden": boolean,"id": string,"send_mode": string | null,"send_status": string | null,"sent_at": string,"thread_id": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "attachments"?: NonNullable<Json>,"author_name"?: string | null,"body"?: string,"created_at"?: string,"direction": string,"error"?: string | null,"external_id"?: string | null,"hidden"?: boolean,"id"?: string,"send_mode"?: string | null,"send_status"?: string | null,"sent_at"?: string,"thread_id": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "attachments"?: NonNullable<Json>,"author_name"?: string | null,"body"?: string,"created_at"?: string,"direction"?: string,"error"?: string | null,"external_id"?: string | null,"hidden"?: boolean,"id"?: string,"send_mode"?: string | null,"send_status"?: string | null,"sent_at"?: string,"thread_id"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_messages_thread_id_workspace_id_fkey"
+      columns: ["thread_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_threads"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_messages_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -1081,6 +1125,62 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"social_saved_replies": {
+                  Row: {
+                    "body": string,"business_id": string | null,"created_at": string,"id": string,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "body": string,"business_id"?: string | null,"created_at"?: string,"id"?: string,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "body"?: string,"business_id"?: string | null,"created_at"?: string,"id"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_saved_replies_business_id_workspace_id_fkey"
+      columns: ["business_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_saved_replies_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_threads": {
+                  Row: {
+                    "account_id": string,"created_at": string,"customer_name": string | null,"external_id": string,"id": string,"kind": string,"labels": (string)[],"last_inbound_at": string | null,"last_message_at": string,"media_caption": string | null,"media_external_id": string | null,"media_permalink": string | null,"media_thumbnail": string | null,"order_id": string | null,"participant_id": string | null,"participant_name": string | null,"participant_username": string | null,"platform": string,"preview": string | null,"status": string,"unread": boolean,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"customer_name"?: string | null,"external_id": string,"id"?: string,"kind": string,"labels"?: (string)[],"last_inbound_at"?: string | null,"last_message_at"?: string,"media_caption"?: string | null,"media_external_id"?: string | null,"media_permalink"?: string | null,"media_thumbnail"?: string | null,"order_id"?: string | null,"participant_id"?: string | null,"participant_name"?: string | null,"participant_username"?: string | null,"platform": string,"preview"?: string | null,"status"?: string,"unread"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"customer_name"?: string | null,"external_id"?: string,"id"?: string,"kind"?: string,"labels"?: (string)[],"last_inbound_at"?: string | null,"last_message_at"?: string,"media_caption"?: string | null,"media_external_id"?: string | null,"media_permalink"?: string | null,"media_thumbnail"?: string | null,"order_id"?: string | null,"participant_id"?: string | null,"participant_name"?: string | null,"participant_username"?: string | null,"platform"?: string,"preview"?: string | null,"status"?: string,"unread"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_threads_account_id_workspace_id_fkey"
+      columns: ["account_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_threads_order_id_workspace_id_fkey"
+      columns: ["order_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "social_threads_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"stock_items": {
                   Row: {
                     "business_id": string,"created_at": string,"id": string,"match_color": string | null,"match_size": string | null,"min_quantity": number,"name": string,"product_id": string | null,"quantity": number,"updated_at": string,"user_id": string,"variant": string,"workspace_id": string
@@ -1114,13 +1214,13 @@ isOneToOne: false
                   ]
                 },"stock_movements": {
                   Row: {
-                    "business_id": string,"created_at": string,"delta": number,"id": string,"item_key": string,"kind": string,"label": string,"moved_on": string,"reason": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"delta": number,"id": string,"item_key": string,"kind": string,"label": string,"moved_on": string,"order_id": string | null,"order_label": string | null,"reason": string | null,"source": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"created_at"?: string,"delta": number,"id"?: string,"item_key": string,"kind": string,"label": string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"delta": number,"id"?: string,"item_key": string,"kind": string,"label": string,"moved_on"?: string,"order_id"?: string | null,"order_label"?: string | null,"reason"?: string | null,"source"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"delta"?: number,"id"?: string,"item_key"?: string,"kind"?: string,"label"?: string,"moved_on"?: string,"reason"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"delta"?: number,"id"?: string,"item_key"?: string,"kind"?: string,"label"?: string,"moved_on"?: string,"order_id"?: string | null,"order_label"?: string | null,"reason"?: string | null,"source"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1128,6 +1228,12 @@ isOneToOne: false
       columns: ["business_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "stock_movements_order_fk"
+      columns: ["order_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "orders"
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "stock_movements_workspace_id_fkey"
@@ -1282,13 +1388,13 @@ isOneToOne: false
                   ]
                 },"user_ui_prefs": {
                   Row: {
-                    "created_at": string,"home_widgets": Json | null,"mobile_tabs": (string)[] | null,"show_capture_button": boolean,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_widgets": NonNullable<Json>,"created_at": string,"home_widgets": Json | null,"mobile_tabs": (string)[] | null,"seeded_widgets": (string)[],"show_capture_button": boolean,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_widgets"?: NonNullable<Json>,"created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_widgets"?: NonNullable<Json>,"created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1385,6 +1491,11 @@ isOneToOne: false
                            },
 "antola_snapshot":
 { Args: { "p_hash": string }; Returns: Json
+                           },
+"apply_order_stock":
+{ Args: { "p_clear"?: boolean,"p_order": string }; Returns: {
+              "delta": number,"item_key": string,"label": string,"quantity": number
+            }[]
                            },
 "apply_workspace_policies":
 { Args: { "tbl": string }; Returns: undefined

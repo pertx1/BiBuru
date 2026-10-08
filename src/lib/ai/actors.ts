@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { nowLocal, zonedToUtc } from "@/lib/dates";
 import { formatDecimal, toCents } from "@/lib/money";
 import { normalizeText } from "@/lib/production/text";
+import { resolveLineStock } from "@/lib/stock/link";
+import { loadStockLinkContext, syncStockTasks } from "@/lib/stock/service";
 import { expenseSchema, orderSchema } from "@/lib/schemas";
 import type { Database } from "@/lib/supabase/database.types";
 import { eventSchema, goalSchema, taskSchema } from "@/lib/tasks/schemas";
@@ -185,7 +187,13 @@ export async function createOrder(a: Actor, r: OrderResolved): Promise<Created> 
     workspace_id: a.workspaceId, user_id: a.userId, business_id: r.business.id, order_date: r.date, customer: r.customer, channel: r.channel, status: r.status, notes: r.notes,
   }).select("id").single();
   if (error) return fail("No se pudo guardar el pedido");
-  const { error: e2 } = await a.supabase.from("order_items").insert(r.items.map((it) => ({ workspace_id: a.workspaceId, user_id: a.userId, order_id: data.id, ...it })));
+  // Como cualquier pedido nuevo: cada línea que encaje con un artículo del inventario descuenta del stock.
+  const link = await loadStockLinkContext(r.business.id).catch(() => null);
+  const { error: e2 } = await a.supabase.from("order_items").insert(r.items.map((it) => {
+    const eff = link ? resolveLineStock(it, link) : [];
+    return { workspace_id: a.workspaceId, user_id: a.userId, order_id: data.id, ...it, stock_effects: eff.length ? eff : null };
+  }));
   if (e2) { await a.supabase.from("orders").delete().eq("id", data.id); return fail("No se pudieron guardar las líneas del pedido"); }
+  if (link) { await a.supabase.rpc("apply_order_stock", { p_order: data.id }); await syncStockTasks(r.business.id); }
   return { kind: "order", id: data.id, label: `Pedido ${r.customer ?? ""} · ${formatDecimal(r.total_cents)} €`.trim(), href: `/negocios/${r.business.id}/pedidos?abrir=${data.id}` };
 }

@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { runReminders } from "@/lib/notifications/cron";
 import { webPushSender } from "@/lib/notifications/push";
+import { runReviewCron } from "@/lib/review/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +22,13 @@ async function handle(request: NextRequest) {
   if (!process.env.CRON_SECRET) return NextResponse.json({ error: "CRON_SECRET sin configurar" }, { status: 503 });
   if (!authorized(request)) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const summary = await runReminders(createAdminClient(), webPushSender());
-    return NextResponse.json({ ok: true, ...summary }, { headers: { "Cache-Control": "no-store" } });
+    const admin = createAdminClient();
+    const summary = await runReminders(admin, webPushSender());
+    // Revisiones diaria, semanal y mensual: se generan a su hora aunque no haya avisos activados (y avisan si los hay).
+    let sender = null;
+    try { sender = webPushSender(); } catch { /* sin VAPID: se generan igual, sin aviso */ }
+    const reviews = await runReviewCron(admin, sender).catch((e) => { console.error("[cron] reviews:", e instanceof Error ? e.message : e); return { created: 0, notified: 0 }; });
+    return NextResponse.json({ ok: true, ...summary, reviews }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("[cron] reminders:", e instanceof Error ? e.message : e);
     return NextResponse.json({ error: "Error al procesar los avisos" }, { status: 500 });

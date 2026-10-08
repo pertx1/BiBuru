@@ -94,10 +94,20 @@ export const WIDGETS: WidgetMeta[] = [
     [business(), { key: "show", label: "Mostrar", kind: "choice", options: [{ value: "pending", label: "Pendientes" }, { value: "latest", label: "Últimos" }] }], { show: "pending" }),
   w("pending-receivables", "negocios", "Pendiente de cobro", "Cuánto te deben, en cuántos pedidos y quién (de un negocio o de todos).", "number", ["m", "s", "l"], [business()]),
   w("stock-missing", "negocios", "Stock que falta", "Lo que hay que reponer: pedidos pendientes sin cubrir o por debajo del mínimo.", "list", ["m", "s", "l"], [business()]),
+  w("sales-monthly", "negocios", "Ventas por mes", "Ingresos, gastos y beneficio mes a mes.", "bars", ["l", "m"],
+    [business(), { key: "months", label: "Meses", kind: "choice", options: [{ value: "6", label: "6 meses" }, { value: "12", label: "12 meses" }] }], { months: "6" }),
+  w("orders-status", "negocios", "Pedidos por estado", "Cuántos pedidos hay en cada estado; un toque abre la lista filtrada.", "number", ["m", "l", "s"], [business()]),
+  w("top-products", "negocios", "Productos más vendidos", "Lo que más se vende en el periodo elegido arriba.", "bars", ["m", "l"], [business()]),
+  w("stock-summary", "negocios", "Resumen de stock", "Unidades disponibles y valor a coste del stock de un negocio.", "number", ["m", "s", "l"], [business(false)]),
+  w("print-bag", "negocios", "Bolsa imprenta", "Lo que hay que llevar a imprimir por los pedidos «Sin hacer».", "list", ["m", "l", "s"], [business(false)]),
+  w("invoices-latest", "negocios", "Últimas facturas", "Las últimas facturas guardadas de un negocio.", "list", ["m", "l", "s"], [business(false)]),
+  w("antola-rules", "negocios", "Reglas Antola", "Reglas de color de DTF y si Antola está conectado.", "list", ["s", "m"], [business(false)]),
   w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
+  w("review-today", "tareas", "Revisión de hoy", "Tu revisión diaria (y la semanal o mensual) hasta que pulses «Revisado».", "list", ["m", "l", "s"]),
+  w("tasks-nodate", "tareas", "Sin fecha", "Tareas sin fecha: siguen aquí cada día hasta que las hagas. Complétalas, ponles fecha o ábrelas.", "list", ["m", "l", "s"]),
   w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
   w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),
-  w("tasks-business", "tareas", "Tareas de un negocio", "Tareas abiertas de un negocio concreto.", "list", ["m", "l"], [business(false)]),
+  w("tasks-business", "tareas", "Tareas del negocio", "Tareas abiertas de un negocio; abre Tareas filtrada por ese negocio.", "list", ["m", "l"], [business(false)]),
   w("tasks-done-week", "tareas", "Completadas esta semana", "Cuántas tareas has terminado cada día (de lunes a domingo).", "bars", ["s", "m"]),
   w("next-event", "calendario", "Próximo evento", "El siguiente evento con cuenta atrás.", "agenda", ["s", "m"]),
   w("month-calendar", "calendario", "Calendario del mes", "Mini calendario con los días que tienen algo.", "calendar", ["m", "l"]),
@@ -116,9 +126,10 @@ export const WIDGETS: WidgetMeta[] = [
   w("news-idea", "noticias", "Idea del día", "Una acción para ganar más o escalar, sacada de las noticias de hoy.", "text", ["m", "l", "s"]),
   w("news-business", "noticias", "Noticias de un negocio", "Las noticias de hoy que aplican a un negocio concreto.", "list", ["m", "l"], [business(false)]),
   w("mail-unread", "correo", "Correos sin leer", "Cuántos correos de Outlook tienes sin leer y de quién.", "list", ["m", "s", "l"]),
-  w("social-followers", "redes", "Seguidores", "Seguidores de tus cuentas de Instagram y TikTok y su cambio en 7 días.", "list", ["m", "s", "l"]),
+  w("social-followers", "redes", "Seguidores", "Seguidores de tus cuentas de Instagram y TikTok y su cambio en 7 días (de todas o de un negocio).", "list", ["m", "s", "l"], [business()]),
   w("social-best", "redes", "Mejor publicación de la semana", "La publicación con más interacciones de los últimos 7 días.", "text", ["m", "l"]),
   w("social-upcoming", "redes", "Próximas publicaciones", "Lo que tienes programado en Instagram y TikTok.", "list", ["m", "l", "s"]),
+  w("social-inbox", "redes", "Mensajes sin responder", "Mensajes y comentarios de Instagram que esperan respuesta (de todos o de un negocio).", "list", ["m", "s", "l"], [business()]),
   w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
   w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
   w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),
@@ -141,11 +152,35 @@ export const layoutSchema = z.array(instanceSchema).max(MAX_WIDGETS);
 
 /** Disposición por defecto (el Resumen financiero siempre el primero). */
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-  "finance-summary", "tasks-today", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
+  "finance-summary", "review-today", "tasks-today", "tasks-nodate", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
 ].map((type, i) => {
   const m = WIDGET_BY_TYPE.get(type)!;
   return { id: `def-${i + 1}`, type, size: m.defaultSize, settings: { ...m.defaults } };
 });
+
+/**
+ * Widgets fijos que la app añade UNA vez a un Inicio ya personalizado (detrás de `after` o al principio).
+ * Se recuerdan en `user_ui_prefs.seeded_widgets`: si luego los quitas, no vuelven.
+ */
+export const SEED_WIDGETS: { type: string; after: string | null }[] = [
+  { type: "tasks-nodate", after: "tasks-today" },
+  { type: "review-today", after: "finance-summary" },
+];
+
+export function seedLayout(layout: WidgetInstance[], seeded: string[], idFor: (type: string) => string): { layout: WidgetInstance[]; seeded: string[]; changed: boolean } {
+  let out = layout, changed = false;
+  const done = new Set(seeded);
+  for (const s of SEED_WIDGETS) {
+    if (done.has(s.type)) continue;
+    done.add(s.type); changed = true;
+    if (out.some((w) => w.type === s.type)) continue;
+    const inst = newInstance(s.type, idFor(s.type));
+    if (!inst) continue;
+    const at = s.after ? out.findIndex((w) => w.type === s.after) : -1;
+    out = at >= 0 ? [...out.slice(0, at + 1), inst, ...out.slice(at + 1)] : [inst, ...out];
+  }
+  return { layout: out.slice(0, MAX_WIDGETS), seeded: [...done], changed };
+}
 
 /** Ajustes válidos para el widget: rellena los que falten y descarta los desconocidos o fuera de rango. */
 export function cleanSettings(meta: WidgetMeta, raw: Record<string, unknown> | undefined): Record<string, string> {
@@ -164,17 +199,18 @@ export function cleanSettings(meta: WidgetMeta, raw: Record<string, unknown> | u
 /**
  * Convierte lo guardado (o null) en una disposición válida: sin tipos desconocidos, sin ids repetidos,
  * tamaños permitidos y ajustes completos. Nunca lanza: si algo está mal se queda la parte buena.
+ * `fallback` (por defecto, la de Inicio) se usa si no hay nada guardado; `allowed` limita los tipos (Resumen de un negocio).
  */
-export function normalizeLayout(raw: unknown): WidgetInstance[] {
-  if (raw == null) return DEFAULT_LAYOUT.map((w) => ({ ...w, settings: { ...w.settings } }));
-  if (!Array.isArray(raw)) return normalizeLayout(null);
+export function normalizeLayout(raw: unknown, opts: { fallback?: WidgetInstance[]; allowed?: ReadonlySet<string> } = {}): WidgetInstance[] {
+  const fallback = opts.fallback ?? DEFAULT_LAYOUT;
+  if (raw == null || !Array.isArray(raw)) return fallback.map((w) => ({ ...w, settings: { ...w.settings } }));
   const seen = new Set<string>();
   const out: WidgetInstance[] = [];
   for (const item of raw.slice(0, MAX_WIDGETS)) {
     const p = instanceSchema.safeParse(item);
     if (!p.success) continue;
     const meta = WIDGET_BY_TYPE.get(p.data.type);
-    if (!meta || seen.has(p.data.id)) continue;
+    if (!meta || seen.has(p.data.id) || (opts.allowed && !opts.allowed.has(meta.type))) continue;
     seen.add(p.data.id);
     out.push({ id: p.data.id, type: meta.type, size: meta.sizes.includes(p.data.size) ? p.data.size : meta.defaultSize, settings: cleanSettings(meta, p.data.settings) });
   }
@@ -186,6 +222,37 @@ export function newInstance(type: string, id: string): WidgetInstance | null {
   const meta = WIDGET_BY_TYPE.get(type);
   return meta ? { id, type, size: meta.defaultSize, settings: { ...meta.defaults } } : null;
 }
+
+// ------------------------------------------------------------------ Resumen de cada negocio
+/** Widgets que se pueden poner en el Resumen de un negocio (allí el negocio va fijo: no se elige en los ajustes). */
+export const BUSINESS_WIDGETS: ReadonlySet<string> = new Set([
+  "finance-summary", "profit", "sales", "sales-monthly", "expenses-category", "orders", "orders-status", "pending-receivables", "top-products",
+  "stock-missing", "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "social-inbox", "tasks-business", "goals-active",
+]);
+
+/** Disposición por defecto del Resumen de un negocio (Bolsa imprenta y Reglas Antola solo con el módulo de producción). */
+export function defaultBusinessLayout(production: boolean): WidgetInstance[] {
+  const types: [string, WidgetSize?, Record<string, string>?][] = [
+    ["finance-summary", "l"], ["profit", "m"], ["orders-status", "m"], ["orders", "m", { show: "latest" }], ["pending-receivables", "m"],
+    ["sales-monthly", "l"], ["expenses-category", "m"], ["top-products", "m"], ["stock-missing", "m"], ["stock-summary", "m"],
+    ...(production ? [["print-bag", "m"], ["invoices-latest", "m"], ["antola-rules", "m"]] as [string, WidgetSize][] : []),
+    ["social-followers", "m"], ["social-inbox", "m"], ["tasks-business", "m"], ["goals-active", "m"],
+  ];
+  return types.map(([type, size, extra], i) => {
+    const m = WIDGET_BY_TYPE.get(type)!;
+    return { id: `biz-${i + 1}`, type, size: size && m.sizes.includes(size) ? size : m.defaultSize, settings: { ...m.defaults, ...extra } };
+  });
+}
+
+/** Disposición del Resumen de un negocio a partir de lo guardado (objeto por negocio). */
+export function normalizeBusinessLayout(raw: unknown, businessId: string, production: boolean): WidgetInstance[] {
+  const saved = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>)[businessId] : null;
+  return normalizeLayout(saved ?? null, { fallback: defaultBusinessLayout(production), allowed: BUSINESS_WIDGETS });
+}
+
+/** Dentro de un negocio, todos los widgets usan ese negocio (sea cual sea el ajuste guardado). */
+export const withBusiness = (w: WidgetInstance, businessId: string): WidgetInstance =>
+  WIDGET_BY_TYPE.get(w.type)?.fields.some((f) => f.kind === "business") ? { ...w, settings: { ...w.settings, business: businessId } } : w;
 
 /** Clases de rejilla: 2 columnas en móvil, 4 en escritorio. */
 export const SIZE_CLASSES: Record<WidgetSize, string> = {

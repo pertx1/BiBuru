@@ -44,20 +44,20 @@ export async function loadBase(businessId: string) {
   };
 }
 
-/** Líneas de pedidos en los estados dados (con su pedido). */
-async function loadOrderItems(businessId: string, statuses: string[]) {
+/** Líneas de pedidos en los estados dados (con su pedido). `onlyUnlinked`: sin las que ya se descontaron del stock al crear el pedido. */
+async function loadOrderItems(businessId: string, statuses: string[], onlyUnlinked = false) {
   const { supabase, workspaceId } = await getContext();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, order_number, order_date, order_items(product_name, color, size, quantity)")
+    .select("id, order_number, order_date, order_items(product_name, color, size, quantity, stock_effects)")
     .eq("workspace_id", workspaceId).eq("business_id", businessId).in("status", statuses)
     .order("order_date", { ascending: true }).limit(5000);
   if (error) fail("pedidos pendientes", error);
-  return data;
+  return onlyUnlinked ? data.map((o) => ({ ...o, order_items: o.order_items.filter((i) => i.stock_effects == null) })) : data;
 }
 
 export async function getStockOverview(businessId: string) {
-  const [base, orders] = await Promise.all([loadBase(businessId), loadOrderItems(businessId, ["sin_hacer", "sin_llegar"])]);
+  const [base, orders] = await Promise.all([loadBase(businessId), loadOrderItems(businessId, ["sin_hacer", "sin_llegar"], true)]);
   const pending: PendingItem[] = orders.flatMap((o) => o.order_items.map((i) => ({ product_name: i.product_name, color: i.color, size: i.size, quantity: i.quantity })));
   return { ...computeStockOverview(base.rows, pending, base.catalog, base.rules), catalog: base.catalog };
 }

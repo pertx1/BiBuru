@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/context";
-import { syncStockTasks } from "@/lib/stock/service";
+import { loadStockLinkContext, syncStockTasks } from "@/lib/stock/service";
+import { resolveLineStock } from "@/lib/stock/link";
 import {
   businessSchema, categorySchema, expenseSchema, incomeSchema, orderSchema, productSchema,
   type ActionResult,
@@ -67,9 +68,13 @@ export async function saveOrder(input: OrderPayload): Promise<ActionResult> {
   };
 
   let orderId = id;
+  // Pedido anterior al descuento automático (ninguna línea vinculada): al editarlo sigue sin descontar, salvo las líneas
+  // en las que elijas un artículo a mano. Así los pedidos antiguos no descuentan «hacia atrás» (para eso, «Recalcular desde pedidos»).
+  let legacy = false;
   if (id) {
-    const { data: existing } = await supabase.from("orders").select("id").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
+    const { data: existing } = await supabase.from("orders").select("id, order_items(stock_key, stock_effects)").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
     if (existing) {
+      legacy = existing.order_items.length > 0 && existing.order_items.every((i) => i.stock_effects == null && i.stock_key == null);
       const { error } = await supabase.from("orders").update(row).eq("id", id).eq("workspace_id", workspaceId);
       if (error) return dbError("order.update", error);
       const { error: delErr } = await supabase.from("order_items").delete().eq("order_id", id).eq("workspace_id", workspaceId);
@@ -85,17 +90,28 @@ export async function saveOrder(input: OrderPayload): Promise<ActionResult> {
     orderId = data.id;
   }
 
+  // Qué descuenta cada línea (artículo elegido o reconocido). Si falla la carga del catálogo, las líneas quedan sin vincular.
+  const link = await loadStockLinkContext(o.business_id).catch(() => null);
   const { error: itemsErr } = await supabase.from("order_items").insert(
-    items.map((i) => ({
-      workspace_id: workspaceId, user_id: userId, order_id: orderId!, product_id: i.product_id ?? null,
-      product_name: i.product_name, color: i.color ?? null, size: i.size ?? null,
-      quantity: i.quantity, unit_price_cents: i.unit_price, unit_cost_cents: i.unit_cost,
-    })),
+    items.map((i) => {
+      const effects = link && (!legacy || i.stock_key) ? resolveLineStock(i, link) : [];
+      return {
+        workspace_id: workspaceId, user_id: userId, order_id: orderId!, product_id: i.product_id ?? null,
+        product_name: i.product_name, color: i.color ?? null, size: i.size ?? null,
+        quantity: i.quantity, unit_price_cents: i.unit_price, unit_cost_cents: i.unit_cost,
+        stock_key: i.stock_key ?? null, stock_effects: effects.length ? effects : null,
+      };
+    }),
   );
   if (itemsErr) return dbError("order.items.insert", itemsErr);
-  await syncStockTasks(o.business_id); // los pedidos pendientes reservan stock
+  // Descuenta (o ajusta la diferencia si se ha editado) en una sola transacción en la base de datos.
+  const { data: moved, error: stockErr } = await supabase.rpc("apply_order_stock", { p_order: orderId! });
+  if (stockErr) console.error("[actions] order.stock:", stockErr.message);
+  await syncStockTasks(o.business_id); // «Pedir …» si algo se queda a 0 o falta
   refresh();
-  return { ok: true, id: orderId };
+  const short = (moved ?? []).filter((m) => m.delta < 0 && m.quantity < 0);
+  const warning = short.length ? `Falta stock: ${short.map((m) => `${m.label} (${m.quantity})`).join(", ")}. Tienes la tarea «Pedir …» en Tareas.` : undefined;
+  return { ok: true, id: orderId, warning };
 }
 
 export async function setOrderStatus(id: string, status: string): Promise<ActionResult> {

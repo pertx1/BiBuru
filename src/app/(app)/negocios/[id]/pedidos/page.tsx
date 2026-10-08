@@ -6,9 +6,11 @@ import { OrdersView } from "@/components/orders/orders-view";
 import { getOrder, listProducts, PAGE_SIZE } from "@/lib/data";
 import { addMonths, startOfMonth, todayISO } from "@/lib/dates";
 import { formatEUR } from "@/lib/money";
-import { countUnreviewed, filteredOrderAmounts, getCollections, getOrderWithPayments, listDueOrders, listOrdersFiltered, orderFacets, type OrderWithPayments } from "@/lib/orders/data";
+import { StatusChips } from "@/components/orders/status-chips";
+import { countByStatus, countUnreviewed, filteredOrderAmounts, getCollections, getOrderWithPayments, listDueOrders, listOrdersFiltered, orderFacets, type OrderWithPayments } from "@/lib/orders/data";
 import { debtors, filteredTotals, hasFilters, parseOrderFilters, receivables } from "@/lib/orders/payments";
 import { ORDER_STATUSES } from "@/lib/schemas";
+import { loadStockLinkContext } from "@/lib/stock/service";
 
 export const metadata = { title: "Pedidos" };
 
@@ -28,7 +30,7 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
   const debtsView = sp.vista === "deudas";
   const openId = sp.abrir && UUID.test(sp.abrir) ? sp.abrir : null;
 
-  const [orders, products, openOrder, due, unreviewed, facets, amounts, collections] = await Promise.all([
+  const [orders, products, openOrder, due, unreviewed, facets, amounts, collections, stock, statusCounts] = await Promise.all([
     listOrdersFiltered(id, filters, limit),
     listProducts(id),
     openId ? safe<OrderWithPayments | null>(getOrderWithPayments(id, openId), null).then(async (o) => o ?? (await getOrder(id, openId)) as OrderWithPayments | null) : Promise.resolve(null),
@@ -37,6 +39,8 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
     orderFacets(id),
     hasFilters(filters) ? safe(filteredOrderAmounts(id, filters), null) : Promise.resolve(null),
     debtsView ? safe(getCollections(startOfMonth(addMonths(today, -11)), today, id), []) : Promise.resolve([]),
+    safe(loadStockLinkContext(id), null),
+    debtsView ? Promise.resolve({}) : safe(countByStatus(id, filters, ORDER_STATUSES), {}),
   ]);
   const owed = receivables(due, today);
   const totals = amounts ? filteredTotals(amounts.map((r) => ({ ...r, paid_cents: Number(r.paid_cents), due_cents: Number(r.due_cents ?? 0) }))) : null;
@@ -58,6 +62,7 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
         <DebtsView businessId={id} debtors={debtors(due, today)} aging={owed.aging} collections={collections} />
       ) : (
         <>
+          <StatusChips counts={statusCounts} statuses={ORDER_STATUSES} current={filters.status} hrefFor={(st) => `?${keep({ estado: st ?? undefined, limite: undefined })}`} />
           <OrderFilters businessId={id} customers={facets.customers} channels={facets.channels} products={products.map((p) => p.name)} />
           {totals && (
             <dl className="grid grid-cols-2 gap-2 rounded-xl border border-border bg-surface p-3 text-sm md:grid-cols-5">
@@ -71,7 +76,8 @@ export default async function PedidosPage({ params, searchParams }: { params: Pr
         </>
       )}
 
-      <OrdersView businessId={id} orders={debtsView ? [] : orders} products={products} today={today} openOrder={openOrder} highlightId={sp.nuevo && UUID.test(sp.nuevo) ? sp.nuevo : null} hideList={debtsView} />
+      <OrdersView businessId={id} orders={debtsView ? [] : orders} products={products} today={today} openOrder={openOrder} highlightId={sp.nuevo && UUID.test(sp.nuevo) ? sp.nuevo : null} hideList={debtsView} stock={stock}
+        prefill={sp.crear === "1" ? { customer: sp.para?.slice(0, 120), channel: sp.via?.slice(0, 60) } : null} />
       {!debtsView && (
         <div className="flex items-center justify-between text-sm">
           {orders.length >= limit ? <Link href={`?${more}`} scroll={false} className="text-accent">Ver más pedidos</Link> : <span className="text-muted">{orders.length} pedidos</span>}

@@ -1,128 +1,241 @@
-# Qué tengo que hacer yo (guía de la noche)
+# Qué tengo que hacer yo
 
-Hola. Esta noche he trabajado en BiBuru mientras dormías. Aquí tienes **todo lo que tienes que hacer tú**, paso a paso y con palabras sencillas.
+Hola. He hecho de una vez los cambios en **Negocios, stock, revisiones y tareas sin fecha**. Aquí tienes qué ha cambiado, dónde está ahora cada cosa y **lo que te toca a ti**, paso a paso, como si te lo explicara a un niño de 10 años.
 
 **Cómo leer esta guía:**
 
 - Ve **en orden**. Lo primero es lo más importante.
-- Cada bloque dice si es **OBLIGATORIO** u **OPCIONAL**, cuánto tarda y si cuesta dinero.
+- Cada bloque dice si es **OBLIGATORIO** u **OPCIONAL**, cuánto tarda y si cuesta dinero (todo es **gratis**).
 - Cada paso es **un solo gesto**. Haz uno, mira que ha salido bien y pasa al siguiente.
 - Las palabras en **negrita** son los botones o textos exactos que verás en la pantalla.
-- Tu app está en **https://bi-buru.vercel.app**. Si alguna vez pone otra dirección, usa la tuya.
+- Cada bloque termina con **«Sabrás que ha salido bien cuando…»** y **«Si te sale este error, haz esto…»**.
+- Tu app está en **https://bi-buru.vercel.app**.
 
-> Una palabra que verás mucho: **variable** (un nombre y un valor secreto que se guardan en Vercel para que la app funcione; por ejemplo, la «llave» para hablar con Microsoft).
-
----
-
-## 1. Resumen de la noche
-
-| Función | Estado | En una frase |
-|---|---|---|
-| 1. Pedidos: cobros, «Me deben», filtros y botón «Nuevo pedido» | **Hecha** | Cada pedido tiene estado de pago, puedes apuntar cobros, ver quién te debe y filtrar como quieras. |
-| 2. Stock que falta, en Tareas | **Hecha** | Si algo se queda a 0 (o falta para tus pedidos), aparece sola una tarea «Pedir …» para hoy, como en BATU. |
-| 3. Que la app vaya mejor en el móvil | **Hecha** | Botones más grandes, sin zoom al escribir, deslizar tareas y tirar hacia abajo para actualizar. |
-| 4. Favoritos de TikTok pegando el enlace | **Hecha** | Pegas uno o varios enlaces y se analizan solos con la descripción y la portada; puedes subir el vídeo para un análisis completo. |
-| 5. Correo de Outlook | **Hecha a medias** | Todo está construido, pero **falta conectar**: tienes que registrar la app en Microsoft (bloque D). |
-| 6. Instagram de negocio | **Hecha a medias** | Estadísticas, ranking y programación hechas; **falta conectar** la app de Meta (bloque E). |
-| 7. TikTok de negocio | **Hecha a medias** | Estadísticas y programación (borrador o aviso) hechas; **falta conectar** la app de TikTok (bloque F). |
-| Tareas como en Antola | **Hecha** | Filtros (Hoy, 7 días, Bandeja…), «+» con formulario completo, repetir, avisos por tarea y pantalla de detalle. La base de datos se actualiza sola al publicar. |
-| Extra: Política de privacidad | **Hecha** | Ya existen **https://bi-buru.vercel.app/privacidad** y **/terminos** (Meta y TikTok los piden). |
-| Extra: avisos encima de las hojas | **Hecha** | Los mensajes («Guardado ✔», errores…) ya no quedan escondidos detrás de las ventanas abiertas. |
-
-«Hecha a medias» significa: **el código está terminado y probado**, pero necesita que tú crees una cuenta de desarrollador y pegues unas llaves. Sin eso, la app muestra **«Falta conectar»** y todo lo demás funciona igual.
-
-**Importante:** nada de esto está todavía en tu app de verdad. Está en un **pull request** (una propuesta de cambios que puedes revisar antes de aceptarla). No he tocado tu app ni tus datos reales. El primer paso (bloque A) es aceptarlo.
+> Tres palabras que verás mucho:
+> - **Stock**: lo que tienes guardado (camisetas, DTF, bolsas…).
+> - **Vincular**: decirle a la app «esta línea del pedido es este artículo del stock», para que lo reste sola.
+> - **Widget**: una tarjeta del Resumen o de Inicio (por ejemplo «Pedidos por estado»). Puedes ponerlas, quitarlas y moverlas.
 
 ---
 
-## 2. Bloques ordenados de más importante a menos
+## 1. Resumen: qué hay de nuevo
+
+| # | Cambio | Estado | En una frase |
+|---|---|---|---|
+| 1 | Cada pedido resta del stock | **Hecho** | Al crear un pedido, sus líneas restan del stock; si lo editas, solo la diferencia; si lo cancelas o lo borras, vuelve. |
+| 2 | Revisión diaria, semanal y mensual | **Hecho** | Una sección nueva, **Revisión**, que se prepara sola cada mañana, cada domingo por la tarde y cada día 1, te avisa y se guarda. |
+| 3 | Tareas sin fecha en Inicio | **Hecho** | Un bloque fijo **Sin fecha** en Inicio, todos los días, hasta que las hagas. |
+| 4 | Negocios reorganizados | **Hecho** | Pestañas nuevas, el **Resumen** con widgets que puedes cambiar y botones por estado en **Pedidos**. |
+| 5 | Redes y Mensajes en cada negocio | **Hecho · falta asignar cuentas** | Pestaña **Mensajes** con correo, Instagram y TikTok juntos. Tienes que decir qué cuenta es de qué negocio (bloque D). |
+| 6 | Esta guía | **Hecha** | También en PDF: **docs/QUE-TENGO-QUE-HACER.pdf**. |
+
+**Importante:** nada de esto está todavía en tu app de verdad. Está en un **pull request** (una propuesta de cambios que revisas antes de aceptarla). No he tocado tu app ni tus datos. **Los pedidos que ya tienes no restan nada del stock** hasta que tú lo decidas (bloque C).
+
+---
+
+## 2. Qué ha cambiado de sitio
+
+Nada se ha borrado: solo ha cambiado de sitio. Si entras por una dirección antigua, la app te lleva sola a la nueva.
+
+| Antes estaba en… | Ahora está en… |
+|---|---|
+| Negocio → **Producción** → Stock | Negocio → **Stock** (la misma tabla de Producción, ahora la única) |
+| Negocio → **Producción** → Bolsa imprenta | Negocio → **Bolsa imprenta** |
+| Negocio → **Producción** → Facturas | Negocio → **Facturas** |
+| Negocio → **Producción** → Reglas y Antola | Negocio → **Reglas Antola** |
+| Negocio → **Ingresos** | Negocio → **Estadísticas**, al final, en **Ingresos sueltos** (y siguen sumando en el Resumen) |
+| Negocio → **Tareas** | Menú **Tareas**, con el chip del negocio marcado |
+| Negocio → **Objetivos** | Menú **Objetivos**, con el botón del negocio marcado |
+
+**Orden de las pestañas de cada negocio:** Resumen, Pedidos, Gastos, Stock, Bolsa imprenta, Facturas, Reglas Antola, Redes, Mensajes, Estadísticas y Productos. En el móvil, desliza la fila de pestañas con el dedo hacia la izquierda para ver las del final. Bolsa imprenta, Facturas y Reglas Antola solo salen si el negocio tiene el **Módulo de producción**.
+
+---
+
+## 3. Bloques ordenados de más importante a menos
 
 | Bloque | Qué | Obligatorio | Tiempo | Coste |
 |---|---|---|---|---|
-| A | Revisar y fusionar el pull request | **OBLIGATORIO** | 10 min | Gratis |
-| B | Revisar los pedidos «Sin revisar» | **OBLIGATORIO** | 5 min | Gratis |
-| C | Poner el stock inicial y los mínimos | Recomendado | 15–30 min | Gratis |
-| D | Conectar Outlook (Microsoft) | Opcional | 20 min | Gratis |
-| E | Conectar Instagram (Meta) | Opcional | 30 min | Gratis |
-| F | Conectar TikTok | Opcional | 30 min (+ días de espera si pides auditoría) | Gratis |
-| G | Guardar un vídeo de TikTok para el análisis completo | Opcional | 2 min | Gratis (gasta un poco de tu presupuesto de IA) |
-| H | Correo de contacto de la política de privacidad | Opcional | 3 min | Gratis |
+| A | Ver la vista previa y fusionar el pull request | **OBLIGATORIO** | 10 min | Gratis |
+| B | Vincular los artículos del stock (para que los pedidos resten) | **OBLIGATORIO** si usas stock | 10–20 min | Gratis |
+| C | Decidir si los pedidos antiguos restan del stock | Recomendado | 5 min | Gratis |
+| D | Asignar cada cuenta de correo y de redes a su negocio | Recomendado | 3 min | Gratis |
+| E | Elegir la hora de las revisiones | Recomendado | 2 min | Gratis |
+| F | Ordenar el Resumen de cada negocio a tu gusto | Opcional | 5 min | Gratis |
 
 ---
 
-### Bloque A · Revisar y fusionar el pull request · OBLIGATORIO · 10 min · gratis
+### Bloque A · Ver la vista previa y fusionar el pull request · OBLIGATORIO · 10 min · gratis
 
 Fusionar (en inglés *merge*) = aceptar los cambios para que pasen a tu app de verdad.
 
-**Antes de empezar:** la **vista previa** (una copia de prueba de la app que hace Vercel para cada pull request) usa tu base de datos real, pero **sin** las tablas nuevas. Por eso, en la vista previa, Pedidos, Stock, Correo y Redes pueden salir vacíos o con algún aviso. Es normal. Al fusionar, las tablas nuevas se crean solas.
+**Antes de empezar:**
+- Este pull request **ya lleva dentro** el anterior (el **#6**, de Redes y Bandeja). Si fusionas este, entra todo. Si ya fusionaste el #6, no pasa nada.
+- La **vista previa** usa tu base de datos real **sin** las tablas nuevas. Por eso, ahí, la Revisión, el Resumen con widgets y los Mensajes pueden salir con avisos o vacíos. Es normal: al fusionar, las tablas se crean solas.
 
-1. Abre el enlace del pull request que te he dejado en el chat (empieza por **https://github.com/pertx1/biburu/pull/**).
-2. Baja hasta el cuadro donde **vercel** ha dejado un comentario.
-3. Pulsa **Visit Preview** (o **Preview**) para ver la vista previa.
-4. Entra con tu cuenta como siempre.
-5. Mira por encima: el menú tiene **Correo** y **Redes**, y en un negocio hay una pestaña **Stock**. Con eso basta.
-6. Vuelve a la página del pull request en GitHub.
-7. Baja hasta el final y pulsa el botón verde **Merge pull request**.
-8. Pulsa **Confirm merge**.
-9. Espera unos 3 minutos.
-10. Entra en **https://vercel.com**, abre tu proyecto **bi-buru** y pulsa **Deployments**.
+1. Abre el enlace del pull request que te he dejado en el chat.
+2. Baja hasta el comentario de **vercel** y pulsa **Visit Preview**.
+3. Entra con tu cuenta y mira por encima: el menú tiene **Revisión** y en un negocio las pestañas tienen el orden nuevo.
+4. Vuelve al pull request en GitHub.
+5. Baja hasta el final y pulsa el botón verde **Merge pull request**.
+6. Pulsa **Confirm merge**.
+7. Espera unos 3 minutos y entra en **https://vercel.com** → **bi-buru** → **Deployments**.
 
-**Sabrás que ha salido bien cuando…** el despliegue de arriba ponga **Ready** en verde y, al abrir **https://bi-buru.vercel.app**, en **Negocios → (un negocio) → Pedidos** veas el cuadro **Me deben**.
+**Sabrás que ha salido bien cuando…** el despliegue de arriba ponga **Ready** en verde y en **https://bi-buru.vercel.app/revision** veas la revisión de hoy.
 
 **Si te sale este error, haz esto…**
-
-- **«This branch has conflicts»** (hay cambios que chocan): no pulses nada más y escríbeme «el pull request tiene conflictos».
-- El despliegue pone **Error** o **Failed**: pulsa en él, copia las últimas líneas del registro y pégamelas en el chat.
-- En la app sale **«falta aplicar la actualización de la base de datos»**: espera 5 minutos y recarga. Si sigue, dímelo.
-
----
-
-### Bloque B · Revisar los pedidos «Sin revisar» · OBLIGATORIO · 5 min · gratis
-
-Tus pedidos de antes no tenían cobros apuntados. Para no inventarme deudas, los he dejado como **Sin revisar** (no cuentan como deuda).
-
-1. Abre la app y entra en **Negocios**.
-2. Pulsa tu negocio (por ejemplo **Akerra**).
-3. Pulsa la pestaña **Pedidos**.
-4. Verás un aviso amarillo: **X pedidos sin revisar**. Pulsa **Revisar**.
-5. Elige una opción:
-   - Si casi todos ya te los pagaron: pulsa **Todos están cobrados**. Se apunta un cobro con la fecha de cada pedido.
-   - Si casi ninguno te lo han pagado: pulsa **Todos están sin cobrar**. Pasan a contar como deuda.
-   - Si es mitad y mitad: pulsa **Ver cuáles son** y revísalos uno a uno con **Marcar como pagado** o **Añadir cobro**.
-6. Confirma con **Aceptar**.
-
-**Sabrás que ha salido bien cuando…** el aviso amarillo desaparezca y el cuadro **Me deben** muestre lo que de verdad te deben.
-
-**Si te sale este error, haz esto…** «No se pudieron registrar todos los cobros»: pulsa otra vez el mismo botón. No se duplica nada.
+- **«This branch has conflicts»**: no pulses nada más y escríbeme «el pull request tiene conflictos».
+- El despliegue pone **Error**: pulsa en él, copia las últimas líneas y pégamelas en el chat.
+- Sale **«falta aplicar la actualización de la base de datos»**: espera 5 minutos y recarga.
 
 ---
 
-### Bloque C · Poner el stock inicial y los mínimos · Recomendado · 15–30 min · gratis
+### Bloque B · Vincular los artículos del stock · OBLIGATORIO si usas stock · 10–20 min · gratis
 
-Así la app sabe qué te falta y crea las tareas **Reponer** solas.
+Para que un pedido reste del stock, la app tiene que saber **qué artículo** es cada línea. Muchas veces lo adivina sola; esto es para que acierte siempre.
 
-**Si tu negocio usa Producción (camisetas y DTF):**
+**Si tu negocio usa Producción (camisetas y DTF):** no tienes que hacer nada especial. Si en el pedido escribes el **diseño** (por ejemplo **Ola**), el **color** (**Negra**) y la **talla** (**M**), la app resta sola una camiseta negra M y un DTF del color que toca.
 
-1. Entra en **Negocios → Akerra → Stock**.
-2. Pulsa una fila, por ejemplo **Camiseta negra M**.
-3. Escribe cuántas tienes en **Unidades** y pulsa **Fijar**.
-4. En **Stock mínimo** escribe cuántas quieres tener siempre (por ejemplo **3**) y pulsa **Guardar mínimo**.
-5. Repite con cada talla y color. (Si una prenda no está, créala en **Catálogo en Producción**.)
+**Para el resto (sudaderas, bolsas, productos…):**
 
-**Para todo lo demás (bolsas, etiquetas, productos terminados…):**
+1. Entra en **Negocios → (tu negocio) → Stock**.
+2. Si un artículo no está, pulsa **Añadir artículo**, escribe el **Nombre** igual que lo escribes en los pedidos y pulsa **Guardar**.
+3. Si lo vendes como producto del catálogo, ábrelo, pulsa **Editar artículo** y en **Producto del catálogo** elige el producto. Pulsa **Guardar**.
 
-1. En la misma pantalla **Stock**, pulsa **Añadir artículo**.
-2. Escribe el **Nombre** igual que lo escribes en los pedidos (por ejemplo **Sudadera gris**).
-3. Si quieres, pon **Variante** (por ejemplo **M**), **Tienes ahora** y **Mínimo**.
-4. Pulsa **Guardar**.
+**En cada pedido nuevo:**
 
-**Sabrás que ha salido bien cuando…** arriba ponga **No falta nada** o, si falta algo, en **Tareas → Hoy** aparezca **Pedir …** con la etiqueta **Stock**.
+1. Pulsa **Nuevo pedido**.
+2. En cada línea, debajo de los precios, verás:
+   - **Descuenta: 1 × Camiseta negra M…** → está vinculada.
+   - **Sin vincular al stock** (en naranja) → no restará nada.
+3. Si sale **Sin vincular**, elige el artículo en la lista de arriba de la línea (**Artículo del stock…**).
+4. Pulsa **Guardar pedido**. Si algo se queda en negativo, sale el aviso **Falta stock…** y la tarea **Pedir …** aparece sola en Tareas.
 
-**Si te sale este error, haz esto…** «Ya existe un artículo con ese nombre y variante»: búscalo en la lista y edítalo en vez de crear otro.
+**Sabrás que ha salido bien cuando…** al guardar un pedido, en **Stock** el número de ese artículo baje, y al tocarlo, en **Historial** salga el pedido con **Ver pedido**.
+
+**Si te sale este error, haz esto…**
+- La línea dice **Sin vincular** aunque el artículo existe: elige el artículo a mano en la lista de la línea.
+- Has restado de más: edita el pedido (se ajusta solo la diferencia) o cancélalo (vuelve todo).
 
 ---
 
-### Bloque D · Conectar Outlook · OPCIONAL · 20 min · gratis
+### Bloque C · ¿Los pedidos antiguos restan del stock? · Recomendado · 5 min · gratis
+
+Los pedidos que ya tenías **no restan** (así no se descuadra el stock que ya contaste a mano). Si quieres que los pendientes sí resten:
+
+1. Entra en **Negocios → (tu negocio) → Stock**.
+2. Pulsa **Recalcular desde pedidos**.
+3. Elige **Solo los pendientes («Sin hacer» y «Sin llegar»)** (lo recomendado) o **Todos los no cancelados desde una fecha**.
+4. Pulsa **Ver vista previa**: verás cuánto bajaría cada artículo.
+5. Si te cuadra, pulsa **Aplicar** y **Aceptar**.
+
+**Sabrás que ha salido bien cuando…** salga **Hecho: N pedidos descontados** y en el **Historial** de cada artículo aparezcan esos pedidos.
+
+**Si te sale este error, haz esto…** **«No se pudo terminar»**: pulsa **Aplicar** otra vez. Lo que ya se descontó no se descuenta dos veces.
+
+---
+
+### Bloque D · Asignar cada cuenta a su negocio · Recomendado · 3 min · gratis
+
+La pestaña **Mensajes** de un negocio junta el **correo** y los **mensajes de Instagram y TikTok** de las cuentas de ese negocio.
+
+1. Entra en **Ajustes**.
+2. Arriba verás **Cuentas sin negocio** (si no sale, es que todas están ya asignadas).
+3. En cada cuenta, elige su negocio en **Elige negocio…**.
+
+**Sabrás que ha salido bien cuando…** la cuenta desaparezca de la lista y, en **Negocios → (tu negocio) → Mensajes**, salgan sus correos y mensajes.
+
+**Si te sale este error, haz esto…** si en **Mensajes** pone **Falta conectar o asignar cuentas**, conecta Outlook (Ajustes → Correo de Outlook) o Instagram/TikTok (pestaña Redes) y vuelve a este bloque.
+
+> **Cómo funciona Mensajes:** arriba eliges el **canal** (Correo, Instagram, TikTok) y el **estado** (Sin responder, Respondido, Archivado o Todos), y puedes buscar. Pulsa **⋯** en un mensaje para **Crear pedido**, **Crear tarea**, **Guardar como nota**, **Respondido** o **Archivar**. Instagram se responde aquí mismo; el correo, con **Responder en Outlook**; TikTok no deja leer mensajes desde una app propia, así que sale **Abrir en TikTok**. Un correo cuenta como **Sin responder** mientras no lo hayas leído ni marcado.
+
+---
+
+### Bloque E · Elegir la hora de las revisiones · Recomendado · 2 min · gratis
+
+1. Entra en **Ajustes** y baja a **Revisiones (diaria, semanal y mensual)**.
+2. **Diaria**: viene a las **08:30**. Cambia la hora si quieres.
+3. **Semanal**: viene el **Domingo** a las **18:00**. Elige día y hora.
+4. **Mensual**: el **día 1** a las **09:00**.
+5. Pulsa **Guardar**.
+
+> **Cómo funciona Revisión:** a esa hora se prepara sola con tus datos reales y te llega un aviso (si tienes los avisos activados y no es hora de silencio). En **Revisión** puedes completar o posponer tareas, marcar un pedido como **Cobrado** o abrir un correo sin salir. Arriba eliges **Todos juntos** o un negocio. Al final pulsa **Revisado**: si no la cierras, sigue en Inicio, en **Revisión de hoy**. En la semanal, escribe tus **3 prioridades** y pulsa **Crear como tareas**. El botón **Resumen con IA** es opcional y gasta un poco de tu presupuesto de IA.
+
+**Sabrás que ha salido bien cuando…** a la hora elegida te llegue el aviso **Revisión diaria lista** y en **Revisión → Histórico** aparezca la de hoy.
+
+**Si te sale este error, haz esto…** si no llega el aviso, mira **Ajustes → Avisos en este dispositivo** (tiene que estar activado) y que no sea hora de silencio. La revisión se prepara igual aunque no haya aviso.
+
+---
+
+### Bloque F · Ordenar el Resumen de cada negocio · Opcional · 5 min · gratis
+
+1. Entra en **Negocios → (tu negocio) → Resumen**.
+2. Pulsa **Editar resumen**.
+3. Arrastra desde **⠿** para mover, pulsa el icono de tamaño para hacerla más grande, el de ajustes para cambiar opciones y la **X** para quitar.
+4. **Añadir widget** abre la lista: Resumen financiero, Beneficio y margen, Ventas por mes, Gastos por categoría, Pedidos, Pedidos por estado, Pendiente de cobro, Más vendidos, Stock que falta, Resumen de stock, Bolsa imprenta, Últimas facturas, Reglas Antola, Seguidores, Mensajes sin responder, Tareas del negocio y Objetivos activos.
+5. Pulsa **Listo**. Si quieres volver a la de antes, **Editar resumen → Restablecer**.
+
+Estos widgets también están en **Inicio → Editar → Añadir widget**: en sus ajustes eliges el negocio.
+
+**Sabrás que ha salido bien cuando…** al recargar, el Resumen siga como lo dejaste (cada negocio guarda el suyo).
+
+**Si te sale este error, haz esto…** **«No se pudo guardar»**: recarga y repite.
+
+---
+
+## 4. Decisiones que necesito de ti
+
+1. **¿Los pedidos antiguos restan?** (bloque C)
+   - Recomiendo: **Solo los pendientes**, después de contar tu stock real.
+   - Si no haces nada: no restan; siguen «reservando» stock como antes (salen en la columna **Reservado**).
+2. **¿Quieres la pestaña Productos al final?** No la pediste, pero no la he quitado porque ahí está tu catálogo con precios. Si sobra, dímelo.
+3. **¿Facturas para todos los negocios?** Ahora solo salen con el **Módulo de producción** (como antes). Si quieres Facturas en todos, dímelo.
+
+---
+
+## 5. Lo que no he podido hacer y por qué
+
+- **Copiar los filtros de PROFITY tal cual.** No tengo acceso a cómo eran. He puesto una fila de botones por estado con su número, que se combinan con los demás filtros.
+- **Mensajes y comentarios de TikTok.** TikTok no deja leerlos desde una app propia: sale **Abrir en TikTok**.
+- **Marcar correos como respondidos en Outlook.** Con permiso de solo lectura no se puede: «Respondido» y «Archivado» se guardan solo en BiBuru.
+- **Valor del stock de camisetas y DTF.** No tienen coste guardado; el widget **Resumen de stock** da el valor de los artículos vinculados a un producto con coste.
+- **Probar con tus datos reales.** Lo he probado en un ordenador con datos de ejemplo (pedidos, stock, revisiones, Inicio y móvil) y con pruebas automáticas.
+
+---
+
+## 6. Cómo probar en el iPhone
+
+1. **Pedido que resta:** Negocio → **Stock**, mira un número (por ejemplo **Camiseta negra M**). Crea un pedido con **Ola · Negra · M · 2**. Vuelve a **Stock**: ha bajado 2. Cancela el pedido: vuelve.
+2. **Historial:** toca ese número en Stock: abajo, **Historial** con **Ver pedido**.
+3. **Botones de estado:** en **Pedidos**, toca **Sin hacer**: solo salen esos. Tócalo otra vez para quitarlo.
+4. **Resumen:** **Editar resumen**, quita un widget, **Listo** y recarga: sigue quitado.
+5. **Sin fecha:** en Inicio, en **Sin fecha**, toca el calendario de una tarea y elige **Mañana**: desaparece del bloque.
+6. **Revisión:** menú **Revisión** (o **Más → Revisión**): completa una tarea tocando el círculo y pulsa **Revisado**.
+7. **Mensajes:** Negocio → **Mensajes**: cambia entre **Correo**, **Instagram** y **TikTok**.
+
+---
+
+## 7. Decisiones que tomé por mi cuenta
+
+Están todas, con su porqué, en **docs/DECISIONES.md**. Las más importantes:
+
+- **El stock que ves es «lo que tienes»**: los pedidos nuevos ya están restados. Los antiguos sin vincular siguen reservando como antes, para no contarlos dos veces.
+- Si no hay stock suficiente, el pedido **se guarda igual**, avisa y crea la tarea **Pedir …** (la de siempre).
+- Si editas un pedido antiguo, **sigue sin restar**, salvo las líneas en las que elijas un artículo a mano.
+- La pestaña **Stock** usa la tabla de Producción y añade **Materiales y productos** debajo, para no perder nada.
+- La **Revisión semanal** de viernes a domingo revisa esa semana; de lunes a jueves, la anterior. Sustituye al aviso antiguo de «Revisión semanal de objetivos» (que ya incluye).
+- Las prioridades de la semana se crean como tareas de **prioridad alta** para el lunes siguiente (o para hoy, si ese lunes ya pasó).
+- En Inicio, **Sin fecha** y **Revisión de hoy** se añaden **una sola vez**; si los quitas, no vuelven.
+- La disposición del **Resumen** es tuya (por persona y negocio), igual que la de Inicio.
+
+Si quieres cambiar cualquiera, dímelo y lo cambio.
+
+---
+
+## 8. Anexo: pasos de la guía anterior (si aún no los hiciste)
+
+Estos son los pasos para conectar Outlook, Instagram, TikTok y los mensajes de Instagram. No han cambiado.
+
+### Anexo D · Conectar Outlook · OPCIONAL · 20 min · gratis
 
 Para ver tus correos en **Correo**. BiBuru **solo lee**: no puede enviar ni borrar.
 
@@ -169,7 +282,7 @@ Para ver tus correos en **Correo**. BiBuru **solo lee**: no puede enviar ni borr
 
 ---
 
-### Bloque E · Conectar Instagram · OPCIONAL · 30 min · gratis
+### Anexo E · Conectar Instagram · OPCIONAL · 30 min · gratis
 
 Necesitas que tu Instagram sea **profesional** (empresa o creador). Funciona en **modo desarrollo**: no hace falta que Meta revise nada, porque es para tus propias cuentas.
 
@@ -211,7 +324,7 @@ BiBuru también funciona así. Cambia esto:
 
 1. En **Vercel → bi-buru → Settings → Environment Variables**, añade **INSTAGRAM_APP_ID** con el identificador de E2.7 (marca **Production**, **Save**).
 2. Añade **INSTAGRAM_APP_SECRET** con la clave de E2.7 (marca **Production**, **Save**).
-3. Comprueba que existe **TOKEN_ENCRYPTION_KEY** (mira D2.4).
+3. Comprueba que existe **TOKEN_ENCRYPTION_KEY** (mira Anexo D2.4).
 4. **Deployments** → **⋯** → **Redeploy**.
 
 **E4. Conectar**
@@ -220,18 +333,20 @@ BiBuru también funciona así. Cambia esto:
 2. Pulsa **+ Conectar Instagram**, entra con tu Instagram y pulsa **Permitir**.
 3. En la tarjeta de la cuenta, elige el **Negocio**.
 
+**Para ver y responder mensajes y comentarios** sigue después con el **Anexo H**.
+
 **Sabrás que ha salido bien cuando…** veas tu **@usuario** en Redes y, al día siguiente, números en **Estadísticas**. (Instagram solo da seguidores diarios a cuentas con 100 seguidores o más.)
 
 **Si te sale este error, haz esto…**
 
-- **«Tu Instagram profesional no está vinculado a una página de Facebook»** (variante Facebook): haz E2-bis.1 y, al conectar, marca la página y el Instagram.
+- **«Tu Instagram profesional no está vinculado a una página de Facebook»** (variante Facebook): haz Anexo E2-bis.1 y, al conectar, marca la página y el Instagram.
 - **«Insufficient developer role»** o **«Invalid platform app»**: tu Instagram no aceptó la invitación de evaluador (E2.11–E2.12) o copiaste el ID de Facebook en vez del de Instagram.
 - **«Invalid redirect_uri»**: revisa E2.9 letra a letra.
 - **«La conexión caduca en N días»**: no hagas nada; se renueva sola. Si llega a **caducada**, pulsa **Reconectar**.
 
 ---
 
-### Bloque F · Conectar TikTok · OPCIONAL · 30 min · gratis
+### Anexo F · Conectar TikTok · OPCIONAL · 30 min · gratis
 
 Sin la **auditoría** (una revisión que hace TikTok a la app), todo lo que una app publica en TikTok **queda privado**. Por eso BiBuru, por ahora, **envía el vídeo a tu TikTok como borrador** (tú lo terminas y lo publicas, y sale público) o **te avisa a la hora** con el vídeo y el texto listos.
 
@@ -254,12 +369,13 @@ Sin la **auditoría** (una revisión que hace TikTok a la app), todo lo que una 
 
 1. Añade **TIKTOK_CLIENT_KEY** con el Client key (marca **Production**, **Save**).
 2. Añade **TIKTOK_CLIENT_SECRET** con el Client secret (marca **Production**, **Save**).
-3. Comprueba **TOKEN_ENCRYPTION_KEY** (mira D2.4).
+3. Comprueba **TOKEN_ENCRYPTION_KEY** (mira Anexo D2.4).
 4. **Deployments** → **⋯** → **Redeploy**.
 
 **F3. Conectar**
 
 1. En la app, entra en **Redes** y pulsa **+ Conectar TikTok**.
+   (Los **mensajes y comentarios de TikTok** no se pueden leer desde una app propia: TikTok no lo permite. En la Bandeja verás **Abrir mensajes en TikTok**.)
 2. Entra con tu TikTok y pulsa **Autorizar**.
 3. Elige el **Negocio** de la cuenta.
 
@@ -275,11 +391,11 @@ Sin la **auditoría** (una revisión que hace TikTok a la app), todo lo que una 
 
 - **«client_key»** o **«redirect_uri»** no válidos: comprueba que copiaste las llaves **del Sandbox** y la dirección de F1.8.
 - **«Falta conectar»**: falta una variable o el **Redeploy**.
-- No llega el borrador: en **Redes → Publicaciones**, abre la publicación; si pone **Error**, pulsa **Reintentar**. Si TikTok no deja subir en tu cuenta, la app pasará a **avisarte** (publicación asistida).
+- No llega el borrador: en **Redes → Contenido**, abre la publicación; si pone **Error**, pulsa **Reintentar**. Si TikTok no deja subir en tu cuenta, la app pasará a **avisarte** (publicación asistida).
 
 ---
 
-### Bloque G · Guardar un vídeo de TikTok para el análisis completo · OPCIONAL · 2 min
+### Anexo G · Guardar un vídeo de TikTok para el análisis completo · OPCIONAL · 2 min
 
 El análisis normal usa la descripción, los hashtags, el autor y la portada. Si quieres que la IA vea y escuche el vídeo:
 
@@ -295,134 +411,110 @@ El análisis normal usa la descripción, los hashtags, el autor y la portada. Si
 
 ---
 
-### Bloque H · Correo de contacto en la política de privacidad · OPCIONAL · 3 min
+### Anexo H · Activar los mensajes de Instagram (Bandeja) · OPCIONAL · 20 min · gratis
+
+Primero haz el **Anexo E** (Instagram conectado). Esto añade dos permisos y el «timbre» (webhook) para que los mensajes lleguen solos.
+
+**H1. Añadir los permisos de mensajes en la app de Meta**
+
+1. Entra en **https://developers.facebook.com** → **Mis apps** → **BiBuru**.
+2. Ve a **Casos de uso** → **Personalizar** el de Instagram (o **Permisos y funciones**).
+3. Pulsa **Añadir** en estos dos permisos:
+   - Si tu app es la de **inicio de sesión de Instagram** (la normal): **instagram_business_manage_messages** y **instagram_business_manage_comments**.
+   - Si tu app es la de **inicio de sesión con Facebook** (pusiste **INSTAGRAM_LOGIN=facebook**): **instagram_manage_messages**, **instagram_manage_comments** y **pages_manage_metadata**. Si creaste una **Configuración** (E2-bis.4), añádelos también ahí.
+
+**H2. Inventar el código del timbre y guardarlo en Vercel**
+
+1. Inventa un código de **al menos 16 letras y números**, sin espacios (por ejemplo, junta dos palabras y unos números: **NaranjaTijera83Bici51**). No uses ese ejemplo: inventa el tuyo.
+2. En **Vercel → bi-buru → Settings → Environment Variables** pulsa **Add New**.
+3. En **Key** escribe exactamente **META_WEBHOOK_VERIFY_TOKEN** y en **Value** pega tu código. Marca **Production** y pulsa **Save**.
+4. **Deployments** → **⋯** del primero → **Redeploy** → **Redeploy**. Espera a que ponga **Ready**.
+
+**H3. Poner el timbre en Meta**
+
+1. En tu app de Meta:
+   - App normal: **Instagram** → **Configuración de la API con inicio de sesión de Instagram** → apartado **Configurar webhooks**.
+   - App de Facebook: menú **Webhooks** → en el desplegable elige **Instagram**.
+2. En **URL de devolución de llamada** (*Callback URL*) pega exactamente: **https://bi-buru.vercel.app/api/webhooks/meta**
+3. En **Token de verificación** (*Verify token*) pega el **mismo código** de H2.1.
+4. Pulsa **Verificar y guardar** (*Verify and save*).
+5. En la lista de campos, pulsa **Suscribirse** (*Subscribe*) en **messages** y **comments** (y **mentions** si aparece).
+6. En **Generar tokens de acceso**, si junto a tu cuenta hay un interruptor **Suscripción a webhooks**, actívalo. (BiBuru también lo intenta solo al conectar.)
+
+**H4. Dar los permisos nuevos a BiBuru**
+
+1. En la app, entra en **Redes** → pestaña **Bandeja**.
+2. Verás el aviso **Activar mensajes**. Pulsa ese botón.
+3. Entra con tu Instagram y pulsa **Permitir** en los permisos nuevos.
+
+**H5. Que Meta mande los avisos al momento (modo «Activo»)**
+
+Meta **solo toca el timbre** si la app está en modo **Activo** (*Live*), y los **comentarios** necesitan además **acceso avanzado**. **Mientras tanto, BiBuru lee los mensajes solo cada hora** (y al abrir Redes o pulsar **Actualizar todo**), así que la Bandeja funciona igual, solo que no al segundo.
+
+1. En la app de Meta, arriba, cambia **Modo de la app** de **Desarrollo** a **Activo** (o pulsa **Publicar**). Te pedirá icono, categoría y la política de privacidad: **https://bi-buru.vercel.app/privacidad**.
+2. Para el **acceso avanzado**: **Revisión de la app** → **Permisos y funciones** → junto a cada permiso de H1 pulsa **Solicitar acceso avanzado**. Meta puede pedir **verificar tu empresa** y un **vídeo** enseñando cómo se usa.
+3. Texto para pegar en la solicitud (uno por permiso, cambia lo que haga falta):
+
+> BiBuru es un panel privado que uso solo yo para gestionar mi propio negocio. Conecto mi cuenta profesional de Instagram para ver en una bandeja los mensajes directos y comentarios que recibo y responderlos a mano. Ningún mensaje se envía automáticamente: siempre lo escribo y pulso «Enviar». Los mensajes solo se guardan en mi base de datos privada, nadie más tiene acceso y se borran si la persona los borra. Uso: (1) leer conversaciones y comentarios de mis publicaciones, (2) responder dentro de la ventana de 24 horas, (3) ocultar comentarios ofensivos y responder en privado a un comentario.
+
+4. Para el **vídeo**: graba la pantalla del móvil: abres **Redes → Bandeja**, entras en un mensaje, escribes una respuesta, pulsas **Enviar** y se ve en Instagram. Después ocultas un comentario.
+
+**Sabrás que ha salido bien cuando…** en **Redes → Bandeja** desaparezca el aviso **Activar mensajes** y, después de escribirte tú mismo desde otra cuenta, el mensaje aparezca (al momento si la app está **Activa**, o en menos de una hora / al pulsar **Actualizar todo** si no).
+
+**Si te sale este error, haz esto…**
+
+- Meta dice **«No se pudo validar la URL de devolución de llamada o el token de verificación»**: el código de H3.3 no es igual al de Vercel, o no hiciste **Redeploy** después de H2. Revisa letra a letra (mayúsculas incluidas).
+- Al pulsar **Activar mensajes** sale **«Invalid Scopes»**: falta H1 (los permisos no están añadidos en la app de Meta).
+- Al responder sale **«Pasaron 24 h: responde desde Instagram»**: Instagram solo deja responder por API 24 h después del último mensaje de la persona. Pulsa **Abrir en Instagram**.
+- Una respuesta queda en **Error**: pulsa **Reintentar**. Si sigue, copia el texto del error y pégamelo.
+- No llegan comentarios pero sí mensajes: falta el **acceso avanzado** de comentarios (H5.2). Mientras, se leen cada hora.
+
+---
+
+### Anexo I · Elegir tus ajustes de Redes y mensajes · Recomendado · 2 min · gratis
+
+1. En la app entra en **Ajustes** y baja a **Redes y mensajes**.
+2. **Avisarme de mensajes nuevos**: viene **encendido**. Déjalo así si quieres un aviso cuando alguien te escriba.
+3. **Alertas de redes**: viene **apagado**. Enciéndelo si quieres saber cuándo llegas a una cifra redonda de seguidores, cuándo una publicación va muy bien o si pierdes muchos seguidores de golpe.
+4. **«Sugerir respuesta» con IA**: viene **apagado**. Si lo enciendes, al pulsar el botón en un mensaje, ese texto se envía a Google para proponerte una respuesta (gasta un poco de tu presupuesto de IA). Nunca se envía nada solo.
+
+**Sabrás que ha salido bien cuando…** al recargar Ajustes las casillas sigan como las dejaste.
+
+**Si te sale este error, haz esto…** «No se pudo guardar»: recarga la página y vuelve a probar. Si sigue, dímelo.
+
+---
+
+### Anexo J · Correo de contacto en la política de privacidad · OPCIONAL · 3 min · gratis
 
 1. En **Vercel → Settings → Environment Variables** añade **PRIVACY_CONTACT_EMAIL** con el correo donde quieras recibir dudas de privacidad.
 2. **Redeploy**.
 
 **Sabrás que ha salido bien cuando…** en **https://bi-buru.vercel.app/privacidad** salga tu correo al final.
 
+**Si te sale este error, haz esto…** si no sale, comprueba que marcaste **Production** y que hiciste **Redeploy**.
+
 ---
 
-## 3. Todas las variables nuevas de Vercel (nombre exacto)
+
+## 9. Todas las variables de Vercel (nombre exacto)
 
 | Variable | Para qué | ¿Obligatoria? |
 |---|---|---|
 | **MICROSOFT_CLIENT_ID** | Outlook | Solo si usas Correo |
 | **MICROSOFT_CLIENT_SECRET** | Outlook | Solo si usas Correo |
 | **INSTAGRAM_APP_ID** | Instagram | Solo si usas Instagram |
-| **INSTAGRAM_APP_SECRET** | Instagram | Solo si usas Instagram |
+| **INSTAGRAM_APP_SECRET** | Instagram (y comprobar que los avisos de Meta son de verdad) | Solo si usas Instagram |
 | **INSTAGRAM_LOGIN** | Instagram | Solo si tu app de Meta es la de «inicio de sesión con Facebook»: valor **facebook** |
-| **INSTAGRAM_FB_CONFIG_ID** | Instagram | Solo con **INSTAGRAM_LOGIN=facebook** y si Meta te pidió crear una «Configuración» |
+| **INSTAGRAM_FB_CONFIG_ID** | Instagram | Solo con **INSTAGRAM_LOGIN=facebook** y si Meta te pidió una «Configuración» |
+| **META_WEBHOOK_VERIFY_TOKEN** | **Nueva.** El código del timbre de mensajes (Anexo H) | Solo si usas la Bandeja |
 | **TIKTOK_CLIENT_KEY** | TikTok | Solo si usas TikTok |
 | **TIKTOK_CLIENT_SECRET** | TikTok | Solo si usas TikTok |
 | **TIKTOK_DIRECT_POST_AUDITED** | Poner **1** cuando TikTok apruebe la auditoría | No |
 | **PRIVACY_CONTACT_EMAIL** | Correo en la política de privacidad | No |
 | **TOKEN_ENCRYPTION_KEY** | Cifrar las llaves de las cuentas (ya existía) | Sí, si conectas algo |
+| **SUPABASE_SERVICE_ROLE_KEY** | Avisos, cron y «Actualizar todo» (ya existía) | Sí |
 
 No pegues nunca estas llaves en el chat. Solo en Vercel.
 
 ---
 
-## 4. Decisiones que necesito de ti
-
-Cada una tiene opciones, lo que te recomiendo y qué pasa si no haces nada.
-
-1. **¿Dejo que la IA lea tus correos?** (Ajustes → Correo → **Usar la IA con mis correos**)
-   - Opciones: Sí (aparece **Resumir con IA** en cada correo) / No.
-   - Recomiendo: **No**, salvo que te ahorre mucho tiempo. Al usarlo, el texto de ese correo va a Google.
-   - Si no haces nada: queda apagado y ningún correo sale de Microsoft y BiBuru.
-2. **¿Avisos de correo nuevo?** (Ajustes → Correo → **Avisarme de correo nuevo**, por cuenta)
-   - Recomiendo: activarlo solo en la cuenta del negocio.
-   - Si no haces nada: no hay avisos de correo.
-3. **Pedidos «Sin revisar»** (bloque B): ¿cobrados o sin cobrar?
-   - Recomiendo: **Todos están cobrados** si son antiguos y luego marcar a mano los pocos que te deban.
-   - Si no haces nada: no cuentan como deuda y «Me deben» sale más bajo de lo real.
-4. **¿Pido la auditoría de TikTok?** (bloque F4)
-   - Recomiendo: **No por ahora**. El borrador ya te deja publicar en público con un toque.
-   - Si no haces nada: se sigue usando borrador o aviso.
-5. **Tareas de Stock**: salen para hoy cuando algo está a 0 o falta (como en BATU).
-   - Si prefieres que solo salgan al bajar de un mínimo, ponle mínimo a cada artículo o dímelo y lo cambio.
-6. **Espacio para archivos de Redes**: límite de **500 MB** y borrado **3 días** después de publicar.
-   - Si no haces nada: así se queda (cabe en el plan gratuito de Supabase).
-
----
-
-## 5. Lo que no he podido hacer y por qué
-
-- **Probar con Microsoft, Meta y TikTok de verdad.** No tengo tus cuentas ni acceso a internet desde donde trabajo. Lo he probado con datos de ejemplo y pruebas automáticas. **Alternativa:** cuando conectes cada cuenta (bloques D–F), si algo falla, la app lo dice en pantalla; cópiame el mensaje.
-- **Probar con Safari (WebKit) de verdad.** No se podía instalar aquí. He probado con Chrome haciéndose pasar por un iPhone. **Alternativa:** sección 6 (pruebas en tu iPhone).
-- **Replicar los filtros del PROFITY antiguo.** En el repositorio solo está la importación de datos, no sus pantallas. He hecho los filtros que pediste.
-- **Publicar en TikTok en público directamente.** TikTok no lo permite sin auditoría. **Alternativa:** borrador o aviso (ya hecho).
-- **Alcance diario en TikTok.** TikTok no lo da. Muestro seguidores, visualizaciones e interacciones (calculadas cada día).
-- **Marcar correos como leídos.** Con permiso de solo lectura no se puede. «Leído» se cambia en Outlook.
-- **Arrastrar publicaciones en la vista Mes del móvil.** En el móvil la vista Mes solo muestra puntos. **Alternativa:** usa la vista **Semana** o **Agenda** y mantén pulsada el asa **⋮⋮**.
-- **Subir el vídeo completo, de punta a punta.** El almacenamiento de archivos no se puede simular aquí; está probado por partes. Pruébalo con el bloque G.
-
----
-
-## 6. Cómo probar cada cosa nueva en el iPhone
-
-Abre BiBuru desde el icono de tu pantalla de inicio.
-
-**Pedidos**
-
-1. **Negocios → Akerra → Pedidos**.
-2. Pulsa el botón morado **Nuevo pedido** (abajo a la derecha).
-3. Escribe un cliente, cierra con la **X** y vuelve a pulsar **Nuevo pedido**: debe poner **Borrador recuperado**.
-4. Añade un producto y precio y pulsa **Guardar pedido**: el pedido sale destacado en la lista.
-5. Pulsa **Añadir cobro**, pon la mitad y guarda: sale **Pago parcial**.
-6. Pulsa **Marcar como pagado**: sale **Pagado**.
-7. En el selector de pago elige **Pendiente**: vuelve a no pagado (con **Deshacer**).
-8. Pulsa **Filtros**, elige **Este mes** y **Aplicar**: salen las etiquetas y los totales.
-9. Pulsa el cuadro **Me deben** → **Quién me debe**: ves la lista y los gráficos.
-
-**Stock**
-
-1. **Negocios → Akerra → Stock** → **Añadir artículo** con **Tienes ahora 0**.
-2. En **Tareas → Hoy** aparece **Pedir …** (en la nota: «Se ha quedado a 0»).
-3. Táchala: se completa como cualquier tarea y no vuelve a salir mientras siga a 0. Si quieres, pulsa **Apuntar unidades** en el aviso.
-
-**Tareas (como Antola)**
-
-1. Pulsa el **+** redondo de **Tareas**, escribe algo, elige **Hoy**, una hora y **Recordatorio → Antes → 15 min antes**. Pulsa **Crear tarea**: sale **Tarea creada**.
-2. Toca el **círculo** de la tarea: sale **¡Hecho! ✓** con **Deshacer** durante 5 segundos.
-3. Crea otra con **Repetir → Días concretos** (por ejemplo, **L** y **X**). Al completarla aparece la siguiente.
-4. Cuando llegue el aviso, tócalo: se abre la tarea con **Hecho**, **Mañana**, **Posponer 15 min** y **Posponer 1 h**.
-5. Lo que crees con **+** sin fecha ni proyecto aparece en el chip **Bandeja** (con su número).
-6. **Ajustes → Qué avisos quieres → Avisos de tareas** los apaga todos de golpe.
-
-**Móvil**
-
-1. En **Tareas**, desliza una tarea a la **derecha**: se completa. A la **izquierda**: pasa a mañana.
-2. En cualquier pantalla, arriba del todo, **tira hacia abajo**: se actualiza.
-3. Toca un campo de texto: la pantalla **no** debe hacer zoom.
-
-**Favoritos de TikTok**
-
-1. En TikTok, **Compartir → Copiar enlace**.
-2. En **Favoritos**, pulsa **Pegar** (acepta el permiso del portapapeles).
-3. Al rato la tarjeta dice **Listo · texto y portada**.
-
-**Correo** (después del bloque D): **Correo** → toca un correo → prueba **Crear tarea**, **Guardar como nota** y **Responder en Outlook**.
-
-**Redes** (después de E o F): **Redes → Publicaciones → Nueva publicación** → añade una foto o vídeo, marca la cuenta, pon fecha y hora y pulsa **Programar**. Mira el día en **Calendario**.
-
----
-
-## 7. Decisiones que tomé por mi cuenta
-
-Están todas, con su porqué, en **docs/DECISIONES.md**. Las más importantes:
-
-- Los pedidos antiguos quedan **Sin revisar** (no cuentan como deuda) hasta que los revises.
-- **Marcar como pagado** apunta un cobro por lo que falte, con fecha de hoy y método **Otro**.
-- Colores: **cobrado en azul** y **pendiente en rojo** (el verde/ámbar no se distingue bien con daltonismo).
-- El stock de Producción ya existía: lo he reutilizado y le he añadido **mínimo**; para lo demás hay **Materiales y productos**.
-- Las tareas de Stock funcionan como en BATU: «Pedir …», para hoy, prioridad alta, no se repiten si las tachas y se completan solas cuando hay stock.
-- El correo guarda solo remitente, asunto, fecha y un extracto; el cuerpo se pide al abrirlo. Las imágenes van bloqueadas hasta que pulses **Mostrar imágenes**.
-- Las cuentas de Instagram y TikTok son del espacio (las ve quien lo comparta contigo); las llaves no las puede leer nadie desde la app.
-- Sin auditoría de TikTok uso **borrador** o **aviso**, nunca algo que quedaría privado sin decírtelo.
-- Los avisos de la app ahora salen **encima** de las hojas abiertas.
-- He creado **/privacidad** y **/terminos** porque Meta y TikTok los piden.
-
-Si quieres cambiar cualquiera, dímelo y lo cambio.

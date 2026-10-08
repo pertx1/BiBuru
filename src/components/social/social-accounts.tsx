@@ -7,7 +7,17 @@ import { disconnectSocialAccount, refreshSocialStats, setSocialAccountBusiness }
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-type Acc = { id: string; platform: string; username: string | null; display_name: string | null; avatar_url: string | null; business_id: string | null; status: string; last_error: string | null; token_expires_at: string | null; account_type: string | null };
+type Acc = {
+  id: string; platform: string; username: string | null; display_name: string | null; avatar_url: string | null; business_id: string | null; status: string; last_error: string | null;
+  token_expires_at: string | null; account_type: string | null; followers_count?: number | null; last_sync_at?: string | null; sync_error?: string | null; rate_limited_until?: string | null;
+  unread?: number; deltaToday?: number | null; deltaWeek?: number | null;
+};
+const ago = (iso: string | null | undefined, nowMs: number) => {
+  if (!iso) return "Sin actualizar todavía";
+  const m = Math.max(0, Math.round((nowMs - new Date(iso).getTime()) / 60000));
+  return m < 1 ? "Actualizado ahora" : m < 60 ? `Actualizado hace ${m} min` : m < 1440 ? `Actualizado hace ${Math.round(m / 60)} h` : `Actualizado hace ${Math.round(m / 1440)} días`;
+};
+const signed = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toLocaleString("es-ES")}`;
 const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadísticas tardan unos minutos.", cancelado: "Has cancelado la conexión.", estado: "La conexión caducó: vuelve a intentarlo.", error: "No se pudo conectar. Vuelve a intentarlo.", "sin-configurar": "Falta conectar: la app aún no está registrada (mira la guía).", "sin-pagina": "Tu Instagram profesional no está vinculado a una página de Facebook (o no la marcaste al dar permiso). Vincúlalo y vuelve a conectar." };
 const PLAT = { instagram: "Instagram", tiktok: "TikTok" } as const;
 
@@ -35,6 +45,13 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">@{a.username ?? a.display_name ?? "cuenta"}</p><p className="text-xs text-muted">{PLAT[a.platform as keyof typeof PLAT]}{a.account_type ? ` · ${a.account_type === "BUSINESS" ? "empresa" : a.account_type === "MEDIA_CREATOR" ? "creador" : a.account_type.toLowerCase()}` : ""}</p></div>
                   <button type="button" aria-label="Actualizar estadísticas" disabled={pending} onClick={() => run(() => refreshSocialStats(a.id), "Estadísticas actualizadas")} className="flex size-11 items-center justify-center rounded-lg hover:bg-surface-2 md:size-9"><RefreshCw className={cn("size-4", pending && "animate-spin")} aria-hidden /></button>
                 </div>
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="text-xl font-semibold tabular-nums">{a.followers_count != null ? a.followers_count.toLocaleString("es-ES") : "—"}<span className="ml-1 text-xs font-normal text-muted">seguidores</span></span>
+                  {a.deltaToday != null && <span className={cn("text-xs font-semibold", a.deltaToday >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaToday)} hoy</span>}
+                  {a.deltaWeek != null && <span className={cn("text-xs font-semibold", a.deltaWeek >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaWeek)} esta semana</span>}
+                  {!!a.unread && <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">{a.unread} sin responder</span>}
+                </div>
+                <p className="text-xs text-muted">{ago(a.last_sync_at, nowMs)}{a.rate_limited_until && new Date(a.rate_limited_until).getTime() > nowMs ? ` · ${a.platform === "tiktok" ? "TikTok" : "Instagram"} ha puesto un límite: sigo en la próxima pasada` : a.sync_error ? ` · ${a.sync_error}` : ""}</p>
                 {warn && (
                   <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                     {a.status === "expired" ? "La conexión ha caducado." : a.status === "error" ? a.last_error ?? "Error de conexión." : `La conexión caduca en ${left} días; se renueva sola si la app sigue en uso.`}

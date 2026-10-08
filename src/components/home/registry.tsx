@@ -3,7 +3,7 @@ import { FinanceSummaryWidget } from "./widgets/finance-summary";
 import { ProfitWidget, SalesWidget } from "./widgets/kpi";
 import { AgendaTodayWidget, GoalsActiveWidget, InboxWidget, QuickCaptureWidget, TasksTodayWidget, VideosToWatchWidget } from "./widgets/simple";
 import { BusinessCompareWidget, ExpensesCategoryWidget, OrdersWidget } from "./widgets/business2";
-import { TasksBusinessWidget, TasksDoneWeekWidget, TasksOverdueWidget, TasksWeekWidget } from "./widgets/tasks2";
+import { TasksBusinessWidget, TasksNoDateWidget, TasksDoneWeekWidget, TasksOverdueWidget, TasksWeekWidget } from "./widgets/tasks2";
 import { MonthCalendarWidget, NextEventWidget, WeekGlanceWidget } from "./widgets/calendar2";
 import { GoalDeadlineWidget, GoalRingWidget, GoalTrendWidget } from "./widgets/goals2";
 import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasWidget, VideosCategoryWidget, VideosRecentWidget, VideosTopWidget } from "./widgets/notes-videos";
@@ -12,7 +12,9 @@ import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/n
 import { PendingReceivablesWidget } from "./widgets/receivables";
 import { StockMissingWidget } from "./widgets/stock";
 import { MailUnreadWidget } from "./widgets/mail";
-import { SocialBestPostWidget, SocialFollowersWidget, SocialUpcomingWidget } from "./widgets/social";
+import { AntolaRulesWidget, InvoicesLatestWidget, OrdersStatusWidget, PrintBagWidget, SalesMonthlyWidget, StockSummaryWidget, TopProductsWidget } from "./widgets/business3";
+import { ReviewTodayWidget } from "./widgets/review";
+import { SocialBestPostWidget, SocialFollowersWidget, SocialInboxWidget, SocialUpcomingWidget } from "./widgets/social";
 import type { WidgetProps } from "./types";
 
 /**
@@ -34,6 +36,8 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "pending-receivables": PendingReceivablesWidget,
   "stock-missing": StockMissingWidget,
   "business-compare": BusinessCompareWidget,
+  "tasks-nodate": TasksNoDateWidget,
+  "review-today": ReviewTodayWidget,
   "tasks-overdue": TasksOverdueWidget,
   "tasks-week": TasksWeekWidget,
   "tasks-business": TasksBusinessWidget,
@@ -58,6 +62,14 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "social-followers": SocialFollowersWidget,
   "social-best": SocialBestPostWidget,
   "social-upcoming": SocialUpcomingWidget,
+  "social-inbox": SocialInboxWidget,
+  "sales-monthly": SalesMonthlyWidget,
+  "orders-status": OrdersStatusWidget,
+  "top-products": TopProductsWidget,
+  "stock-summary": StockSummaryWidget,
+  "print-bag": PrintBagWidget,
+  "invoices-latest": InvoicesLatestWidget,
+  "antola-rules": AntolaRulesWidget,
   "ai-ask": AiAskWidget,
   "ai-brief": AiBriefWidget,
   "ai-usage": AiUsageWidget,

@@ -4,6 +4,7 @@ import { getContext } from "@/lib/context";
 import { encryptSecret } from "@/lib/favorites/crypto";
 import { IG_NO_LINKED_ACCOUNT, igExchangeCode, igProfile, igRedirectUri } from "@/lib/social/instagram";
 import { snapshotAccount } from "@/lib/social/service";
+import { syncDue } from "@/lib/sync/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +31,13 @@ export async function GET(request: NextRequest) {
       workspace_id: workspaceId, user_id: userId, platform: "instagram", external_id: prof.id, username: prof.username, display_name: prof.name,
       avatar_url: prof.avatar?.startsWith("https://") ? prof.avatar.slice(0, 2000) : null, account_type: prof.accountType, access_token_enc: encryptSecret(t.accessToken),
       token_expires_at: new Date(Date.now() + t.expiresIn * 1000).toISOString(), scopes: t.scopes.slice(0, 1000), status: "ok", last_error: null,
+      webhook_subscribed: false, sync_error: null, rate_limited_until: null, // con permisos nuevos se vuelve a suscribir a los avisos de Meta
     }, { onConflict: "workspace_id,platform,external_id" }).select("id, workspace_id, user_id, platform, external_id, access_token_enc, refresh_token_enc, token_expires_at, refresh_expires_at, status, last_snapshot_on, created_at, updated_at").single();
     if (error) { console.error("[instagram] guardar:", error.message); return back("error"); }
-    after(() => snapshotAccount(createAdminClient(), data).catch(() => null)); // primeras estadísticas
+    after(async () => {
+      await snapshotAccount(createAdminClient(), data).catch(() => null); // primeras estadísticas
+      await syncDue(createAdminClient(), { ids: [data.id], limit: 1 }).catch(() => null); // seguidores, bandeja y suscripción a webhooks
+    });
     return back("ok");
   } catch (e) {
     console.error("[instagram] callback:", e instanceof Error ? e.message : e);

@@ -5,18 +5,22 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Maximize2, Plus, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
-import { loadWidgetOptions, resetHomeLayout, saveHomeLayout, type WidgetOptions } from "@/app/(app)/home-actions";
+import { loadWidgetOptions, resetBusinessLayout, resetHomeLayout, saveBusinessLayout, saveHomeLayout, type WidgetOptions } from "@/app/(app)/home-actions";
 import { SearchButton } from "@/components/search/search-button";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
-import { GROUP_LABELS, SIZE_CLASSES, SIZE_LABELS, WIDGET_BY_TYPE, WIDGETS, newInstance, type WidgetGroup, type WidgetInstance, type WidgetSize } from "@/lib/home/layout";
+import { BUSINESS_WIDGETS, GROUP_LABELS, SIZE_CLASSES, SIZE_LABELS, WIDGET_BY_TYPE, WIDGETS, newInstance, type WidgetGroup, type WidgetInstance, type WidgetSize } from "@/lib/home/layout";
 import { cn } from "@/lib/utils";
 import { WidgetPreview } from "./previews";
 import type { BizOption } from "./types";
 import { WidgetSkeleton } from "./widget-card";
 
-type Props = { layout: WidgetInstance[]; nodes: Record<string, ReactNode>; businesses: BizOption[]; dateLabel: string; toolbar: ReactNode };
+type Props = {
+  layout: WidgetInstance[]; nodes: Record<string, ReactNode>; businesses: BizOption[]; dateLabel: string; toolbar: ReactNode;
+  /** Resumen de un negocio: misma rejilla, pero solo widgets de negocio, con el negocio fijo y guardado aparte. */
+  businessId?: string;
+};
 
 function Item({ w, node, editing, onSize, onSettings, onRemove }: { w: WidgetInstance; node: ReactNode; editing: boolean; onSize: () => void; onSettings: () => void; onRemove: () => void }) {
   const meta = WIDGET_BY_TYPE.get(w.type)!;
@@ -42,7 +46,10 @@ function Item({ w, node, editing, onSize, onSettings, onRemove }: { w: WidgetIns
 }
 
 /** Rejilla de Inicio: 2 columnas en móvil y 4 en escritorio. En modo edición: mover (arrastrando, también con el dedo), tamaño, ajustes, quitar y añadir. */
-export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolbar }: Props) {
+export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolbar, businessId }: Props) {
+  const save = (next: WidgetInstance[]) => (businessId ? saveBusinessLayout(businessId, next) : saveHomeLayout(next));
+  const reset = () => (businessId ? resetBusinessLayout(businessId) : resetHomeLayout());
+  const catalog = businessId ? WIDGETS.filter((m) => BUSINESS_WIDGETS.has(m.type)) : WIDGETS;
   const toast = useToast();
   const [layout, setLayout] = useState(initial);
   const [prev, setPrev] = useState(initial);
@@ -55,7 +62,7 @@ export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolba
 
   const persist = (next: WidgetInstance[]) => {
     setLayout(next);
-    start(async () => { const r = await saveHomeLayout(next); if (!r.ok) toast({ message: r.error }); });
+    start(async () => { const r = await save(next); if (!r.ok) toast({ message: r.error }); });
   };
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -77,24 +84,24 @@ export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolba
       <div className="flex min-h-12 items-center justify-between gap-2">
         <p className="truncate text-sm font-medium text-muted first-letter:uppercase">{dateLabel}</p>
         <div className="flex items-center gap-2">
-          <SearchButton />
+          {!businessId && <SearchButton />}
           <button type="button" onClick={() => setEditing((e) => !e)} aria-pressed={editing}
             className={cn("min-h-11 rounded-full px-4 text-sm font-semibold", editing ? "bg-accent text-accent-foreground" : "border border-border bg-surface")}>
-            {editing ? "Listo" : "Editar"}
+            {editing ? "Listo" : businessId ? "Editar resumen" : "Editar"}
           </button>
         </div>
       </div>
       {editing ? (
         <div className="flex flex-wrap gap-2">
           <Button type="button" onClick={() => setGallery(true)}><Plus className="size-4" aria-hidden /> Añadir widget</Button>
-          <Button type="button" variant="secondary" disabled={pending} onClick={() => { if (confirm("¿Volver a la disposición por defecto? Se pierden tus cambios de Inicio.")) start(async () => { const r = await resetHomeLayout(); toast({ message: r.ok ? "Inicio restablecido" : r.error }); }); }}>
+          <Button type="button" variant="secondary" disabled={pending} onClick={() => { if (confirm(businessId ? "¿Volver al Resumen por defecto de este negocio? Se pierden tus cambios." : "¿Volver a la disposición por defecto? Se pierden tus cambios de Inicio.")) start(async () => { const r = await reset(); toast({ message: r.ok ? (businessId ? "Resumen restablecido" : "Inicio restablecido") : r.error }); }); }}>
             <RotateCcw className="size-4" aria-hidden /> Restablecer
           </Button>
           <p className="w-full text-xs text-muted">Arrastra desde ⠿ para mover. Los cambios se guardan solos y se ven en todos tus dispositivos.</p>
         </div>
       ) : toolbar}
 
-      {layout.length === 0 && <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">Inicio está vacío. Pulsa «Editar» → «Añadir widget».</p>}
+      {layout.length === 0 && <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">{businessId ? "El Resumen está vacío." : "Inicio está vacío."} Pulsa «Editar» → «Añadir widget».</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={layout.map((w) => w.id)} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-2 gap-3 md:grid-flow-row-dense md:grid-cols-4">
@@ -109,7 +116,7 @@ export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolba
       <Sheet open={gallery} onClose={() => setGallery(false)} title="Añadir widget">
         <div className="flex flex-col gap-5 p-4">
           {(Object.keys(GROUP_LABELS) as WidgetGroup[]).map((g) => {
-            const items = WIDGETS.filter((m) => m.group === g);
+            const items = catalog.filter((m) => m.group === g);
             if (!items.length) return null;
             return (
               <section key={g}>
@@ -132,14 +139,16 @@ export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolba
       </Sheet>
 
       <Sheet open={!!editingW} onClose={() => setSettingsId(null)} title={editingW ? `Ajustes · ${WIDGET_BY_TYPE.get(editingW.type)!.title}` : "Ajustes"}>
-        {editingW && <SettingsForm w={editingW} businesses={businesses} onSave={(patch) => { update(editingW.id, patch); setSettingsId(null); }} />}
+        {editingW && <SettingsForm w={editingW} businesses={businesses} fixedBusiness={!!businessId} onSave={(patch) => { update(editingW.id, patch); setSettingsId(null); }} />}
       </Sheet>
     </div>
   );
 }
 
-function SettingsForm({ w, businesses, onSave }: { w: WidgetInstance; businesses: BizOption[]; onSave: (patch: Partial<WidgetInstance>) => void }) {
-  const meta = WIDGET_BY_TYPE.get(w.type)!;
+function SettingsForm({ w, businesses, onSave, fixedBusiness }: { w: WidgetInstance; businesses: BizOption[]; onSave: (patch: Partial<WidgetInstance>) => void; fixedBusiness?: boolean }) {
+  const base = WIDGET_BY_TYPE.get(w.type)!;
+  // Dentro de un negocio, el negocio no se elige: es ese.
+  const meta = fixedBusiness ? { ...base, fields: base.fields.filter((f) => f.kind !== "business") } : base;
   const [size, setSize] = useState<WidgetSize>(w.size);
   const [settings, setSettings] = useState(w.settings);
   const needsOptions = meta.fields.some((f) => f.kind === "goal" || f.kind === "folder" || f.kind === "category");

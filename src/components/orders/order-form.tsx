@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Link2, Link2Off, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { deleteOrder, saveOrder, type OrderPayload } from "@/app/(app)/negocios/actions";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,12 @@ import type { Order, Product } from "@/lib/data";
 import { formatDecimal, formatEUR, orderTotals, toCents } from "@/lib/money";
 import { ORDER_STATUSES, ORDER_STATUS_LABEL } from "@/lib/schemas";
 import type { OrderWithPayments } from "@/lib/orders/data";
+import { effectsText, resolveLineStock, type StockLinkContext } from "@/lib/stock/link";
 import { OrderPayments } from "./order-payments";
 
-type Line = { key: string; product_id: string | null; product_name: string; color: string; size: string; quantity: string; unit_price: string; unit_cost: string };
+type Line = { key: string; product_id: string | null; stock_key: string; product_name: string; color: string; size: string; quantity: string; unit_price: string; unit_cost: string };
 
-const newLine = (): Line => ({ key: crypto.randomUUID(), product_id: null, product_name: "", color: "", size: "", quantity: "1", unit_price: "", unit_cost: "" });
+const newLine = (): Line => ({ key: crypto.randomUUID(), product_id: null, stock_key: "", product_name: "", color: "", size: "", quantity: "1", unit_price: "", unit_cost: "" });
 
 /** Borrador del pedido nuevo (si sales a medias se conserva en este dispositivo). */
 type Draft = { fields: Record<string, string>; lines: Line[] };
@@ -30,13 +31,18 @@ export function orderToPayload(o: Order): OrderPayload {
     id: o.id, business_id: o.business_id, order_date: o.order_date, order_number: o.order_number ?? undefined,
     customer: o.customer ?? undefined, channel: o.channel ?? undefined, status: o.status as OrderPayload["status"], notes: o.notes ?? undefined,
     items: o.order_items.map((i) => ({
-      product_id: i.product_id, product_name: i.product_name, color: i.color ?? undefined, size: i.size ?? undefined,
+      product_id: i.product_id, stock_key: i.stock_key, product_name: i.product_name, color: i.color ?? undefined, size: i.size ?? undefined,
       quantity: i.quantity, unit_price: formatDecimal(i.unit_price_cents), unit_cost: formatDecimal(i.unit_cost_cents),
     })),
   };
 }
 
-type FormProps = { businessId: string; order: (Order & Partial<Pick<OrderWithPayments, "order_payments">>) | null; products: Product[]; today: string; onDone: (savedId?: string) => void };
+type FormProps = {
+  businessId: string; order: (Order & Partial<Pick<OrderWithPayments, "order_payments">>) | null; products: Product[]; today: string; onDone: (savedId?: string) => void;
+  prefill?: { customer?: string; channel?: string };
+  /** Inventario del negocio: cada línea se elige de aquí (y descuenta del stock). null = sin inventario. */
+  stock?: StockLinkContext | null;
+};
 
 /** «Descartar» el borrador vuelve a montar el formulario en blanco. */
 export function OrderForm(props: FormProps) {
@@ -44,16 +50,16 @@ export function OrderForm(props: FormProps) {
   return <OrderFormInner key={k} {...props} onDiscard={() => { clearDraft(props.businessId); setK((n) => n + 1); }} />;
 }
 
-function OrderFormInner({ businessId, order, products, today, onDone, onDiscard }: FormProps & { onDiscard: () => void }) {
+function OrderFormInner({ businessId, order, products, today, onDone, onDiscard, prefill, stock = null }: FormProps & { onDiscard: () => void }) {
   const toast = useToast();
   const [draft] = useState<Draft | null>(() => (order ? null : readDraft(businessId)));
   const v = (k: string, fallback: string) => draft?.fields[k] ?? fallback;
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [lines, setLines] = useState<Line[]>(
-    draft ? draft.lines : order && order.order_items.length
+    draft ? draft.lines.map((l) => ({ ...l, stock_key: l.stock_key ?? "" })) : order && order.order_items.length
       ? order.order_items.map((i) => ({
-          key: i.id, product_id: i.product_id, product_name: i.product_name, color: i.color ?? "", size: i.size ?? "",
+          key: i.id, product_id: i.product_id, stock_key: i.stock_key ?? "", product_name: i.product_name, color: i.color ?? "", size: i.size ?? "",
           quantity: String(i.quantity), unit_price: formatDecimal(i.unit_price_cents), unit_cost: formatDecimal(i.unit_cost_cents),
         }))
       : [newLine()],
@@ -64,6 +70,21 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
   );
 
   const setLine = (key: string, patch: Partial<Line>) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+  // Pedido anterior al descuento automático: solo descuentan las líneas a las que elijas un artículo (ver `saveOrder`).
+  const legacy = !!order && order.order_items.length > 0 && order.order_items.every((i) => i.stock_effects == null && i.stock_key == null);
+  const effectsOf = (l: Line) => (stock && (!legacy || l.stock_key) ? resolveLineStock({ ...l, quantity: parseInt(l.quantity, 10) || 0 }, stock) : []);
+
+  /** Elegir un artículo del inventario: lo vincula y, si la línea estaba vacía, rellena el nombre (y la talla de la prenda). */
+  function onStockPick(key: string, stockKey: string) {
+    const opt = stock?.options.find((o) => o.key === stockKey);
+    setLines((ls) => ls.map((l) => {
+      if (l.key !== key) return l;
+      if (!opt) return { ...l, stock_key: "" };
+      const [, a, b] = stockKey.split("|");
+      const name = l.product_name.trim() ? l.product_name : opt.group === "prendas" ? opt.label.replace(new RegExp(` ${b}$`), "") : opt.label;
+      return { ...l, stock_key: stockKey, product_name: name.slice(0, 80), size: opt.group === "prendas" && !l.size ? b : l.size, color: opt.group === "prendas" && !l.color ? a : l.color };
+    }));
+  }
 
   /** Al elegir un producto del catálogo se rellenan precio y coste si estaban vacíos. */
   function onProductName(key: string, name: string) {
@@ -87,13 +108,13 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
       order_number: String(fd.get("order_number") ?? ""), customer: String(fd.get("customer") ?? ""),
       channel: String(fd.get("channel") ?? ""), status: String(fd.get("status")) as OrderPayload["status"], notes: String(fd.get("notes") ?? ""),
       items: lines.map((l) => ({
-        product_id: l.product_id, product_name: l.product_name, color: l.color, size: l.size,
+        product_id: l.product_id, stock_key: l.stock_key || null, product_name: l.product_name, color: l.color, size: l.size,
         quantity: l.quantity, unit_price: l.unit_price, unit_cost: l.unit_cost,
       })),
     };
     start(async () => {
       const r = await saveOrder(payload);
-      if (r.ok) { if (!order) clearDraft(businessId); onDone(r.id); }
+      if (r.ok) { if (!order) clearDraft(businessId); if (r.warning) toast({ message: r.warning }); onDone(r.id); }
       else setError(r.error);
     });
   }
@@ -132,9 +153,9 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
             {ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}
           </Select>
         </Field>
-        <Field label="Cliente" htmlFor="o-customer"><Input id="o-customer" name="customer" defaultValue={v("customer", order?.customer ?? "")} maxLength={120} autoComplete="off" /></Field>
+        <Field label="Cliente" htmlFor="o-customer"><Input id="o-customer" name="customer" defaultValue={v("customer", order?.customer ?? prefill?.customer ?? "")} maxLength={120} autoComplete="off" /></Field>
         <Field label="Nº de pedido" htmlFor="o-number"><Input id="o-number" name="order_number" defaultValue={v("order_number", order?.order_number ?? "")} maxLength={40} autoComplete="off" /></Field>
-        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" /></Field>
+        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? prefill?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" /></Field>
       </div>
 
       <fieldset className="flex flex-col gap-3">
@@ -142,6 +163,15 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
         <datalist id="products-list">{products.map((p) => <option key={p.id} value={p.name} />)}</datalist>
         {lines.map((l, idx) => (
           <div key={l.key} className="grid grid-cols-6 gap-2 rounded-lg border border-border p-3">
+            {stock && stock.options.length > 0 && (
+              <Select aria-label={`Artículo del stock de la línea ${idx + 1}`} value={l.stock_key} onChange={(e) => onStockPick(l.key, e.target.value)} className="col-span-6">
+                <option value="">{legacy ? "Pedido anterior: elige artículo" : "Artículo del stock…"}</option>
+                {(["prendas", "dtf", "articulos"] as const).map((g) => {
+                  const opts = stock.options.filter((o) => o.group === g);
+                  return opts.length ? <optgroup key={g} label={g === "prendas" ? "Prendas" : g === "dtf" ? "DTF" : "Materiales y productos"}>{opts.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}</optgroup> : null;
+                })}
+              </Select>
+            )}
             <Input aria-label={`Producto de la línea ${idx + 1}`} placeholder="Producto" list="products-list" value={l.product_name} onChange={(e) => onProductName(l.key, e.target.value)} className="col-span-6" maxLength={80} required />
             <Input aria-label="Color" placeholder="Color" value={l.color} onChange={(e) => setLine(l.key, { color: e.target.value })} className="col-span-3" maxLength={40} />
             <Input aria-label="Talla" placeholder="Talla" value={l.size} onChange={(e) => setLine(l.key, { size: e.target.value })} className="col-span-3" maxLength={20} />
@@ -154,6 +184,15 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard 
             <label className="col-span-2 flex flex-col gap-1 text-xs text-muted">Coste ud. (€)
               <Input inputMode="decimal" value={l.unit_cost} onChange={(e) => setLine(l.key, { unit_cost: e.target.value })} placeholder="0,00" />
             </label>
+            {stock && (() => {
+              const eff = effectsOf(l);
+              return (
+                <p className={`col-span-6 flex items-start gap-1.5 text-xs ${eff.length ? "text-muted" : "text-amber-700 dark:text-amber-400"}`}>
+                  {eff.length ? <Link2 className="mt-0.5 size-3.5 shrink-0" aria-hidden /> : <Link2Off className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
+                  <span>{eff.length ? effectsText(eff) : legacy ? "Pedido anterior: no descuenta del stock" : "Sin vincular al stock: esta línea no descuenta. Elige el artículo arriba."}</span>
+                </p>
+              );
+            })()}
             {lines.length > 1 && (
               <button type="button" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} className="col-span-6 flex min-h-11 md:min-h-10 items-center justify-center gap-1 text-xs text-muted hover:text-danger">
                 <Trash2 className="size-3.5" aria-hidden /> Quitar línea

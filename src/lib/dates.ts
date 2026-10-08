@@ -167,3 +167,8 @@ export function zonedToUtc(date: string, time: string, timeZone: string = TIMEZO
   if (valid.length > 0) return new Date(Math.min(...valid)); // otoño: hora repetida -> la primera
   return new Date(guess - Math.min(...offsets) * 60_000);    // primavera: hora inexistente -> la siguiente válida
 }
+
+/** Instante actual en ms, para componentes de servidor (se renderizan una vez por petición). */
+export function requestNowMs(): number {
+  return Date.now();
+}

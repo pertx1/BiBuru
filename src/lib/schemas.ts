@@ -56,6 +56,8 @@ export const businessSchema = z.object({
 
 export const orderItemSchema = z.object({
   product_id: z.uuid().nullish(),
+  /** Artículo del stock elegido en la lista (tshirt|…, dtf|…, item|<id>). Vacío = se reconoce solo o queda sin vincular. */
+  stock_key: z.preprocess((v) => (v === "" ? null : v), z.string().max(200).regex(/^(tshirt|dtf|item)\|/).nullish()),
   product_name: z.string().trim().min(1, "Cada línea necesita un producto").max(80),
   color: optText(40),
   size: optText(20),
@@ -114,4 +116,4 @@ export const categorySchema = z.object({
   color: hexColor,
 });
 
-export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
+export type ActionResult = { ok: true; id?: string; warning?: string } | { ok: false; error: string };

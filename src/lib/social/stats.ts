@@ -82,3 +82,55 @@ export function composeCaption(caption: string, hashtags: string, max = 2200): s
   const text = [caption.trim(), tags.join(" ")].filter(Boolean).join("\n\n");
   return text.slice(0, max);
 }
+
+/**
+ * Suma día a día varias cuentas (vista «Todas» de un negocio o de todas las redes). Un dato del día es null solo si
+ * ninguna cuenta lo tiene; si alguna lo tiene, se suman las que lo tienen.
+ */
+export function aggregateDaily(rows: DailyRow[]): DailyRow[] {
+  const by = new Map<string, DailyRow>();
+  const add = (a: number | null, b: number | null) => (a == null ? b : b == null ? a : a + b);
+  for (const r of rows) {
+    const cur = by.get(r.day);
+    by.set(r.day, cur ? { day: r.day, followers: add(cur.followers, r.followers), reach: add(cur.reach, r.reach), views: add(cur.views, r.views), interactions: add(cur.interactions, r.interactions) } : { ...r });
+  }
+  return [...by.values()].sort((a, b) => a.day.localeCompare(b.day));
+}
+
+/** «+12 hoy», «+85 esta semana»: variación de seguidores frente a la foto de hace N días (null si no hay foto). */
+export function followerDelta(current: number | null, daily: { day: string; followers: number | null }[], daysAgo: string): number | null {
+  if (current == null) return null;
+  const base = [...daily].filter((d) => d.day <= daysAgo && d.followers != null).sort((a, b) => b.day.localeCompare(a.day))[0];
+  return base ? current - base.followers! : null;
+}
+
+export type SocialAlert = { key: string; title: string; body: string };
+const MILESTONES = [100, 250, 500, 1000, 2500, 5000, 10_000, 25_000, 50_000, 100_000, 250_000, 500_000, 1_000_000];
+
+/**
+ * Avisos opcionales de redes: cifra redonda de seguidores, publicación muy por encima de la media y caída brusca.
+ * `before` = seguidores de la foto de ayer. Claves estables para no avisar dos veces de lo mismo.
+ */
+export function socialAlerts(o: { accountId: string; username: string | null; before: number | null; now: number | null; media: { id: string; views: number | null; posted_at: string }[]; at?: Date }): SocialAlert[] {
+  const at = o.at ?? new Date();
+  const who = `@${o.username ?? "tu cuenta"}`;
+  const out: SocialAlert[] = [];
+  if (o.before != null && o.now != null) {
+    const hit = MILESTONES.filter((m) => o.before! < m && o.now! >= m).at(-1);
+    if (hit) out.push({ key: `social:hito:${o.accountId}:${hit}`, title: `🎉 ${hit.toLocaleString("es-ES")} seguidores`, body: `${who} acaba de llegar a ${hit.toLocaleString("es-ES")} seguidores.` });
+    const drop = o.before - o.now;
+    if (drop >= Math.max(10, Math.ceil(o.before * 0.02))) out.push({ key: `social:caida:${o.accountId}:${at.toISOString().slice(0, 10)}`, title: "Bajada de seguidores", body: `${who} ha perdido ${drop.toLocaleString("es-ES")} seguidores desde ayer.` });
+  }
+  const withViews = o.media.filter((m) => m.views != null);
+  if (withViews.length >= 5) {
+    for (const m of withViews.filter((x) => at.getTime() - new Date(x.posted_at).getTime() < 3 * 86400_000)) {
+      const others = withViews.filter((x) => x.id !== m.id);
+      const avg = others.reduce((s, x) => s + x.views!, 0) / others.length;
+      if (m.views! >= 100 && m.views! >= 2 * avg) out.push({ key: `social:top:${o.accountId}:${m.id}`, title: "Publicación que está funcionando 🚀", body: `Una publicación de ${who} lleva ${m.views!.toLocaleString("es-ES")} visualizaciones, ${Math.round(m.views! / Math.max(1, avg))} veces tu media.` });
+    }
+  }
+  return out;
+}
+
+/** ¿Hay que refrescar? Más de `minutes` desde la última actualización (o nunca). */
+export const isStale = (lastSyncAt: string | null | undefined, now = new Date(), minutes = 15) => !lastSyncAt || now.getTime() - new Date(lastSyncAt).getTime() > minutes * 60_000;

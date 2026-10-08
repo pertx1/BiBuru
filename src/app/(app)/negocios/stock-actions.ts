@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/context";
-import { moveStock, syncStockTasks } from "@/lib/stock/service";
+import { applyRecalc, moveStock, recalcPreview, syncStockTasks, type RecalcPreview } from "@/lib/stock/service";
 import type { ActionResult } from "@/lib/schemas";
 
 const refresh = () => { revalidatePath("/negocios", "layout"); revalidatePath("/tareas"); revalidatePath("/"); };
@@ -99,4 +99,38 @@ export async function receiveForTask(input: { taskId: string; units: number }): 
   await syncStockTasks(t.business_id);
   refresh();
   return { ok: true };
+}
+
+export type StockMove = { id: string; delta: number; kind: string; reason: string | null; moved_on: string; order_id: string | null; order_label: string | null; source: string };
+
+/** Historial de movimientos de un artículo (los ligados a un pedido llevan a ese pedido). */
+export async function stockHistory(businessId: string, itemKey: string): Promise<StockMove[]> {
+  const p = z.object({ businessId: z.uuid(), key }).safeParse({ businessId, key: itemKey });
+  if (!p.success) return [];
+  const { supabase, workspaceId } = await getContext();
+  const { data } = await supabase.from("stock_movements").select("id, delta, kind, reason, moved_on, order_id, order_label, source")
+    .eq("workspace_id", workspaceId).eq("business_id", p.data.businessId).eq("item_key", p.data.key).order("created_at", { ascending: false }).limit(60);
+  return data ?? [];
+}
+
+const recalcSchema = z.object({ businessId: z.uuid(), mode: z.enum(["pendientes", "desde"]), from: z.iso.date().nullish() });
+
+/** «Recalcular desde pedidos» · vista previa (no cambia nada). */
+export async function previewStockRecalc(input: z.input<typeof recalcSchema>): Promise<{ ok: true; preview: RecalcPreview } | { ok: false; error: string }> {
+  const p = recalcSchema.safeParse(input);
+  if (!p.success || (p.data.mode === "desde" && !p.data.from)) return { ok: false, error: "Elige desde qué fecha" };
+  try { return { ok: true, preview: await recalcPreview(p.data.businessId, p.data.mode, p.data.from ?? null) }; }
+  catch (e) { console.error("[stock] recalc preview", e instanceof Error ? e.message : e); return { ok: false, error: "No se pudo calcular" }; }
+}
+
+/** «Recalcular desde pedidos» · aplicar: esos pedidos pasan a descontar (una sola vez). */
+export async function runStockRecalc(input: z.input<typeof recalcSchema>): Promise<ActionResult & { orders?: number }> {
+  const p = recalcSchema.safeParse(input);
+  if (!p.success || (p.data.mode === "desde" && !p.data.from)) return { ok: false, error: "Elige desde qué fecha" };
+  try {
+    const r = await applyRecalc(p.data.businessId, p.data.mode, p.data.from ?? null);
+    await syncStockTasks(p.data.businessId);
+    refresh();
+    return { ok: true, orders: r.orders };
+  } catch (e) { console.error("[stock] recalc", e instanceof Error ? e.message : e); return { ok: false, error: "No se pudo terminar. Vuelve a intentarlo: lo que ya se descontó no se descuenta otra vez." }; }
 }

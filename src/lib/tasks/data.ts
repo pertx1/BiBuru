@@ -206,3 +206,13 @@ export async function listReminders(): Promise<Reminder[]> {
   // «sent» ya avisados siguen visibles 3 días por si no se resolvieron; los pendientes siempre.
   return data.filter((r) => r.status !== "sent" || Date.now() - Date.parse(r.sent_at ?? r.remind_at) < 3 * 86_400_000);
 }
+
+/** Tareas sin fecha pendientes, de mayor a menor prioridad (las más antiguas primero), con el total. */
+export async function listNoDateTasks(limit: number, opts: { businessId?: string } = {}): Promise<{ tasks: { id: string; title: string; priority: number; business_id: string | null }[]; total: number }> {
+  const { supabase, workspaceId } = await getContext();
+  let q = supabase.from("tasks").select("id, title, priority, business_id", { count: "exact" }).eq("workspace_id", workspaceId).eq("status", "open").is("due_date", null);
+  if (opts.businessId) q = q.eq("business_id", opts.businessId);
+  const { data, count, error } = await q.order("priority", { ascending: false }).order("created_at", { ascending: true }).limit(limit);
+  if (error) fail("tareas sin fecha", error);
+  return { tasks: data, total: count ?? data.length };
+}

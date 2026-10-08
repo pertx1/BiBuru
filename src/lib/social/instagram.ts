@@ -17,7 +17,7 @@ export const igMode = (): "instagram" | "facebook" => (process.env.INSTAGRAM_LOG
 export const igApi = (path: string) => `${igMode() === "facebook" ? FB_GRAPH : IG_GRAPH}/${V}${path}`;
 
 export class IgError extends Error {
-  constructor(message: string, readonly status?: number, readonly expired = false, readonly retryable = true) { super(message); }
+  constructor(message: string, readonly status?: number, readonly expired = false, readonly retryable = true, readonly limited = false) { super(message); }
 }
 
 export function instagramConfig() {
@@ -26,14 +26,14 @@ export function instagramConfig() {
 }
 export const igRedirectUri = (origin: string) => process.env.INSTAGRAM_REDIRECT_URI?.trim() || `${origin}/api/instagram/callback`;
 
-export function igAuthUrl(o: { appId: string; redirectUri: string; state: string }) {
+export function igAuthUrl(o: { appId: string; redirectUri: string; state: string; inbox?: boolean }) {
   if (igMode() === "facebook") {
     // Inicio de sesión con Facebook para empresas: con una «configuración» del panel (config_id) o, si no hay, con los permisos.
     const configId = process.env.INSTAGRAM_FB_CONFIG_ID?.trim();
-    const q = new URLSearchParams({ client_id: o.appId, redirect_uri: o.redirectUri, response_type: "code", state: o.state, ...(configId ? { config_id: configId } : { scope: IG_SCOPES_FB.join(",") }) });
+    const q = new URLSearchParams({ client_id: o.appId, redirect_uri: o.redirectUri, response_type: "code", state: o.state, ...(configId ? { config_id: configId } : { scope: [...IG_SCOPES_FB, ...(o.inbox ? IG_INBOX_SCOPES_FB : [])].join(",") }) });
     return `https://www.facebook.com/${V}/dialog/oauth?${q}`;
   }
-  const p = new URLSearchParams({ client_id: o.appId, redirect_uri: o.redirectUri, response_type: "code", scope: IG_SCOPES.join(","), state: o.state, enable_fb_login: "0", force_reauth: "true" });
+  const p = new URLSearchParams({ client_id: o.appId, redirect_uri: o.redirectUri, response_type: "code", scope: [...IG_SCOPES, ...(o.inbox ? IG_INBOX_SCOPES : [])].join(","), state: o.state, enable_fb_login: "0", force_reauth: "true" });
   return `https://www.instagram.com/oauth/authorize?${p}`;
 }
 
@@ -43,7 +43,8 @@ async function readJson(res: Response) {
     const code = j.error?.code;
     const expired = code === 190 || res.status === 401;
     const retryable = !expired && (res.status >= 500 || res.status === 429 || code === 4 || code === 17 || code === 32 || code === 613 || code === 2);
-    throw new IgError(`Instagram: ${(j.error?.message ?? String(res.status)).slice(0, 250)}`, res.status, expired, retryable);
+    const limited = res.status === 429 || code === 4 || code === 17 || code === 32 || code === 613;
+    throw new IgError(`Instagram: ${(j.error?.message ?? String(res.status)).slice(0, 250)}`, res.status, expired, retryable, limited);
   }
   return j;
 }
@@ -164,4 +165,69 @@ export async function igPublish(token: string, igUserId: string, containerId: st
   const id = String((await post(igApi(`/${igUserId}/media_publish`), token, { creation_id: containerId }, f)).id);
   const j = await get(igApi(`/${id}?fields=permalink`), token, f).catch(() => ({ permalink: null }));
   return { id, permalink: (j.permalink as string) ?? null };
+}
+
+// ---------------------------------------------------------------- bandeja: mensajes directos y comentarios
+/** Permisos extra para la bandeja (se piden solo al pulsar «Activar mensajes», para no romper conexiones sin ellos). */
+export const IG_INBOX_SCOPES = ["instagram_business_manage_messages", "instagram_business_manage_comments"];
+export const IG_INBOX_SCOPES_FB = ["instagram_manage_messages", "instagram_manage_comments", "pages_manage_metadata"];
+export const igInboxScopes = () => (igMode() === "facebook" ? IG_INBOX_SCOPES_FB : IG_INBOX_SCOPES);
+/** ¿La conexión tiene ya los permisos de la bandeja? */
+export const hasInboxScopes = (scopes: string | null | undefined) => igInboxScopes().slice(0, 2).every((s) => (scopes ?? "").split(/[\s,]+/).includes(s));
+
+/** Quién envía y lee: con inicio de sesión de Instagram, la propia cuenta; con Facebook, la página («me» con su token). */
+const who = (igUserId: string) => (igMode() === "facebook" ? "me" : igUserId);
+
+export type IgDmMessage = { id: string; fromId: string; fromUsername: string | null; text: string; at: string; attachments: { type: string; url: string }[] };
+export type IgConversation = { id: string; updatedAt: string; participant: { id: string; username: string | null } | null; messages: IgDmMessage[] };
+
+/** Conversaciones recientes con sus últimos mensajes. */
+export async function igConversations(token: string, igUserId: string, limit = 20, f: Fetch = fetch): Promise<IgConversation[]> {
+  const fields = "id,updated_time,participants,messages.limit(20){id,from,to,message,created_time,attachments}";
+  const j = await get(igApi(`/${who(igUserId)}/conversations?platform=instagram&fields=${encodeURIComponent(fields)}&limit=${limit}`), token, f);
+  return ((j.data as Record<string, unknown>[] | undefined) ?? []).map((c) => {
+    const parts = (((c.participants as { data?: { id: string; username?: string }[] } | undefined)?.data) ?? []);
+    const other = parts.find((p) => String(p.id) !== igUserId) ?? null;
+    const msgs = (((c.messages as { data?: Record<string, unknown>[] } | undefined)?.data) ?? []).map((m) => {
+      const from = (m.from ?? {}) as { id?: string; username?: string };
+      const atts = ((m.attachments as { data?: Record<string, unknown>[] } | undefined)?.data ?? []).map((a) => ({ type: String(a.mime_type ?? "file"), url: String((a.image_data as { url?: string } | undefined)?.url ?? (a.video_data as { url?: string } | undefined)?.url ?? a.file_url ?? "") })).filter((a) => a.url.startsWith("https://"));
+      return { id: String(m.id), fromId: String(from.id ?? ""), fromUsername: from.username ?? null, text: String(m.message ?? ""), at: String(m.created_time ?? new Date().toISOString()), attachments: atts };
+    });
+    return { id: String(c.id), updatedAt: String(c.updated_time ?? new Date().toISOString()), participant: other ? { id: String(other.id), username: other.username ?? null } : null, messages: msgs };
+  });
+}
+
+export type IgComment = { id: string; text: string; username: string | null; fromId: string | null; at: string; hidden: boolean; replies: { id: string; text: string; username: string | null; fromId: string | null; at: string }[] };
+
+/** Comentarios de una publicación (con sus respuestas). */
+export async function igComments(token: string, mediaId: string, f: Fetch = fetch): Promise<IgComment[]> {
+  const fields = "id,text,username,timestamp,from,hidden,replies{id,text,username,timestamp,from}";
+  const j = await get(igApi(`/${mediaId}/comments?fields=${encodeURIComponent(fields)}&limit=50`), token, f);
+  const one = (c: Record<string, unknown>) => ({ id: String(c.id), text: String(c.text ?? ""), username: (c.username as string) ?? ((c.from as { username?: string } | undefined)?.username ?? null), fromId: ((c.from as { id?: string } | undefined)?.id ?? null), at: String(c.timestamp ?? new Date().toISOString()) });
+  return ((j.data as Record<string, unknown>[] | undefined) ?? []).map((c) => ({ ...one(c), hidden: c.hidden === true, replies: (((c.replies as { data?: Record<string, unknown>[] } | undefined)?.data) ?? []).map(one) }));
+}
+
+/** Enviar un mensaje directo (solo dentro de la ventana de 24 h). */
+export async function igSendDm(token: string, igUserId: string, recipientId: string, text: string, f: Fetch = fetch): Promise<string> {
+  const j = await post(igApi(`/${who(igUserId)}/messages`), token, { recipient: JSON.stringify({ id: recipientId }), message: JSON.stringify({ text: text.slice(0, 1000) }) }, f);
+  return String(j.message_id ?? j.id ?? "");
+}
+/** Respuesta pública a un comentario. */
+export async function igReplyComment(token: string, commentId: string, text: string, f: Fetch = fetch): Promise<string> {
+  return String((await post(igApi(`/${commentId}/replies`), token, { message: text.slice(0, 2200) }, f)).id ?? "");
+}
+/** Respuesta privada (un mensaje directo a quien comentó; una sola vez por comentario y en 7 días). */
+export async function igPrivateReply(token: string, igUserId: string, commentId: string, text: string, f: Fetch = fetch): Promise<string> {
+  const j = await post(igApi(`/${who(igUserId)}/messages`), token, { recipient: JSON.stringify({ comment_id: commentId }), message: JSON.stringify({ text: text.slice(0, 1000) }) }, f);
+  return String(j.message_id ?? j.id ?? "");
+}
+/** Ocultar o mostrar un comentario. */
+export async function igHideComment(token: string, commentId: string, hide: boolean, f: Fetch = fetch): Promise<void> {
+  await post(igApi(`/${commentId}`), token, { hide: hide ? "true" : "false" }, f);
+}
+/** Suscribe la cuenta a los avisos en tiempo real (mensajes, comentarios y menciones). Si falla, queda la sincronización cada hora. */
+export async function igSubscribeWebhooks(token: string, f: Fetch = fetch): Promise<boolean> {
+  const fields = igMode() === "facebook" ? "messages,feed" : "messages,comments";
+  const j = await post(igApi(`/me/subscribed_apps`), token, { subscribed_fields: fields }, f).catch(() => null);
+  return !!j && (j.success === true || j.success === "true");
 }
