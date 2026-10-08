@@ -221,14 +221,12 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Zonas de 44 px solo en móvil (`min-h-11 md:min-h-…`). Gestos: `SwipeRow` (tareas) y `PullToRefresh` (layout).
 - Los avisos (`ToastProvider`) se muestran como `popover` para quedar encima de los `<dialog>` abiertos.
 
-## Bandeja de redes y sincronización
-- Adaptador por red en `src/lib/inbox/logic.ts` (`CAPABILITIES`: Instagram todo; TikTok nada, solo enlace). Lógica pura (24 h, firma Meta, webhook → `InboxEvent`, filtros) con tests.
-- `src/lib/inbox/service.ts` (servidor, clave de servicio): `ingestEvents` (webhook), `syncInboxAccount` (lectura de conversaciones y comentarios), `storeMessages` idempotente
-  por `(thread_id, external_id)`. La primera sincronización no avisa. Acciones en `redes/inbox-actions.ts`; nada se envía sin pulsar «Enviar».
-- `/api/webhooks/meta`: GET con `META_WEBHOOK_VERIFY_TOKEN`; POST con `X-Hub-Signature-256` (HMAC de `INSTAGRAM_APP_SECRET`). Es público en el proxy.
-- Meta solo manda webhooks a apps Live (comentarios: acceso avanzado): la bandeja se sostiene con la sincronización horaria (`src/lib/sync/service.ts`, llamada desde el cron de Redes),
-  `refreshIfStale` (al abrir, >15 min) y «Actualizar todo». Si una red limita, `rate_limited_until` = +1 h.
-- Pantalla común `RedesView` para `/redes` y `/negocios/[id]/redes`. Ajustes en `profiles.inbox_ai_suggest | inbox_push_enabled | social_alerts_enabled`.
+## Sincronización de redes (sin mensajes)
+- Los mensajes y comentarios de Instagram y TikTok se quitaron (a petición). Las tablas `social_threads`/`social_messages`/`social_saved_replies`
+  siguen en la BD (migraciones solo aditivas) pero la app no las lee ni escribe; no hay webhook de Meta ni permisos de mensajes.
+- `src/lib/sync/service.ts`: seguidores y publicaciones cada hora (desde el cron de Redes), `refreshIfStale` (al abrir, >15 min) y «Actualizar todo»;
+  si una red limita, `rate_limited_until` = +1 h. Pantalla común `RedesView` (Contenido y Estadísticas) para `/redes` y `/negocios/[id]/redes`.
+  Ajuste: `profiles.social_alerts_enabled`.
 
 ## Pedidos que descuentan stock
 - `order_items.stock_key` (artículo elegido) y `stock_effects` ([{key,label,qty}], null = sin vincular). Lógica pura en `src/lib/stock/link.ts` (`resolveLineStock`, mismo código en formulario y servidor).
@@ -239,7 +237,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 ## Negocios: pestañas y Resumen
 - Pestañas en `business-tabs.tsx`; Producción, Ingresos, Tareas y Objetivos son redirecciones. Bolsa/Facturas/Reglas en `/negocios/[id]/{bolsa,facturas,reglas}` con `ProductionGate`.
 - Resumen = `HomeGrid` con `businessId` (solo `BUSINESS_WIDGETS`, negocio fijo con `withBusiness`), disposición en `user_ui_prefs.business_widgets[bizId]`. `renderWidgetNodes` sirve a Inicio y Resumen.
-- Mensajes del negocio: `src/lib/messages/` (correo de `mail_accounts.business_id` + hilos de sus redes), `mail_messages.triage`.
+- Mensajes del negocio: `src/lib/messages/` (solo correo de `mail_accounts.business_id`), estado en `mail_messages.triage`.
 
 ## Revisión
 - `src/lib/review/period.ts` (pura: periodos, `isDue`), `build.ts` (cifras con cualquier cliente: filtrar SIEMPRE por espacio/persona), `service.ts` (actual, histórico, IA, `runReviewCron` desde `/api/cron/reminders`).

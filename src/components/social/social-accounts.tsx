@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 type Acc = {
   id: string; platform: string; username: string | null; display_name: string | null; avatar_url: string | null; business_id: string | null; status: string; last_error: string | null;
   token_expires_at: string | null; account_type: string | null; followers_count?: number | null; last_sync_at?: string | null; sync_error?: string | null; rate_limited_until?: string | null;
-  unread?: number; deltaToday?: number | null; deltaWeek?: number | null;
+  deltaToday?: number | null; deltaWeek?: number | null;
 };
 const ago = (iso: string | null | undefined, nowMs: number) => {
   if (!iso) return "Sin actualizar todavía";
@@ -49,7 +49,6 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
                   <span className="text-xl font-semibold tabular-nums">{a.followers_count != null ? a.followers_count.toLocaleString("es-ES") : "—"}<span className="ml-1 text-xs font-normal text-muted">seguidores</span></span>
                   {a.deltaToday != null && <span className={cn("text-xs font-semibold", a.deltaToday >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaToday)} hoy</span>}
                   {a.deltaWeek != null && <span className={cn("text-xs font-semibold", a.deltaWeek >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaWeek)} esta semana</span>}
-                  {!!a.unread && <span className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">{a.unread} sin responder</span>}
                 </div>
                 <p className="text-xs text-muted">{ago(a.last_sync_at, nowMs)}{a.rate_limited_until && new Date(a.rate_limited_until).getTime() > nowMs ? ` · ${a.platform === "tiktok" ? "TikTok" : "Instagram"} ha puesto un límite: sigo en la próxima pasada` : a.sync_error ? ` · ${a.sync_error}` : ""}</p>
                 {warn && (

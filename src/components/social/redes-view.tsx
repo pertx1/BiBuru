@@ -2,35 +2,33 @@ import Link from "next/link";
 import { PostsView } from "@/components/social/posts-view";
 import { SocialAccounts } from "@/components/social/social-accounts";
 import { SocialStats } from "@/components/social/social-stats";
-import { InboxView } from "@/components/social/inbox-view";
 import { RefreshAll } from "@/components/social/refresh-all";
 import { listBusinesses } from "@/lib/data";
 import { addDays, requestNowMs, todayISO } from "@/lib/dates";
 import { accountsExtras, accountStats, listPosts, listSocialAccounts, socialConfigured, storageUsed } from "@/lib/social/data";
-import { listThreads, parseInboxFilters } from "@/lib/inbox/data";
 import { refreshIfStale } from "@/lib/sync/service";
 import { STORAGE_LIMIT_BYTES } from "@/lib/social/service";
 import { followerDelta } from "@/lib/social/stats";
 import { cn } from "@/lib/utils";
 
 export type RedesSP = Record<string, string | undefined>;
-export const REDES_VIEWS = ["bandeja", "contenido", "estadisticas"] as const;
+export const REDES_VIEWS = ["contenido", "estadisticas"] as const;
 type View = (typeof REDES_VIEWS)[number];
 
 /**
- * Redes: Bandeja (mensajes, comentarios y menciones), Contenido (publicaciones programadas) y Estadísticas.
+ * Redes: Contenido (publicaciones programadas) y Estadísticas. (Los mensajes y comentarios de Instagram y TikTok se quitaron.)
  * Global («Todas las redes», con filtro por negocio) o dentro de un negocio (`businessId` fijo).
  */
 export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; businessId?: string; basePath: string }) {
   const filterBiz = businessId ?? (sp.negocio && /^[0-9a-f-]{36}$/i.test(sp.negocio) ? sp.negocio : undefined);
-  const view: View = sp.vista === "publicaciones" ? "contenido" : (REDES_VIEWS.find((v) => v === sp.vista) ?? "bandeja");
+  const view: View = sp.vista === "publicaciones" ? "contenido" : (REDES_VIEWS.find((v) => v === sp.vista) ?? "contenido");
   const [accounts, businesses] = await Promise.all([listSocialAccounts(filterBiz).catch(() => []), listBusinesses()]);
   refreshIfStale(accounts); // > 15 min sin actualizar: se refresca en segundo plano
   const today = todayISO();
-  const extras = await accountsExtras(accounts.map((a) => a.id), addDays(today, -8)).catch(() => ({ unread: new Map<string, number>(), daily: [] }));
+  const extras = await accountsExtras(accounts.map((a) => a.id), addDays(today, -8)).catch(() => ({ daily: [] }));
   const cards = accounts.map((a) => {
     const daily = extras.daily.filter((d) => d.account_id === a.id);
-    return { ...a, unread: extras.unread.get(a.id) ?? 0, deltaToday: followerDelta(a.followers_count, daily, addDays(today, -1)), deltaWeek: followerDelta(a.followers_count, daily, addDays(today, -7)) };
+    return { ...a, deltaToday: followerDelta(a.followers_count, daily, addDays(today, -1)), deltaWeek: followerDelta(a.followers_count, daily, addDays(today, -7)) };
   });
 
   const keep = (o: RedesSP) => {
@@ -39,15 +37,14 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
     const s = q.toString();
     return s ? `${basePath}?${s}` : basePath;
   };
-  const tab = (v: View, l: string, badge?: number) => (
+  const tab = (v: View, l: string) => (
     <Link href={keep({ vista: v, cuenta: undefined, hilo: undefined })} aria-current={view === v ? "page" : undefined}
       className={cn("flex min-h-11 items-center gap-1.5 border-b-2 border-transparent px-3 text-sm font-medium text-muted md:min-h-9", view === v && "border-accent text-foreground")}>
-      {l}{badge ? <span className="rounded-full bg-danger px-1.5 text-[11px] font-bold text-white">{badge}</span> : null}
+      {l}
     </Link>
   );
   const bizWithAccounts = businesses.filter((b) => accounts.some((a) => a.business_id === b.id) || b.id === filterBiz);
   const allAccounts = businessId ? accounts : await listSocialAccounts().catch(() => accounts);
-  const totalUnread = cards.reduce((s, a) => s + a.unread, 0);
 
   const days = [7, 30, 90].includes(Number(sp.dias)) ? Number(sp.dias) : 30;
   const to = addDays(today, -1), from = addDays(to, -(days - 1)), prevFrom = addDays(from, -days);
@@ -70,11 +67,8 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
       </div>
       <SocialAccounts accounts={cards} businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} configured={socialConfigured()} audited={process.env.TIKTOK_DIRECT_POST_AUDITED === "1"}
         nowMs={requestNowMs()} result={{ instagram: sp.instagram, tiktok: sp.tiktok }} />
-      <nav className="flex gap-1 border-b border-border" aria-label="Secciones de Redes">{tab("bandeja", "Bandeja", totalUnread)}{tab("contenido", "Contenido")}{tab("estadisticas", "Estadísticas")}</nav>
+      <nav className="flex gap-1 border-b border-border" aria-label="Secciones de Redes">{tab("contenido", "Contenido")}{tab("estadisticas", "Estadísticas")}</nav>
 
-      {view === "bandeja" && (
-        <InboxView accounts={cards} threads={await listThreads({ ...parseInboxFilters(sp), accountIds: accounts.map((a) => a.id) }).catch(() => [])} filters={parseInboxFilters(sp)} basePath={basePath} keepParams={{ vista: "bandeja", negocio: businessId ? undefined : filterBiz }} businessId={filterBiz ?? null} />
-      )}
       {view === "contenido" && (
         <PostsView posts={(await listPosts()).filter((p) => !filterBiz || p.business_id === filterBiz)} accounts={accounts.map((a) => ({ id: a.id, platform: a.platform, username: a.username, status: a.status, scopes: a.scopes }))}
           businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} today={today} openId={sp.abrir ?? null} used={await storageUsed()} limit={STORAGE_LIMIT_BYTES} />

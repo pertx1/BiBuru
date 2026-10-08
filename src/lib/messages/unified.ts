@@ -1,6 +1,6 @@
 /**
- * Mensajes de un negocio en una sola lista: correo de sus cuentas de Outlook y mensajes/comentarios de sus cuentas de
- * Instagram y TikTok. Lógica pura (filtros de la URL, estado del correo y mezcla por fecha) con tests.
+ * Mensajes de un negocio: el correo de sus cuentas de Outlook (los de Instagram y TikTok se quitaron).
+ * Lógica pura (filtros de la URL, estado del correo y orden por fecha) con tests.
  */
 export type Channel = "correo" | "instagram" | "tiktok";
 export type MsgStatus = "sin_responder" | "respondido" | "archivado";

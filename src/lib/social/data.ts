@@ -24,17 +24,12 @@ export async function listSocialAccounts(businessId?: string) {
 }
 export type SocialAccountView = Awaited<ReturnType<typeof listSocialAccounts>>[number];
 
-/** Por cuenta: mensajes sin responder y fotos de seguidores de los últimos 8 días (para «+12 hoy», «+85 esta semana»). */
+/** Por cuenta: fotos de seguidores de los últimos 8 días (para «+12 hoy», «+85 esta semana»). */
 export async function accountsExtras(ids: string[], since: string) {
-  if (!ids.length) return { unread: new Map<string, number>(), daily: [] as { account_id: string; day: string; followers: number | null }[] };
+  if (!ids.length) return { daily: [] as { account_id: string; day: string; followers: number | null }[] };
   const { supabase, workspaceId } = await getContext();
-  const [threads, daily] = await Promise.all([
-    supabase.from("social_threads").select("account_id").eq("workspace_id", workspaceId).eq("status", "sin_responder").in("account_id", ids).limit(5000),
-    supabase.from("social_daily").select("account_id, day, followers").eq("workspace_id", workspaceId).in("account_id", ids).gte("day", since).limit(2000),
-  ]);
-  const unread = new Map<string, number>();
-  for (const t of threads.data ?? []) unread.set(t.account_id, (unread.get(t.account_id) ?? 0) + 1);
-  return { unread, daily: daily.data ?? [] };
+  const { data } = await supabase.from("social_daily").select("account_id, day, followers").eq("workspace_id", workspaceId).in("account_id", ids).gte("day", since).limit(2000);
+  return { daily: data ?? [] };
 }
 
 /** Estadísticas de una o varias cuentas (varias = suma día a día de todas sus redes). */

@@ -26,7 +26,7 @@ Hola. He hecho de una vez los cambios en **Negocios, stock, revisiones y tareas 
 | 2 | Revisión diaria, semanal y mensual | **Hecho** | Una sección nueva, **Revisión**, que se prepara sola cada mañana, cada domingo por la tarde y cada día 1, te avisa y se guarda. |
 | 3 | Tareas sin fecha en Inicio | **Hecho** | Un bloque fijo **Sin fecha** en Inicio, todos los días, hasta que las hagas. |
 | 4 | Negocios reorganizados | **Hecho** | Pestañas nuevas, el **Resumen** con widgets que puedes cambiar y botones por estado en **Pedidos**. |
-| 5 | Redes y Mensajes en cada negocio | **Hecho · falta asignar cuentas** | Pestaña **Mensajes** con correo, Instagram y TikTok juntos. Tienes que decir qué cuenta es de qué negocio (bloque D). |
+| 5 | Redes y Mensajes en cada negocio | **Hecho · falta asignar cuentas** | Pestaña **Mensajes** con el **correo** de ese negocio (los mensajes de Instagram y TikTok los quitamos a petición tuya). Tienes que decir qué cuenta es de qué negocio (bloque D). |
 | 6 | Esta guía | **Hecha** | También en PDF: **docs/QUE-TENGO-QUE-HACER.pdf**. |
 
 **Importante:** nada de esto está todavía en tu app de verdad. Está en un **pull request** (una propuesta de cambios que revisas antes de aceptarla). No he tocado tu app ni tus datos. **Los pedidos que ya tienes no restan nada del stock** hasta que tú lo decidas (bloque C).
@@ -136,7 +136,7 @@ Los pedidos que ya tenías **no restan** (así no se descuadra el stock que ya c
 
 ### Bloque D · Asignar cada cuenta a su negocio · Recomendado · 3 min · gratis
 
-La pestaña **Mensajes** de un negocio junta el **correo** y los **mensajes de Instagram y TikTok** de las cuentas de ese negocio.
+La pestaña **Mensajes** de un negocio muestra el **correo** de las cuentas de Outlook de ese negocio. Las cuentas de Instagram y TikTok también se asignan aquí, para que sus estadísticas salgan en la pestaña **Redes** del negocio.
 
 1. Entra en **Ajustes**.
 2. Arriba verás **Cuentas sin negocio** (si no sale, es que todas están ya asignadas).
@@ -144,9 +144,9 @@ La pestaña **Mensajes** de un negocio junta el **correo** y los **mensajes de I
 
 **Sabrás que ha salido bien cuando…** la cuenta desaparezca de la lista y, en **Negocios → (tu negocio) → Mensajes**, salgan sus correos y mensajes.
 
-**Si te sale este error, haz esto…** si en **Mensajes** pone **Falta conectar o asignar cuentas**, conecta Outlook (Ajustes → Correo de Outlook) o Instagram/TikTok (pestaña Redes) y vuelve a este bloque.
+**Si te sale este error, haz esto…** si en **Mensajes** pone **Ninguna cuenta de correo asignada a este negocio**, conecta Outlook (Ajustes → Correo de Outlook) y vuelve a este bloque.
 
-> **Cómo funciona Mensajes:** arriba eliges el **canal** (Correo, Instagram, TikTok) y el **estado** (Sin responder, Respondido, Archivado o Todos), y puedes buscar. Pulsa **⋯** en un mensaje para **Crear pedido**, **Crear tarea**, **Guardar como nota**, **Respondido** o **Archivar**. Instagram se responde aquí mismo; el correo, con **Responder en Outlook**; TikTok no deja leer mensajes desde una app propia, así que sale **Abrir en TikTok**. Un correo cuenta como **Sin responder** mientras no lo hayas leído ni marcado.
+> **Cómo funciona Mensajes:** arriba eliges el **estado** (Sin responder, Respondido, Archivado o Todos) y puedes buscar. Pulsa **⋯** en un correo para **Responder en Outlook**, **Crear pedido**, **Crear tarea**, **Guardar como nota**, **Respondido** o **Archivar**. Un correo cuenta como **Sin responder** mientras no lo hayas leído ni marcado.
 
 ---
 
@@ -195,7 +195,7 @@ Estos widgets también están en **Inicio → Editar → Añadir widget**: en su
 ## 5. Lo que no he podido hacer y por qué
 
 - **Copiar los filtros de PROFITY tal cual.** No tengo acceso a cómo eran. He puesto una fila de botones por estado con su número, que se combinan con los demás filtros.
-- **Mensajes y comentarios de TikTok.** TikTok no deja leerlos desde una app propia: sale **Abrir en TikTok**.
+- **Mensajes y comentarios de Instagram y TikTok.** Los quitamos a petición tuya: BiBuru ya no los lee. Respóndelos desde las apps de Instagram y TikTok.
 - **Marcar correos como respondidos en Outlook.** Con permiso de solo lectura no se puede: «Respondido» y «Archivado» se guardan solo en BiBuru.
 - **Valor del stock de camisetas y DTF.** No tienen coste guardado; el widget **Resumen de stock** da el valor de los artículos vinculados a un producto con coste.
 - **Probar con tus datos reales.** Lo he probado en un ordenador con datos de ejemplo (pedidos, stock, revisiones, Inicio y móvil) y con pruebas automáticas.
@@ -210,7 +210,7 @@ Estos widgets también están en **Inicio → Editar → Añadir widget**: en su
 4. **Resumen:** **Editar resumen**, quita un widget, **Listo** y recarga: sigue quitado.
 5. **Sin fecha:** en Inicio, en **Sin fecha**, toca el calendario de una tarea y elige **Mañana**: desaparece del bloque.
 6. **Revisión:** menú **Revisión** (o **Más → Revisión**): completa una tarea tocando el círculo y pulsa **Revisado**.
-7. **Mensajes:** Negocio → **Mensajes**: cambia entre **Correo**, **Instagram** y **TikTok**.
+7. **Mensajes:** Negocio → **Mensajes**: toca **Respondido** en un correo y cambia entre **Sin responder** y **Respondido**.
 
 ---
 
@@ -233,7 +233,7 @@ Si quieres cambiar cualquiera, dímelo y lo cambio.
 
 ## 8. Anexo: pasos de la guía anterior (si aún no los hiciste)
 
-Estos son los pasos para conectar Outlook, Instagram, TikTok y los mensajes de Instagram. No han cambiado.
+Estos son los pasos para conectar Outlook, Instagram y TikTok (para estadísticas y publicaciones). No han cambiado.
 
 ### Anexo D · Conectar Outlook · OPCIONAL · 20 min · gratis
 
@@ -333,8 +333,6 @@ BiBuru también funciona así. Cambia esto:
 2. Pulsa **+ Conectar Instagram**, entra con tu Instagram y pulsa **Permitir**.
 3. En la tarjeta de la cuenta, elige el **Negocio**.
 
-**Para ver y responder mensajes y comentarios** sigue después con el **Anexo H**.
-
 **Sabrás que ha salido bien cuando…** veas tu **@usuario** en Redes y, al día siguiente, números en **Estadísticas**. (Instagram solo da seguidores diarios a cuentas con 100 seguidores o más.)
 
 **Si te sale este error, haz esto…**
@@ -375,7 +373,6 @@ Sin la **auditoría** (una revisión que hace TikTok a la app), todo lo que una 
 **F3. Conectar**
 
 1. En la app, entra en **Redes** y pulsa **+ Conectar TikTok**.
-   (Los **mensajes y comentarios de TikTok** no se pueden leer desde una app propia: TikTok no lo permite. En la Bandeja verás **Abrir mensajes en TikTok**.)
 2. Entra con tu TikTok y pulsa **Autorizar**.
 3. Elige el **Negocio** de la cuenta.
 
@@ -411,76 +408,14 @@ El análisis normal usa la descripción, los hashtags, el autor y la portada. Si
 
 ---
 
-### Anexo H · Activar los mensajes de Instagram (Bandeja) · OPCIONAL · 20 min · gratis
+### Anexo H · Ajuste de Redes · Opcional · 1 min · gratis
 
-Primero haz el **Anexo E** (Instagram conectado). Esto añade dos permisos y el «timbre» (webhook) para que los mensajes lleguen solos.
+1. En **Ajustes**, baja a **Redes**.
+2. **Alertas de redes** viene **apagado**. Enciéndelo si quieres saber cuándo llegas a una cifra redonda de seguidores, cuándo una publicación va muy bien o si pierdes muchos seguidores de golpe.
 
-**H1. Añadir los permisos de mensajes en la app de Meta**
+**Sabrás que ha salido bien cuando…** al recargar Ajustes la casilla siga como la dejaste.
 
-1. Entra en **https://developers.facebook.com** → **Mis apps** → **BiBuru**.
-2. Ve a **Casos de uso** → **Personalizar** el de Instagram (o **Permisos y funciones**).
-3. Pulsa **Añadir** en estos dos permisos:
-   - Si tu app es la de **inicio de sesión de Instagram** (la normal): **instagram_business_manage_messages** y **instagram_business_manage_comments**.
-   - Si tu app es la de **inicio de sesión con Facebook** (pusiste **INSTAGRAM_LOGIN=facebook**): **instagram_manage_messages**, **instagram_manage_comments** y **pages_manage_metadata**. Si creaste una **Configuración** (E2-bis.4), añádelos también ahí.
-
-**H2. Inventar el código del timbre y guardarlo en Vercel**
-
-1. Inventa un código de **al menos 16 letras y números**, sin espacios (por ejemplo, junta dos palabras y unos números: **NaranjaTijera83Bici51**). No uses ese ejemplo: inventa el tuyo.
-2. En **Vercel → bi-buru → Settings → Environment Variables** pulsa **Add New**.
-3. En **Key** escribe exactamente **META_WEBHOOK_VERIFY_TOKEN** y en **Value** pega tu código. Marca **Production** y pulsa **Save**.
-4. **Deployments** → **⋯** del primero → **Redeploy** → **Redeploy**. Espera a que ponga **Ready**.
-
-**H3. Poner el timbre en Meta**
-
-1. En tu app de Meta:
-   - App normal: **Instagram** → **Configuración de la API con inicio de sesión de Instagram** → apartado **Configurar webhooks**.
-   - App de Facebook: menú **Webhooks** → en el desplegable elige **Instagram**.
-2. En **URL de devolución de llamada** (*Callback URL*) pega exactamente: **https://bi-buru.vercel.app/api/webhooks/meta**
-3. En **Token de verificación** (*Verify token*) pega el **mismo código** de H2.1.
-4. Pulsa **Verificar y guardar** (*Verify and save*).
-5. En la lista de campos, pulsa **Suscribirse** (*Subscribe*) en **messages** y **comments** (y **mentions** si aparece).
-6. En **Generar tokens de acceso**, si junto a tu cuenta hay un interruptor **Suscripción a webhooks**, actívalo. (BiBuru también lo intenta solo al conectar.)
-
-**H4. Dar los permisos nuevos a BiBuru**
-
-1. En la app, entra en **Redes** → pestaña **Bandeja**.
-2. Verás el aviso **Activar mensajes**. Pulsa ese botón.
-3. Entra con tu Instagram y pulsa **Permitir** en los permisos nuevos.
-
-**H5. Que Meta mande los avisos al momento (modo «Activo»)**
-
-Meta **solo toca el timbre** si la app está en modo **Activo** (*Live*), y los **comentarios** necesitan además **acceso avanzado**. **Mientras tanto, BiBuru lee los mensajes solo cada hora** (y al abrir Redes o pulsar **Actualizar todo**), así que la Bandeja funciona igual, solo que no al segundo.
-
-1. En la app de Meta, arriba, cambia **Modo de la app** de **Desarrollo** a **Activo** (o pulsa **Publicar**). Te pedirá icono, categoría y la política de privacidad: **https://bi-buru.vercel.app/privacidad**.
-2. Para el **acceso avanzado**: **Revisión de la app** → **Permisos y funciones** → junto a cada permiso de H1 pulsa **Solicitar acceso avanzado**. Meta puede pedir **verificar tu empresa** y un **vídeo** enseñando cómo se usa.
-3. Texto para pegar en la solicitud (uno por permiso, cambia lo que haga falta):
-
-> BiBuru es un panel privado que uso solo yo para gestionar mi propio negocio. Conecto mi cuenta profesional de Instagram para ver en una bandeja los mensajes directos y comentarios que recibo y responderlos a mano. Ningún mensaje se envía automáticamente: siempre lo escribo y pulso «Enviar». Los mensajes solo se guardan en mi base de datos privada, nadie más tiene acceso y se borran si la persona los borra. Uso: (1) leer conversaciones y comentarios de mis publicaciones, (2) responder dentro de la ventana de 24 horas, (3) ocultar comentarios ofensivos y responder en privado a un comentario.
-
-4. Para el **vídeo**: graba la pantalla del móvil: abres **Redes → Bandeja**, entras en un mensaje, escribes una respuesta, pulsas **Enviar** y se ve en Instagram. Después ocultas un comentario.
-
-**Sabrás que ha salido bien cuando…** en **Redes → Bandeja** desaparezca el aviso **Activar mensajes** y, después de escribirte tú mismo desde otra cuenta, el mensaje aparezca (al momento si la app está **Activa**, o en menos de una hora / al pulsar **Actualizar todo** si no).
-
-**Si te sale este error, haz esto…**
-
-- Meta dice **«No se pudo validar la URL de devolución de llamada o el token de verificación»**: el código de H3.3 no es igual al de Vercel, o no hiciste **Redeploy** después de H2. Revisa letra a letra (mayúsculas incluidas).
-- Al pulsar **Activar mensajes** sale **«Invalid Scopes»**: falta H1 (los permisos no están añadidos en la app de Meta).
-- Al responder sale **«Pasaron 24 h: responde desde Instagram»**: Instagram solo deja responder por API 24 h después del último mensaje de la persona. Pulsa **Abrir en Instagram**.
-- Una respuesta queda en **Error**: pulsa **Reintentar**. Si sigue, copia el texto del error y pégamelo.
-- No llegan comentarios pero sí mensajes: falta el **acceso avanzado** de comentarios (H5.2). Mientras, se leen cada hora.
-
----
-
-### Anexo I · Elegir tus ajustes de Redes y mensajes · Recomendado · 2 min · gratis
-
-1. En la app entra en **Ajustes** y baja a **Redes y mensajes**.
-2. **Avisarme de mensajes nuevos**: viene **encendido**. Déjalo así si quieres un aviso cuando alguien te escriba.
-3. **Alertas de redes**: viene **apagado**. Enciéndelo si quieres saber cuándo llegas a una cifra redonda de seguidores, cuándo una publicación va muy bien o si pierdes muchos seguidores de golpe.
-4. **«Sugerir respuesta» con IA**: viene **apagado**. Si lo enciendes, al pulsar el botón en un mensaje, ese texto se envía a Google para proponerte una respuesta (gasta un poco de tu presupuesto de IA). Nunca se envía nada solo.
-
-**Sabrás que ha salido bien cuando…** al recargar Ajustes las casillas sigan como las dejaste.
-
-**Si te sale este error, haz esto…** «No se pudo guardar»: recarga la página y vuelve a probar. Si sigue, dímelo.
+**Si te sale este error, haz esto…** «No se pudo guardar»: recarga y vuelve a probar.
 
 ---
 
@@ -503,10 +438,9 @@ Meta **solo toca el timbre** si la app está en modo **Activo** (*Live*), y los 
 | **MICROSOFT_CLIENT_ID** | Outlook | Solo si usas Correo |
 | **MICROSOFT_CLIENT_SECRET** | Outlook | Solo si usas Correo |
 | **INSTAGRAM_APP_ID** | Instagram | Solo si usas Instagram |
-| **INSTAGRAM_APP_SECRET** | Instagram (y comprobar que los avisos de Meta son de verdad) | Solo si usas Instagram |
+| **INSTAGRAM_APP_SECRET** | Instagram | Solo si usas Instagram |
 | **INSTAGRAM_LOGIN** | Instagram | Solo si tu app de Meta es la de «inicio de sesión con Facebook»: valor **facebook** |
 | **INSTAGRAM_FB_CONFIG_ID** | Instagram | Solo con **INSTAGRAM_LOGIN=facebook** y si Meta te pidió una «Configuración» |
-| **META_WEBHOOK_VERIFY_TOKEN** | **Nueva.** El código del timbre de mensajes (Anexo H) | Solo si usas la Bandeja |
 | **TIKTOK_CLIENT_KEY** | TikTok | Solo si usas TikTok |
 | **TIKTOK_CLIENT_SECRET** | TikTok | Solo si usas TikTok |
 | **TIKTOK_DIRECT_POST_AUDITED** | Poner **1** cuando TikTok apruebe la auditoría | No |
