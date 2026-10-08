@@ -97,3 +97,15 @@ export async function orderFacets(businessId: string) {
   const uniq = (xs: (string | null)[]) => [...new Set(xs.map((x) => x?.trim()).filter(Boolean) as string[])].slice(0, 200);
   return { customers: uniq((data ?? []).map((r) => r.customer)), channels: uniq((data ?? []).map((r) => r.channel)) };
 }
+
+/** Nº de pedidos por estado con el resto de filtros aplicados (botones de estado como en PROFITY). */
+export async function countByStatus(businessId: string, f: OrderFilters, statuses: readonly string[]): Promise<Record<string, number>> {
+  const { supabase, workspaceId } = await getContext();
+  const rest = { ...f, status: undefined };
+  const counts = await Promise.all(statuses.map(async (s) => {
+    const base = supabase.from("orders").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("business_id", businessId).eq("status", s);
+    const { count } = await (await filtered(base as never, businessId, rest) as typeof base);
+    return [s, count ?? 0] as const;
+  }));
+  return Object.fromEntries(counts);
+}

@@ -1,9 +1,7 @@
-import { InvoicesView } from "@/components/production/invoices-view";
-import { listInvoices } from "@/lib/production/data";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Facturas" };
-
-export default async function FacturasPage({ params }: { params: Promise<{ id: string }> }) {
+/** Antes en Producción: ahora es la pestaña «Facturas». */
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <InvoicesView businessId={id} invoices={await listInvoices(id)} />;
+  redirect(`/negocios/${id}/facturas`);
 }

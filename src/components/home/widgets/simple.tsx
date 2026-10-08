@@ -60,7 +60,7 @@ export async function GoalsActiveWidget({ w, ctx }: WidgetProps) {
   const biz = businessOf(w, ctx);
   const goals = (await listGoals({ status: "active", businessId: biz?.id })).slice(0, w.size === "l" ? 8 : 4);
   return (
-    <WidgetCard title={`Objetivos activos${biz ? ` · ${biz.name}` : ""}`} href="/objetivos">
+    <WidgetCard title={`Objetivos activos${biz ? ` · ${biz.name}` : ""}`} href={biz ? `/objetivos?negocio=${biz.id}` : "/objetivos"}>
       {goals.length === 0 ? <p className="text-sm text-muted">No hay objetivos activos.</p> : (
         <ul className="flex flex-col gap-3">
           {goals.map((g) => {

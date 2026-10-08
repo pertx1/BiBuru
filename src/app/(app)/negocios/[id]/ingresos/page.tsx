@@ -1,10 +1,7 @@
-import { IncomesView } from "@/components/businesses/simple-lists";
-import { listIncomes } from "@/lib/data";
-import { todayISO } from "@/lib/dates";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Ingresos" };
-
-export default async function IngresosPage({ params }: { params: Promise<{ id: string }> }) {
+/** Ingresos ya no es una pestaña: los ingresos sueltos están al final de «Estadísticas» (y suman en Resumen). */
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <IncomesView businessId={id} incomes={await listIncomes(id)} today={todayISO()} />;
+  redirect(`/negocios/${id}/estadisticas#ingresos`);
 }

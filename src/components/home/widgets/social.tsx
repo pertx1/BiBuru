@@ -10,13 +10,18 @@ const n = (v: number | null | undefined) => (v == null ? "—" : v.toLocaleStrin
 const empty = <p className="text-sm text-muted">Conecta Instagram o TikTok en Redes.</p>;
 
 /** «Seguidores»: total y variación de 7 días de cada cuenta conectada (de la foto diaria). */
-export async function SocialFollowersWidget({ ctx }: WidgetProps) {
+export async function SocialFollowersWidget({ w, ctx }: WidgetProps) {
   const { supabase, workspaceId } = await getContext();
-  const { data: accs } = await supabase.from("social_accounts").select("id, platform, username").eq("workspace_id", workspaceId);
-  if (!accs?.length) return <WidgetCard title="Seguidores" href="/redes">{empty}</WidgetCard>;
+  const biz = businessOf(w, ctx);
+  let accQ = supabase.from("social_accounts").select("id, platform, username").eq("workspace_id", workspaceId);
+  if (biz) accQ = accQ.eq("business_id", biz.id);
+  const { data: accs } = await accQ;
+  const title = biz ? `Seguidores · ${biz.name}` : "Seguidores";
+  const href = biz ? `/negocios/${biz.id}/redes` : "/redes";
+  if (!accs?.length) return <WidgetCard title={title} href={href}>{empty}</WidgetCard>;
   const { data: rows } = await supabase.from("social_daily").select("account_id, day, followers").eq("workspace_id", workspaceId).gte("day", addDays(ctx.today, -9)).not("followers", "is", null).order("day");
   return (
-    <WidgetCard title="Seguidores" href="/redes">
+    <WidgetCard title={title} href={href}>
       <ul className="flex flex-col divide-y divide-border">
         {accs.map((a) => {
           const r = (rows ?? []).filter((x) => x.account_id === a.id);

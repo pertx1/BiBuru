@@ -1369,13 +1369,13 @@ isOneToOne: false
                   ]
                 },"user_ui_prefs": {
                   Row: {
-                    "created_at": string,"home_widgets": Json | null,"mobile_tabs": (string)[] | null,"seeded_widgets": (string)[],"show_capture_button": boolean,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_widgets": NonNullable<Json>,"created_at": string,"home_widgets": Json | null,"mobile_tabs": (string)[] | null,"seeded_widgets": (string)[],"show_capture_button": boolean,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_widgets"?: NonNullable<Json>,"created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_widgets"?: NonNullable<Json>,"created_at"?: string,"home_widgets"?: Json | null,"mobile_tabs"?: (string)[] | null,"seeded_widgets"?: (string)[],"show_capture_button"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

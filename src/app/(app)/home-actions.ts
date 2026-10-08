@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { generateHomeNote } from "@/lib/ai/home";
 import { getContext } from "@/lib/context";
-import { layoutSchema, normalizeLayout, type WidgetInstance } from "@/lib/home/layout";
+import { z } from "zod";
+import { BUSINESS_WIDGETS, layoutSchema, normalizeLayout, type WidgetInstance } from "@/lib/home/layout";
 import { MAX_TABS, maxTabs, normalizeTabs, SECTION_BY_KEY, type SectionKey } from "@/lib/home/nav";
 import type { Json } from "@/lib/supabase/database.types";
 import type { ActionResult } from "@/lib/schemas";
 
-type Patch = { home_widgets?: Json | null; mobile_tabs?: string[] | null; show_capture_button?: boolean };
+type Patch = { home_widgets?: Json | null; mobile_tabs?: string[] | null; show_capture_button?: boolean; business_widgets?: { [key: string]: Json | undefined } };
 
 /** Guarda (upsert) las preferencias propias en el espacio actual. RLS: solo las del propio usuario. */
 async function savePrefs(patch: Patch): Promise<ActionResult> {
@@ -31,6 +32,32 @@ export async function resetHomeLayout(): Promise<ActionResult> {
   const r = await savePrefs({ home_widgets: null });
   if (r.ok) revalidatePath("/");
   return r;
+}
+
+/** Cambia (o quita, con null) la disposición del Resumen de UN negocio, sin tocar las de los demás. */
+async function setBusinessLayout(businessId: string, layout: WidgetInstance[] | null): Promise<ActionResult> {
+  if (!z.uuid().safeParse(businessId).success) return { ok: false, error: "Negocio no válido" };
+  const { supabase, userId, workspaceId } = await getContext();
+  const { data: biz } = await supabase.from("businesses").select("id").eq("id", businessId).eq("workspace_id", workspaceId).maybeSingle();
+  if (!biz) return { ok: false, error: "Negocio no encontrado" };
+  const { data } = await supabase.from("user_ui_prefs").select("business_widgets").eq("user_id", userId).eq("workspace_id", workspaceId).maybeSingle();
+  const all = { ...((data?.business_widgets as Record<string, Json> | null) ?? {}) };
+  if (layout) all[businessId] = layout as unknown as Json; else delete all[businessId];
+  const r = await savePrefs({ business_widgets: all });
+  if (r.ok) revalidatePath(`/negocios/${businessId}`);
+  return r;
+}
+
+/** Disposición del Resumen de un negocio (solo widgets de negocio; se valida y normaliza). */
+export async function saveBusinessLayout(businessId: string, layout: WidgetInstance[]): Promise<ActionResult> {
+  const p = layoutSchema.safeParse(layout);
+  if (!p.success) return { ok: false, error: "Disposición no válida" };
+  return setBusinessLayout(businessId, normalizeLayout(p.data, { fallback: [], allowed: BUSINESS_WIDGETS }));
+}
+
+/** «Restablecer» el Resumen de un negocio: vuelve a la disposición por defecto. */
+export async function resetBusinessLayout(businessId: string): Promise<ActionResult> {
+  return setBusinessLayout(businessId, null);
 }
 
 /** Secciones de la barra inferior (en orden): máx. 5, o 4 si se muestra el botón +. «Más» es fijo. */

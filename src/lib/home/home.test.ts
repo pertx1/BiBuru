@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chartStart, pickTotals, shortEuros } from "./finance";
-import { DEFAULT_LAYOUT, cleanSettings, layoutSchema, newInstance, normalizeLayout, seedLayout, WIDGET_BY_TYPE } from "./layout";
+import { BUSINESS_WIDGETS, DEFAULT_LAYOUT, cleanSettings, defaultBusinessLayout, layoutSchema, newInstance, normalizeBusinessLayout, normalizeLayout, seedLayout, WIDGET_BY_TYPE, withBusiness } from "./layout";
 import { DEFAULT_TABS, maxTabs, moreSections, normalizeTabs, splitTabs } from "./nav";
 import { homeRange, pairSeries } from "./period";
 
@@ -150,5 +150,34 @@ describe("widgets fijos añadidos una sola vez («Sin fecha»)", () => {
     expect(seedLayout(normalizeLayout([{ id: "cccc", type: "inbox", size: "s", settings: {} }]), [], (t) => `seed-${t}`).layout[0].type).toBe("tasks-nodate");
     const twice = seedLayout([...custom, { id: "dddd", type: "tasks-nodate", size: "m", settings: {} }], [], (t) => `seed-${t}`);
     expect(twice.layout.filter((w) => w.type === "tasks-nodate")).toHaveLength(1);
+  });
+});
+
+describe("Resumen de cada negocio con widgets", () => {
+  const BIZ = "22222222-2222-2222-2222-222222222222";
+  it("sin guardar: la disposición por defecto (Bolsa imprenta y Reglas solo con producción)", () => {
+    const plain = normalizeBusinessLayout({}, BIZ, false).map((w) => w.type);
+    expect(plain[0]).toBe("finance-summary");
+    expect(plain).not.toContain("print-bag");
+    expect(normalizeBusinessLayout(null, BIZ, true).map((w) => w.type)).toEqual(expect.arrayContaining(["print-bag", "invoices-latest", "antola-rules", "orders-status", "social-inbox"]));
+    expect(defaultBusinessLayout(true).every((w) => BUSINESS_WIDGETS.has(w.type))).toBe(true);
+  });
+  it("cada negocio guarda la suya y solo admite widgets de negocio", () => {
+    const saved = { [BIZ]: [{ id: "aaaa", type: "orders-status", size: "s", settings: {} }, { id: "bbbb", type: "news-today", size: "m", settings: {} }] };
+    expect(normalizeBusinessLayout(saved, BIZ, false).map((w) => [w.type, w.size])).toEqual([["orders-status", "s"]]);
+    expect(normalizeBusinessLayout(saved, "33333333-3333-3333-3333-333333333333", false)[0].type).toBe("finance-summary");
+  });
+  it("dentro del negocio, los widgets usan ese negocio", () => {
+    const w = newInstance("orders", "x-1")!;
+    expect(withBusiness(w, BIZ).settings.business).toBe(BIZ);
+    expect(withBusiness(newInstance("quick-capture", "x-2")!, BIZ).settings).toEqual({});
+  });
+  it("los 15 widgets de negocio y los dos de acceso existen en el catálogo (también en Inicio, eligiendo negocio)", () => {
+    for (const t of ["finance-summary", "profit", "sales-monthly", "expenses-category", "orders", "orders-status", "pending-receivables", "top-products", "stock-missing",
+      "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "social-inbox", "tasks-business", "goals-active"]) {
+      const m = WIDGET_BY_TYPE.get(t);
+      expect(m, t).toBeDefined();
+      expect(m!.fields.some((f) => f.kind === "business"), t).toBe(true);
+    }
   });
 });

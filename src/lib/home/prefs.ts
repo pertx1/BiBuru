@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getContext } from "@/lib/context";
 import type { Json } from "@/lib/supabase/database.types";
-import { normalizeLayout, SEED_WIDGETS, seedLayout, type WidgetInstance } from "./layout";
+import { normalizeBusinessLayout, normalizeLayout, SEED_WIDGETS, seedLayout, type WidgetInstance } from "./layout";
 import { maxTabs, normalizeTabs, type SectionKey } from "./nav";
 
 /** Preferencias de interfaz del usuario en su espacio (una consulta por petición). Si algo falla, valores por defecto. */
@@ -28,3 +28,12 @@ export const getUiPrefs = cache(async (): Promise<{ layout: WidgetInstance[]; ta
     customTabs: data?.mobile_tabs != null,
   };
 });
+
+/** Disposición del Resumen de un negocio (la guardada por la persona o la de por defecto). */
+export async function getBusinessLayout(businessId: string, production: boolean): Promise<{ layout: WidgetInstance[]; custom: boolean }> {
+  const { supabase, userId, workspaceId } = await getContext();
+  const { data, error } = await supabase.from("user_ui_prefs").select("business_widgets").eq("user_id", userId).eq("workspace_id", workspaceId).maybeSingle();
+  if (error) console.error("[prefs] negocio", error.message);
+  const raw = (data?.business_widgets ?? {}) as Record<string, unknown>;
+  return { layout: normalizeBusinessLayout(raw, businessId, production), custom: raw[businessId] != null };
+}

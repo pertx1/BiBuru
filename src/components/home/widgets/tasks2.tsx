@@ -37,7 +37,7 @@ export async function TasksNoDateWidget({ w, ctx }: WidgetProps) {
 
 export function TasksBusinessWidget(p: WidgetProps) {
   const biz = businessOf(p.w, p.ctx);
-  if (!biz) return <WidgetCard title="Tareas de un negocio"><p className="text-sm text-muted">Pulsa «Editar» → ajustes de este widget y elige el negocio.</p></WidgetCard>;
+  if (!biz) return <WidgetCard title="Tareas del negocio"><p className="text-sm text-muted">Pulsa «Editar» → ajustes de este widget y elige el negocio.</p></WidgetCard>;
   return <TasksBlock {...p} view="todas" businessId={biz.id} title={`Tareas · ${biz.name}`} href={`/tareas?f=${biz.id}`} empty="Sin tareas abiertas." />;
 }
 
