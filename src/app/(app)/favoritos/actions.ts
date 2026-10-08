@@ -148,7 +148,8 @@ export async function confirmAnalysis(id: string, mode: "video" | "light"): Prom
   const r = await analyzeVideo(ctx, id, { mode, confirmed: true });
   refresh();
   if (r === "ready") return { ok: true };
-  return { ok: false, error: r === "blocked" ? "La IA está pausada o al límite ahora mismo; se reintentará sola." : "No se pudo analizar ahora. Se reintentará sola." };
+  if (r === "queued") return { ok: false, error: "Hay otro vídeo analizándose: este va justo después, solo." };
+  return { ok: false, error: r === "blocked" || r === "rate_limited" ? "La IA está pausada o al límite ahora mismo; se reintentará sola." : "No se pudo analizar ahora. Se reintentará sola." };
 }
 
 /** Vuelve a poner un vídeo en la cola de análisis (tras un error). */

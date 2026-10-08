@@ -181,3 +181,18 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - La pestaña **Mensajes** de cada negocio y el widget «Mensajes sin responder» son solo **correo**. La Revisión cuenta solo correos.
 - Los enlaces antiguos a `/redes/mensajes/<id>` llevan a Redes; Redes abre en «Contenido».
 - Si en Meta quedó configurado el webhook, ahora recibirá un 404: se puede borrar en la app de Meta (no hace falta).
+
+## Análisis de varios vídeos de YouTube (arreglo)
+- Causa: al guardar varios enlaces a la vez, cada vídeo lanzaba su análisis en paralelo. Un vídeo de YouTube gasta muchos tokens y el plan
+  gratuito de Gemini tiene tope por minuto: el segundo vídeo recibía **429 RESOURCE_EXHAUSTED**. `runAi` reintentaba a 1 s y 2 s (más cupo
+  gastado), contaba como intento fallido y, tras 4, el vídeo quedaba en «Error» con el texto técnico en inglés.
+- Ahora los vídeos se analizan **de uno en uno por espacio**: se reclama el vídeo con un `update … where analysis_status <> 'analyzing'` y, si
+  hay otro analizándose (actualizado hace < 6 min), vuelve a la cola sin espera. Quien está analizando sigue con el resto de la cola
+  (`analyzeAndDrain`, máx. 150 s); varios `analyzeSoon` de una misma petición van en fila. El cron también va de uno en uno y para a los 35 s.
+- Un 429 no gasta intento: vuelve a la cola con la espera que pide Gemini (`retryDelay`, mín. 1 min; 3 h si el tope es diario) y un mensaje en
+  español (`src/lib/ai/errors.ts`). `runAi` solo reintenta un 429 si Gemini pide ≤ 15 s.
+- Vídeo con `mediaResolution: low` (~100 tokens/s en vez de ~300): 3 veces menos tokens y coste, de sobra para un resumen.
+- `maxOutputTokens` 1500 → 8192: en los modelos que «piensan», el pensamiento cuenta en ese tope y podía cortar el JSON («La IA no devolvió
+  un análisis válido»). Solo se paga lo que se usa.
+- Los vídeos que ya estaban en «Error» por esto (429, cuota, saturado o análisis no válido) vuelven solos a la cola en la siguiente pasada del cron.
+- Prueba: `scripts/e2e/videos-queue.mjs` (Gemini falso que da 429 si recibe dos vídeos a la vez).

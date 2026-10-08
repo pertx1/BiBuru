@@ -18,6 +18,7 @@ export type AiRequest = {
   tools?: FunctionDecl[];
   temperature?: number;
   maxOutputTokens?: number;
+  mediaResolution?: "low" | "medium"; // vídeo/imagen: «low» gasta ~3 veces menos tokens por segundo de vídeo
 };
 
 export type AiResponse = {
@@ -32,8 +33,11 @@ export interface AiProvider {
 }
 
 export class AiError extends Error {
-  constructor(message: string, readonly status?: number, readonly retryable = false) {
+  /** Espera que pide el propio modelo antes de reintentar (429), si la indica. */
+  readonly retryAfterMs?: number;
+  constructor(message: string, readonly status?: number, readonly retryable = false, retryAfterMs?: number) {
     super(message);
+    this.retryAfterMs = retryAfterMs;
   }
 }
 

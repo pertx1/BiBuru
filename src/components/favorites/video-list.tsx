@@ -136,7 +136,8 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
         {v.analysis_status === "error" && (
           <div className="rounded-xl border border-danger/40 bg-danger/5 p-3"><p>{v.analysis_error ?? "No se pudo analizar."}</p>{!v.unavailable && <Button className="mt-2" variant="secondary" disabled={pending} onClick={() => run(() => retryAnalysis(v.id), "Reintentando…")}>Reintentar</Button>}</div>
         )}
-        {(v.analysis_status === "pending" || v.analysis_status === "analyzing") && <p className="text-muted">En la cola de análisis. {v.analysis_error ? `Último aviso: ${v.analysis_error}` : "Se hace solo en unos minutos."}</p>}
+        {v.analysis_status === "analyzing" && <p className="text-muted">Analizando…</p>}
+        {v.analysis_status === "pending" && <p className="text-muted">En la cola de análisis (los vídeos se analizan de uno en uno). {v.analysis_error ? v.analysis_error : "Se hace solo en unos minutos."}</p>}
 
         {v.summary && (
           <section>

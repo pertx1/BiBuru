@@ -22,9 +22,11 @@ export function costMicros(inputTokens: number, outputTokens: number, price: Pri
 
 /** Tokens aproximados de un vídeo (audio + fotogramas a resolución por defecto: ~300 por segundo). */
 export const VIDEO_TOKENS_PER_SECOND = 300;
+/** Con `mediaResolution: low` (lo que usa Favoritos): 66 por fotograma + 32 de audio ≈ 100 por segundo. */
+export const VIDEO_TOKENS_PER_SECOND_LOW = 100;
 
-export function estimateVideoCostMicros(durationSec: number, price: Price, outputTokens = 1500): number {
-  return costMicros(Math.round(durationSec * VIDEO_TOKENS_PER_SECOND) + 500, outputTokens, price);
+export function estimateVideoCostMicros(durationSec: number, price: Price, outputTokens = 1500, tokensPerSecond = VIDEO_TOKENS_PER_SECOND): number {
+  return costMicros(Math.round(durationSec * tokensPerSecond) + 500, outputTokens, price);
 }
 
 export const microsToEuros = (m: number) => m / 1_000_000;
