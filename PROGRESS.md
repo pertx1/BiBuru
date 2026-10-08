@@ -12,6 +12,14 @@
 | 7 · Favoritos (vídeos) | Pendiente |
 | 8 · Pulido | Pendiente |
 
+## Negocios, stock, revisiones y tareas sin fecha (rama `negocios-revision`)
+- **Cada pedido resta del stock** (transacción en BD; editar = diferencia; cancelar/borrar devuelve), vínculo por línea, aviso de falta, historial por artículo y «Recalcular desde pedidos».
+- **Revisión diaria/semanal/mensual**: sección nueva, generación y aviso a su hora, histórico, interactiva, «Revisado», prioridades, IA opcional, filtro por negocio, widget.
+- **Sin fecha** en Inicio (bloque fijo) y en el resumen de la mañana.
+- **Negocios**: pestañas reordenadas (Producción, Ingresos, Tareas y Objetivos fuera, con redirección), Stock en tabla, botones por estado en Pedidos, Resumen con widgets por negocio (7 nuevos).
+- **Mensajes por negocio** (correo + Instagram + TikTok) y Ajustes › Cuentas sin negocio.
+- Pruebas: unitarias, `test:db` (pedidos a la vez, cancelar, editar…), y `scripts/e2e/negocios-revision.mjs` en el navegador.
+
 ## Mejoras «todo de una» (rama `mejoras-todo`)
 - **Redes por negocio**: pestaña **Redes** en cada negocio y «Todas las redes» con filtro por negocio. Tarjeta por cuenta (seguidores, +hoy/+semana,
   sin responder, «Actualizado hace X min», límites). Secciones Bandeja / Contenido / Estadísticas (suma de todas o detalle por cuenta).

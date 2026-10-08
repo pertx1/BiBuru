@@ -37,7 +37,7 @@ export function InboxView({ accounts, threads, filters, basePath, keepParams, bu
       {igNoScopes.length > 0 && (
         <div role="status" className="rounded-xl bg-accent/10 p-3 text-sm">
           <p className="font-semibold">Activa los mensajes de Instagram</p>
-          <p className="mt-0.5 text-muted">Para ver y responder mensajes y comentarios hay que dar dos permisos más ({igNoScopes.map((a) => `@${a.username}`).join(", ")}). Antes, añádelos en la app de Meta (guía, bloque H).</p>
+          <p className="mt-0.5 text-muted">Para ver y responder mensajes y comentarios hay que dar dos permisos más ({igNoScopes.map((a) => `@${a.username}`).join(", ")}). Antes, añádelos en la app de Meta (guía, anexo H).</p>
           <a href="/api/instagram/connect?mensajes=1" className="mt-2 inline-flex min-h-11 items-center rounded-full bg-accent px-4 font-semibold text-accent-foreground md:min-h-9">Activar mensajes</a>
         </div>
       )}

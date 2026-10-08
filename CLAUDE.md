@@ -230,5 +230,20 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   `refreshIfStale` (al abrir, >15 min) y «Actualizar todo». Si una red limita, `rate_limited_until` = +1 h.
 - Pantalla común `RedesView` para `/redes` y `/negocios/[id]/redes`. Ajustes en `profiles.inbox_ai_suggest | inbox_push_enabled | social_alerts_enabled`.
 
+## Pedidos que descuentan stock
+- `order_items.stock_key` (artículo elegido) y `stock_effects` ([{key,label,qty}], null = sin vincular). Lógica pura en `src/lib/stock/link.ts` (`resolveLineStock`, mismo código en formulario y servidor).
+- `apply_order_stock(order, clear)` (security invoker, `for update`): aplica la diferencia entre lo que debe descontar y sus movimientos (`stock_movements.order_id`, `source`). Triggers: cambio de estado y borrado.
+  `saveOrder` y la IA la llaman tras guardar. Nunca restar «a mano» en el código: siempre esta función.
+- Lo vinculado ya está restado: `pendingLines`/`getStockOverview`/`antola_snapshot` solo cuentan líneas con `stock_effects is null`. «Recalcular desde pedidos»: `recalcPreview`/`applyRecalc`.
+
+## Negocios: pestañas y Resumen
+- Pestañas en `business-tabs.tsx`; Producción, Ingresos, Tareas y Objetivos son redirecciones. Bolsa/Facturas/Reglas en `/negocios/[id]/{bolsa,facturas,reglas}` con `ProductionGate`.
+- Resumen = `HomeGrid` con `businessId` (solo `BUSINESS_WIDGETS`, negocio fijo con `withBusiness`), disposición en `user_ui_prefs.business_widgets[bizId]`. `renderWidgetNodes` sirve a Inicio y Resumen.
+- Mensajes del negocio: `src/lib/messages/` (correo de `mail_accounts.business_id` + hilos de sus redes), `mail_messages.triage`.
+
+## Revisión
+- `src/lib/review/period.ts` (pura: periodos, `isDue`), `build.ts` (cifras con cualquier cliente: filtrar SIEMPRE por espacio/persona), `service.ts` (actual, histórico, IA, `runReviewCron` desde `/api/cron/reminders`).
+- Tabla `reviews` (única por espacio+persona+tipo+inicio). Ajustes en `profiles.review_*`. Widget `review-today`; `SEED_WIDGETS` añade widgets fijos una vez.
+
 ## Páginas públicas
 - `/privacidad` y `/terminos` (las piden Meta y TikTok); están en `PUBLIC_PATHS` del proxy.
