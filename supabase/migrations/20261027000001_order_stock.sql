@@ -94,7 +94,12 @@ begin
 end;
 $$;
 revoke all on function public.apply_order_stock(uuid, boolean) from public;
-grant execute on function public.apply_order_stock(uuid, boolean) to authenticated, service_role;
+grant execute on function public.apply_order_stock(uuid, boolean) to authenticated;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    grant execute on function public.apply_order_stock(uuid, boolean) to service_role;
+  end if;
+end $$;
 
 -- Cancelar (o des-cancelar) un pedido devuelve (o vuelve a quitar) su stock.
 create or replace function public.orders_stock_on_status()
