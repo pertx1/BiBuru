@@ -10,7 +10,7 @@ const likeText = (s: string) => s.replace(/[%_,()\\]/g, " ").trim();
 export async function businessAccounts(businessId: string) {
   const { supabase, workspaceId, userId } = await getContext();
   const [{ data: social }, { data: mail }] = await Promise.all([
-    supabase.from("social_accounts").select("id, platform, username, scopes").eq("workspace_id", workspaceId).eq("business_id", businessId),
+    supabase.from("social_accounts").select("id, platform, username, scopes, status, last_sync_at, sync_error, inbox_synced_at").eq("workspace_id", workspaceId).eq("business_id", businessId),
     supabase.from("mail_accounts").select("id, email, status").eq("user_id", userId).eq("business_id", businessId),
   ]);
   return { social: social ?? [], mail: mail ?? [] };
@@ -69,4 +69,19 @@ export async function countBusinessUnanswered(businessId: string): Promise<numbe
     ]);
     return (s.count ?? 0) + (m.count ?? 0);
   } catch { return 0; }
+}
+
+/** Cuentas de Instagram del espacio que no están asignadas a ningún negocio (para avisar en «Mensajes»). */
+export async function unassignedInstagram(): Promise<{ id: string; username: string | null }[]> {
+  const { supabase, workspaceId } = await getContext();
+  const { data } = await supabase.from("social_accounts").select("id, username").eq("workspace_id", workspaceId).eq("platform", "instagram").is("business_id", null);
+  return data ?? [];
+}
+
+/** ¿Hay algún hilo guardado (en cualquier estado) de estas cuentas? */
+export async function hasThreads(accountIds: string[]): Promise<boolean> {
+  if (!accountIds.length) return false;
+  const { supabase, workspaceId } = await getContext();
+  const { count } = await supabase.from("social_threads").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).in("account_id", accountIds);
+  return (count ?? 0) > 0;
 }

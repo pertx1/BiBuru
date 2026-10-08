@@ -5,7 +5,9 @@ import { InboxLive } from "@/components/social/inbox-live";
 import { requestNowMs } from "@/lib/dates";
 import { CAPABILITIES } from "@/lib/inbox/logic";
 import { mailConfigured } from "@/lib/mail/data";
-import { listBusinessMessages } from "@/lib/messages/data";
+import { InstagramStatus } from "@/components/messages/instagram-status";
+import { getBusiness, listBusinesses } from "@/lib/data";
+import { hasThreads, listBusinessMessages, unassignedInstagram } from "@/lib/messages/data";
 import { CHANNEL_LABEL, MSG_STATUS_LABEL, parseUnifiedFilters, type Channel } from "@/lib/messages/unified";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +19,10 @@ type SP = { canal?: string; estado?: string; q?: string };
 export default async function MensajesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const f = parseUnifiedFilters(sp);
-  const { items, accounts } = await listBusinessMessages(id, f);
+  const [{ items, accounts }, unassignedIg, business, businesses] = await Promise.all([listBusinessMessages(id, f), unassignedInstagram().catch(() => []), getBusiness(id), listBusinesses()]);
+  const igAccounts = accounts.social.filter((a) => a.platform === "instagram");
+  const igHasThreads = await hasThreads(igAccounts.map((a) => a.id)).catch(() => false);
+  const showIgStatus = (!f.canal || f.canal === "instagram") && !items.some((i) => i.channel === "instagram");
   const base = `/negocios/${id}/mensajes`;
   const href = (o: SP) => {
     const q = new URLSearchParams();
@@ -26,7 +31,7 @@ export default async function MensajesPage({ params, searchParams }: { params: P
     return s ? `${base}?${s}` : base;
   };
   const chip = (on: boolean) => cn("flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium md:min-h-9", on ? "bg-accent text-accent-foreground" : "bg-fill");
-  const noAccounts = !accounts.mail.length && !accounts.social.length;
+  const noAccounts = !accounts.mail.length && !accounts.social.length && !unassignedIg.length;
   return (
     <div className="flex flex-col gap-3">
       {noAccounts && (
@@ -49,6 +54,10 @@ export default async function MensajesPage({ params, searchParams }: { params: P
         {(["sin_responder", "respondido", "archivado", "todos"] as const).map((e) => <Link key={e} href={href({ estado: e === "sin_responder" ? undefined : e })} className={chip(f.estado === e)}>{MSG_STATUS_LABEL[e]}</Link>)}
       </nav>
       {f.canal === "tiktok" && <p className="text-xs text-muted">TikTok no deja leer mensajes ni comentarios desde una app propia. <a href={CAPABILITIES.tiktok.openDmsUrl ?? "https://www.tiktok.com/messages"} target="_blank" rel="noopener noreferrer" className="text-accent underline">Abrir mensajes en TikTok</a></p>}
+      {showIgStatus && (f.canal === "instagram" || !noAccounts) && (
+        <InstagramStatus businessName={business?.name ?? "este negocio"} accounts={igAccounts} unassigned={unassignedIg}
+          businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} hasItems={igHasThreads} />
+      )}
       <BusinessMessages businessId={id} items={items} nowMs={requestNowMs()} />
       <InboxLive />
     </div>
