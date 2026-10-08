@@ -103,6 +103,7 @@ export const WIDGETS: WidgetMeta[] = [
   w("invoices-latest", "negocios", "Últimas facturas", "Las últimas facturas guardadas de un negocio.", "list", ["m", "l", "s"], [business(false)]),
   w("antola-rules", "negocios", "Reglas Antola", "Reglas de color de DTF y si Antola está conectado.", "list", ["s", "m"], [business(false)]),
   w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
+  w("review-today", "tareas", "Revisión de hoy", "Tu revisión diaria (y la semanal o mensual) hasta que pulses «Revisado».", "list", ["m", "l", "s"]),
   w("tasks-nodate", "tareas", "Sin fecha", "Tareas sin fecha: siguen aquí cada día hasta que las hagas. Complétalas, ponles fecha o ábrelas.", "list", ["m", "l", "s"]),
   w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
   w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),
@@ -151,7 +152,7 @@ export const layoutSchema = z.array(instanceSchema).max(MAX_WIDGETS);
 
 /** Disposición por defecto (el Resumen financiero siempre el primero). */
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-  "finance-summary", "tasks-today", "tasks-nodate", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
+  "finance-summary", "review-today", "tasks-today", "tasks-nodate", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
 ].map((type, i) => {
   const m = WIDGET_BY_TYPE.get(type)!;
   return { id: `def-${i + 1}`, type, size: m.defaultSize, settings: { ...m.defaults } };
@@ -163,6 +164,7 @@ export const DEFAULT_LAYOUT: WidgetInstance[] = [
  */
 export const SEED_WIDGETS: { type: string; after: string | null }[] = [
   { type: "tasks-nodate", after: "tasks-today" },
+  { type: "review-today", after: "finance-summary" },
 ];
 
 export function seedLayout(layout: WidgetInstance[], seeded: string[], idFor: (type: string) => string): { layout: WidgetInstance[]; seeded: string[]; changed: boolean } {
@@ -233,7 +235,7 @@ export function defaultBusinessLayout(production: boolean): WidgetInstance[] {
   const types: [string, WidgetSize?, Record<string, string>?][] = [
     ["finance-summary", "l"], ["profit", "m"], ["orders-status", "m"], ["orders", "m", { show: "latest" }], ["pending-receivables", "m"],
     ["sales-monthly", "l"], ["expenses-category", "m"], ["top-products", "m"], ["stock-missing", "m"], ["stock-summary", "m"],
-    ...(production ? [["print-bag", "m"], ["invoices-latest", "m"], ["antola-rules", "s"]] as [string, WidgetSize][] : []),
+    ...(production ? [["print-bag", "m"], ["invoices-latest", "m"], ["antola-rules", "m"]] as [string, WidgetSize][] : []),
     ["social-followers", "m"], ["social-inbox", "m"], ["tasks-business", "m"], ["goals-active", "m"],
   ];
   return types.map(([type, size, extra], i) => {

@@ -790,13 +790,13 @@ isOneToOne: false
                   ]
                 },"profiles": {
                   Row: {
-                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"inbox_ai_suggest": boolean,"inbox_push_enabled": boolean,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"social_alerts_enabled": boolean,"task_lead_minutes": number,"task_reminders_enabled": boolean,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
+                    "ai_alert_month": string | null,"ai_auto_apply": boolean,"ai_monthly_budget_cents": number,"created_at": string,"daily_digest_enabled": boolean,"daily_digest_time": string,"default_workspace_id": string | null,"display_name": string | null,"event_lead_minutes": number,"id": string,"inbox_ai_suggest": boolean,"inbox_push_enabled": boolean,"mail_ai_allowed": boolean,"news_enabled": boolean,"news_time": string,"news_weekends": boolean,"overdue_alert_enabled": boolean,"overdue_alert_time": string,"quiet_hours_end": string,"quiet_hours_start": string,"review_daily_enabled": boolean,"review_daily_time": string,"review_monthly_enabled": boolean,"review_monthly_time": string,"review_weekly_dow": number,"review_weekly_enabled": boolean,"review_weekly_time": string,"social_alerts_enabled": boolean,"task_lead_minutes": number,"task_reminders_enabled": boolean,"timezone": string,"updated_at": string,"user_id": string,"video_long_minutes": number,"weekly_review_dow": number,"weekly_review_enabled": boolean,"weekly_review_time": string
                   }
                   Insert: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"review_daily_enabled"?: boolean,"review_daily_time"?: string,"review_monthly_enabled"?: boolean,"review_monthly_time"?: string,"review_weekly_dow"?: number,"review_weekly_enabled"?: boolean,"review_weekly_time"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id": string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Update: {
-                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
+                    "ai_alert_month"?: string | null,"ai_auto_apply"?: boolean,"ai_monthly_budget_cents"?: number,"created_at"?: string,"daily_digest_enabled"?: boolean,"daily_digest_time"?: string,"default_workspace_id"?: string | null,"display_name"?: string | null,"event_lead_minutes"?: number,"id"?: string,"inbox_ai_suggest"?: boolean,"inbox_push_enabled"?: boolean,"mail_ai_allowed"?: boolean,"news_enabled"?: boolean,"news_time"?: string,"news_weekends"?: boolean,"overdue_alert_enabled"?: boolean,"overdue_alert_time"?: string,"quiet_hours_end"?: string,"quiet_hours_start"?: string,"review_daily_enabled"?: boolean,"review_daily_time"?: string,"review_monthly_enabled"?: boolean,"review_monthly_time"?: string,"review_weekly_dow"?: number,"review_weekly_enabled"?: boolean,"review_weekly_time"?: string,"social_alerts_enabled"?: boolean,"task_lead_minutes"?: number,"task_reminders_enabled"?: boolean,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"video_long_minutes"?: number,"weekly_review_dow"?: number,"weekly_review_enabled"?: boolean,"weekly_review_time"?: string
                   }
                   Relationships: [
                     {
@@ -851,6 +851,25 @@ isOneToOne: false
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "reminders_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"reviews": {
+                  Row: {
+                    "ai_summary": string | null,"created_at": string,"data": NonNullable<Json>,"id": string,"kind": string,"notified_at": string | null,"period_end": string,"period_start": string,"priorities": (string)[],"reviewed_at": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "ai_summary"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"id"?: string,"kind": string,"notified_at"?: string | null,"period_end": string,"period_start": string,"priorities"?: (string)[],"reviewed_at"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "ai_summary"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"id"?: string,"kind"?: string,"notified_at"?: string | null,"period_end"?: string,"period_start"?: string,"priorities"?: (string)[],"reviewed_at"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reviews_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"

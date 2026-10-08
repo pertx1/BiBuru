@@ -58,6 +58,7 @@ export function StockTable({ businessId, lines, items, production, catalog, prod
   const models = [...new Set(shirts.map((l) => l.key.split("|")[1]))];
   const sizes = [...new Set([...DEFAULT_SIZES, ...shirts.map((l) => l.key.split("|")[2])])].sort((a, b) => sizeRank(a) - sizeRank(b));
   const designs = [...new Set(dtfs.map((l) => l.key.split("|")[1]))];
+  const variants = ["UNICO", "BLANCO", "NEGRO"].filter((v) => dtfs.some((l) => l.key.endsWith(`|${v}`)));
   const cell = (l: StockLine | undefined, text?: string) => l
     ? <button type="button" onClick={() => setTarget(l)} className={cn("min-h-11 w-full min-w-8 rounded-lg px-1 tabular-nums hover:bg-surface-2 md:min-h-9", tone(l))} aria-label={`${l.label}: ${l.available}`}>{text ?? l.available}</button>
     : <span className="text-muted">–</span>;
@@ -116,12 +117,12 @@ export function StockTable({ businessId, lines, items, production, catalog, prod
           {designs.length === 0 ? <p className="text-sm text-muted">Sin diseños. Añádelos en «Catálogo».</p> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="text-left text-xs text-muted"><th className="py-1 pr-2 font-medium">Diseño</th>{["UNICO", "BLANCO", "NEGRO"].map((v) => <th key={v} className="px-1 py-1 text-center font-medium">{VARIANT_LABEL[v]}</th>)}</tr></thead>
+                <thead><tr className="text-left text-xs text-muted"><th className="py-1 pr-2 font-medium">Diseño</th>{variants.map((v) => <th key={v} className="px-1 py-1 text-center font-medium">{VARIANT_LABEL[v]}</th>)}</tr></thead>
                 <tbody>
                   {designs.map((d) => (
                     <tr key={d} className="border-t border-border">
                       <td className="py-1 pr-1 text-xs font-medium sm:text-sm">{d}</td>
-                      {["UNICO", "BLANCO", "NEGRO"].map((v) => <td key={v} className="px-0.5 py-0.5 text-center">{cell(dtfs.find((l) => l.key === `dtf|${d}|${v}`))}</td>)}
+                      {variants.map((v) => <td key={v} className="px-0.5 py-0.5 text-center">{cell(dtfs.find((l) => l.key === `dtf|${d}|${v}`))}</td>)}
                     </tr>
                   ))}
                 </tbody>

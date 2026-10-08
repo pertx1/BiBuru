@@ -22,6 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { MailSettings } from "@/components/mail/mail-settings";
 import { SocialSettings } from "@/components/social/social-settings";
 import { UnassignedAccounts } from "@/components/account/unassigned-accounts";
+import { ReviewSettings } from "@/components/review/review-settings";
 import { listMailAccounts, mailConfigured } from "@/lib/mail/data";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -95,6 +96,15 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
               weekly_review_enabled: p.weekly_review_enabled, weekly_review_dow: p.weekly_review_dow, weekly_review_time: p.weekly_review_time,
             }} />
           </Section>
+        )}
+        {p && (
+          <div id="revisiones" className="scroll-mt-20"><Section title="Revisiones (diaria, semanal y mensual)">
+            <ReviewSettings initial={{
+              review_daily_enabled: p.review_daily_enabled, review_daily_time: p.review_daily_time.slice(0, 5),
+              review_weekly_enabled: p.review_weekly_enabled, review_weekly_dow: p.review_weekly_dow, review_weekly_time: p.review_weekly_time.slice(0, 5),
+              review_monthly_enabled: p.review_monthly_enabled, review_monthly_time: p.review_monthly_time.slice(0, 5),
+            }} />
+          </Section></div>
         )}
         <Section title="Inteligencia artificial">
           <BudgetBanner />

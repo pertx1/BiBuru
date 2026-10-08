@@ -37,7 +37,7 @@ export function NotificationSettingsForm({ initial }: { initial: NotificationSet
       </Row>
       <Row label="Resumen de la mañana">{check("daily_digest_enabled", "Resumen diario")}{time("daily_digest_time")}</Row>
       <Row label="Aviso de tareas atrasadas">{check("overdue_alert_enabled", "Aviso de atrasadas")}{time("overdue_alert_time")}</Row>
-      <Row label="Revisión semanal de objetivos">{check("weekly_review_enabled", "Revisión semanal")}
+      <Row label="Revisión semanal de objetivos (solo si apagas la Revisión semanal, que ya los incluye)">{check("weekly_review_enabled", "Revisión semanal")}
         <Select aria-label="Día de la revisión" value={s.weekly_review_dow} onChange={(e) => set("weekly_review_dow", Number(e.target.value))} className="w-40 sm:w-32">{DAYS.map((n, i) => <option key={n} value={i}>{n}</option>)}</Select>{time("weekly_review_time")}
       </Row>
       <Row label="Horas de silencio">{time("quiet_hours_start")}<span className="text-muted">a</span>{time("quiet_hours_end")}</Row>

@@ -87,7 +87,7 @@ export function HomeGrid({ layout: initial, nodes, businesses, dateLabel, toolba
           {!businessId && <SearchButton />}
           <button type="button" onClick={() => setEditing((e) => !e)} aria-pressed={editing}
             className={cn("min-h-11 rounded-full px-4 text-sm font-semibold", editing ? "bg-accent text-accent-foreground" : "border border-border bg-surface")}>
-            {editing ? "Listo" : "Editar"}
+            {editing ? "Listo" : businessId ? "Editar resumen" : "Editar"}
           </button>
         </div>
       </div>

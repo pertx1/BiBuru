@@ -165,7 +165,7 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
           <div key={l.key} className="grid grid-cols-6 gap-2 rounded-lg border border-border p-3">
             {stock && stock.options.length > 0 && (
               <Select aria-label={`Artículo del stock de la línea ${idx + 1}`} value={l.stock_key} onChange={(e) => onStockPick(l.key, e.target.value)} className="col-span-6">
-                <option value="">{legacy ? "Pedido anterior: elige un artículo para descontarlo" : "Artículo del stock (o se reconoce solo)"}</option>
+                <option value="">{legacy ? "Pedido anterior: elige artículo" : "Artículo del stock…"}</option>
                 {(["prendas", "dtf", "articulos"] as const).map((g) => {
                   const opts = stock.options.filter((o) => o.group === g);
                   return opts.length ? <optgroup key={g} label={g === "prendas" ? "Prendas" : g === "dtf" ? "DTF" : "Materiales y productos"}>{opts.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}</optgroup> : null;

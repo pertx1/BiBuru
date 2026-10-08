@@ -1,5 +1,5 @@
 import {
-  Briefcase, CalendarDays, CheckSquare, Home, Inbox, Mail, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
+  Briefcase, CalendarDays, CheckSquare, ClipboardCheck, Home, Inbox, Mail, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -10,6 +10,7 @@ export type NavItem = { href: string; label: string; icon: LucideIcon };
 /** Barra lateral de escritorio: todas las secciones. */
 export const sidebarItems: NavItem[] = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/revision", label: "Revisión", icon: ClipboardCheck },
   { href: "/chat", label: "Asistente", icon: Sparkles },
   { href: "/bandeja", label: "Bandeja", icon: Inbox },
   { href: "/tareas", label: "Tareas", icon: CheckSquare },
@@ -26,7 +27,7 @@ export const sidebarItems: NavItem[] = [
 
 /** Icono de cada sección (la barra inferior se elige en Ajustes → Navegación, ver `src/lib/home/nav.ts`). */
 export const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
-  inicio: Home, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, correo: Mail, redes: Megaphone,
+  inicio: Home, revision: ClipboardCheck, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, correo: Mail, redes: Megaphone,
   notas: NotebookText, favoritos: Video, bandeja: Inbox, chat: Sparkles, ajustes: Settings,
 };
 

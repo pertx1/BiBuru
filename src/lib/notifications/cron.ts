@@ -75,7 +75,8 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
       const od = planOverdueAlert(p, local, overdueCount);
       if (od) pushes.push(od);
     }
-    if (planWeeklyReview(p, local, 1) !== null) {
+    // La «Revisión semanal» (si está activa) ya incluye los objetivos: no se manda también el aviso antiguo de objetivos.
+    if (!(p as { review_weekly_enabled?: boolean }).review_weekly_enabled && planWeeklyReview(p, local, 1) !== null) {
       const { count } = await admin.from("goals").select("id", { count: "exact", head: true }).eq("workspace_id", ws).eq("status", "active");
       const weekly = planWeeklyReview(p, local, count ?? 0);
       if (weekly) pushes.push(weekly);
