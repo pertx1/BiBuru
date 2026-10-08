@@ -4,13 +4,13 @@ import { BusinessFormButton } from "@/components/businesses/business-form";
 import { BusinessIcon } from "@/components/businesses/business-icon";
 import { BusinessTabs } from "@/components/businesses/business-tabs";
 import { getBusiness } from "@/lib/data";
-import { countUnanswered } from "@/lib/inbox/data";
+import { countBusinessUnanswered } from "@/lib/messages/data";
 import { z } from "zod";
 
 export default async function BusinessLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const [business, unanswered] = await Promise.all([getBusiness(id), countUnanswered(id)]);
+  const [business, unanswered] = await Promise.all([getBusiness(id), countBusinessUnanswered(id)]);
   if (!business) notFound();
   return (
     <>

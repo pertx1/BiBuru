@@ -21,6 +21,7 @@ import { DataSettings } from "@/components/account/data-settings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MailSettings } from "@/components/mail/mail-settings";
 import { SocialSettings } from "@/components/social/social-settings";
+import { UnassignedAccounts } from "@/components/account/unassigned-accounts";
 import { listMailAccounts, mailConfigured } from "@/lib/mail/data";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -60,6 +61,11 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
   const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
   const [mailAccounts, { data: mailBiz }] = await Promise.all([listMailAccounts().catch(() => []), supabase.from("businesses").select("id, name").eq("workspace_id", ctx.workspaceId).eq("archived", false).order("name")]);
   const mailBusinesses = mailBiz ?? [];
+  const { data: socialAccs } = await supabase.from("social_accounts").select("id, platform, username, business_id").eq("workspace_id", ctx.workspaceId);
+  const unassigned = [
+    ...mailAccounts.filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: "correo" as const, label: a.email })),
+    ...(socialAccs ?? []).filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: (a.platform === "tiktok" ? "tiktok" : "instagram") as "tiktok" | "instagram", label: a.username ? `@${a.username}` : "Cuenta" })),
+  ];
   const mailAi = (p as { mail_ai_allowed?: boolean } | null)?.mail_ai_allowed;
   const models = getModelNames();
   const { data: saved } = await supabase.from("ai_prices").select("model, input_eur_per_mtok, output_eur_per_mtok");
@@ -79,6 +85,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
             <dd>{((profile?.ai_monthly_budget_cents ?? 1000) / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })} / mes</dd>
           </dl>
         </Section>
+        {unassigned.length > 0 && <div id="sin-negocio" className="scroll-mt-20"><Section title="Cuentas sin negocio"><UnassignedAccounts accounts={unassigned} businesses={mailBusinesses} /></Section></div>}
         <Section title="Avisos en este dispositivo"><PushSetup vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} devices={devices ?? []} /></Section>
         {p && (
           <Section title="Qué avisos quieres">

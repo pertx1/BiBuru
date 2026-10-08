@@ -3,6 +3,7 @@ import { getContext } from "@/lib/context";
 import { addDays } from "@/lib/dates";
 import { bestOfWeek } from "@/lib/social/stats";
 import { KIND_LABEL } from "@/lib/inbox/logic";
+import { countBusinessUnanswered, listBusinessMessages } from "@/lib/messages/data";
 import { WidgetCard } from "../widget-card";
 import { businessOf, type WidgetProps } from "../types";
 
@@ -82,15 +83,31 @@ export async function SocialUpcomingWidget({ w }: WidgetProps) {
   );
 }
 
-/** «Mensajes sin responder»: los hilos de la bandeja de Redes que esperan respuesta. */
+/** «Mensajes sin responder»: de todos (hilos de Redes) o de un negocio (también su correo, como su pestaña Mensajes). */
 export async function SocialInboxWidget({ w, ctx }: WidgetProps) {
   const { supabase, workspaceId } = await getContext();
   const biz = businessOf(w, ctx);
-  let accQ = supabase.from("social_accounts").select("id, username").eq("workspace_id", workspaceId);
-  if (biz) accQ = accQ.eq("business_id", biz.id);
-  const { data: accs } = await accQ;
-  const href = biz ? `/negocios/${biz.id}/redes` : "/redes";
-  const title = biz ? `Mensajes · ${biz.name}` : "Mensajes sin responder";
+  if (biz) {
+    const [{ items }, total] = await Promise.all([listBusinessMessages(biz.id, { estado: "sin_responder" }), countBusinessUnanswered(biz.id)]);
+    return (
+      <WidgetCard title={`Mensajes · ${biz.name}`} href={`/negocios/${biz.id}/mensajes`}>
+        <p className="text-3xl font-semibold tabular-nums">{total}</p>
+        {w.size !== "s" && items.length > 0 && (
+          <ul className="mt-1 flex flex-col divide-y divide-border">
+            {items.slice(0, w.size === "l" ? 6 : 3).map((i) => (
+              <li key={i.key}><Link href={i.href} className="flex min-h-11 items-center gap-2 text-sm">
+                <span className="w-20 shrink-0 truncate text-xs text-muted">{i.channel === "correo" ? "Correo" : i.kind}</span>
+                <span className="min-w-0 flex-1 truncate"><span className="font-medium">{i.person}</span> <span className="text-muted">{i.preview}</span></span>
+              </Link></li>
+            ))}
+          </ul>
+        )}
+      </WidgetCard>
+    );
+  }
+  const { data: accs } = await supabase.from("social_accounts").select("id, username").eq("workspace_id", workspaceId);
+  const href = "/redes";
+  const title = "Mensajes sin responder";
   if (!accs?.length) return <WidgetCard title={title} href={href}>{empty}</WidgetCard>;
   const { data, count } = await supabase.from("social_threads").select("id, kind, participant_name, participant_username, preview, last_message_at", { count: "exact" })
     .eq("workspace_id", workspaceId).eq("status", "sin_responder").in("account_id", accs.map((a) => a.id))

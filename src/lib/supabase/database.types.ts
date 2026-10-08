@@ -496,13 +496,13 @@ isOneToOne: false
                   ]
                 },"mail_messages": {
                   Row: {
-                    "account_id": string,"created_at": string,"from_address": string | null,"from_name": string | null,"fts": unknown,"graph_id": string,"has_attachments": boolean,"id": string,"is_read": boolean,"notified_at": string | null,"preview": string | null,"received_at": string,"subject": string | null,"updated_at": string,"user_id": string,"web_link": string | null,"workspace_id": string
+                    "account_id": string,"created_at": string,"from_address": string | null,"from_name": string | null,"fts": unknown,"graph_id": string,"has_attachments": boolean,"id": string,"is_read": boolean,"notified_at": string | null,"preview": string | null,"received_at": string,"subject": string | null,"triage": string | null,"updated_at": string,"user_id": string,"web_link": string | null,"workspace_id": string
                   }
                   Insert: {
-                    "account_id": string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id": string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at": string,"subject"?: string | null,"updated_at"?: string,"user_id": string,"web_link"?: string | null,"workspace_id": string
+                    "account_id": string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id": string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at": string,"subject"?: string | null,"triage"?: string | null,"updated_at"?: string,"user_id": string,"web_link"?: string | null,"workspace_id": string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id"?: string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at"?: string,"subject"?: string | null,"updated_at"?: string,"user_id"?: string,"web_link"?: string | null,"workspace_id"?: string
+                    "account_id"?: string,"created_at"?: string,"from_address"?: string | null,"from_name"?: string | null,"fts"?: never,"graph_id"?: string,"has_attachments"?: boolean,"id"?: string,"is_read"?: boolean,"notified_at"?: string | null,"preview"?: string | null,"received_at"?: string,"subject"?: string | null,"triage"?: string | null,"updated_at"?: string,"user_id"?: string,"web_link"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {

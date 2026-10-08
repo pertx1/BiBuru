@@ -142,3 +142,14 @@ export async function syncMailNow(): Promise<ActionResult> {
   refresh();
   return { ok: true };
 }
+
+/** Estado del correo en BiBuru (Mensajes del negocio): «respondido», «archivado» o sin marcar. No cambia nada en Outlook. */
+export async function setMailTriage(id: string, triage: "respondido" | "archivado" | null): Promise<ActionResult> {
+  if (!uuid.safeParse(id).success || ![null, "respondido", "archivado"].includes(triage)) return { ok: false, error: "Datos no válidos" };
+  const { supabase, userId } = await getContext();
+  const { data, error } = await supabase.from("mail_messages").update({ triage }).eq("id", id).eq("user_id", userId).select("id");
+  if (error || !data?.length) return { ok: false, error: "No se pudo guardar" };
+  refresh();
+  revalidatePath("/negocios", "layout");
+  return { ok: true };
+}
