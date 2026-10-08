@@ -3,7 +3,7 @@ import { FinanceSummaryWidget } from "./widgets/finance-summary";
 import { ProfitWidget, SalesWidget } from "./widgets/kpi";
 import { AgendaTodayWidget, GoalsActiveWidget, InboxWidget, QuickCaptureWidget, TasksTodayWidget, VideosToWatchWidget } from "./widgets/simple";
 import { BusinessCompareWidget, ExpensesCategoryWidget, OrdersWidget } from "./widgets/business2";
-import { TasksBusinessWidget, TasksDoneWeekWidget, TasksOverdueWidget, TasksWeekWidget } from "./widgets/tasks2";
+import { TasksBusinessWidget, TasksNoDateWidget, TasksDoneWeekWidget, TasksOverdueWidget, TasksWeekWidget } from "./widgets/tasks2";
 import { MonthCalendarWidget, NextEventWidget, WeekGlanceWidget } from "./widgets/calendar2";
 import { GoalDeadlineWidget, GoalRingWidget, GoalTrendWidget } from "./widgets/goals2";
 import { FolderShortcutWidget, NotesPinnedWidget, NotesRecentWidget, VideoIdeasWidget, VideosCategoryWidget, VideosRecentWidget, VideosTopWidget } from "./widgets/notes-videos";
@@ -34,6 +34,7 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "pending-receivables": PendingReceivablesWidget,
   "stock-missing": StockMissingWidget,
   "business-compare": BusinessCompareWidget,
+  "tasks-nodate": TasksNoDateWidget,
   "tasks-overdue": TasksOverdueWidget,
   "tasks-week": TasksWeekWidget,
   "tasks-business": TasksBusinessWidget,

@@ -61,13 +61,14 @@ export async function runReminders(admin: AdminClient, send: Sender, now: Date =
     const digestDue = planDailyDigest(p, local, probe) !== null;
     const overdueDue = planOverdueAlert(p, local, 1) !== null;
     if (digestDue || overdueDue) {
-      const [today, overdue] = await Promise.all([
+      const [today, overdue, noDate] = await Promise.all([
         admin.from("tasks").select("title,due_time").eq("workspace_id", ws).eq("status", "open").eq("due_date", local.date).order("due_time", { nullsFirst: false }).limit(50),
         admin.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ws).eq("status", "open").lt("due_date", local.date),
+        admin.from("tasks").select("id", { count: "exact", head: true }).eq("workspace_id", ws).eq("status", "open").is("due_date", null),
       ]);
       const overdueCount = overdue.count ?? 0;
       const digest = planDailyDigest(p, local, {
-        todayTasks: today.data ?? [], overdueCount,
+        todayTasks: today.data ?? [], overdueCount, noDateCount: noDate.count ?? 0,
         todayEvents: eventOccurrences(events.data ?? [], local.date, local.date).map((e) => ({ title: e.title, startTime: e.startTime })),
       });
       if (digest) pushes.push(digest);

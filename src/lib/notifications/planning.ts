@@ -120,6 +120,8 @@ export type DigestData = {
   todayTasks: { title: string; due_time: string | null }[];
   overdueCount: number;
   todayEvents: { title: string; startTime: string | null }[];
+  /** Tareas sin fecha pendientes (no son atrasadas, pero se recuerdan cada mañana). */
+  noDateCount?: number;
 };
 
 /** Resumen de la mañana: tareas de hoy, eventos y atrasadas. Se envía a su hora (hasta 3 h de margen). */
@@ -127,7 +129,8 @@ export function planDailyDigest(prefs: Prefs, now: Local, data: DigestData): Pus
   if (!prefs.daily_digest_enabled) return null;
   if (!withinWindow(now, { date: now.date, time: hm(prefs.daily_digest_time) }, 180)) return null;
   const { todayTasks, overdueCount, todayEvents } = data;
-  if (todayTasks.length + overdueCount + todayEvents.length === 0) return null;
+  const noDate = data.noDateCount ?? 0;
+  if (todayTasks.length + overdueCount + todayEvents.length + noDate === 0) return null;
   const lines: string[] = [];
   const parts = [
     todayTasks.length ? `${todayTasks.length} ${todayTasks.length === 1 ? "tarea" : "tareas"}` : "",
@@ -137,6 +140,7 @@ export function planDailyDigest(prefs: Prefs, now: Local, data: DigestData): Pus
   const first = [...todayEvents.filter((e) => e.startTime).map((e) => ({ at: hm(e.startTime!), t: e.title })), ...todayTasks.filter((t) => t.due_time).map((t) => ({ at: hm(t.due_time!), t: t.title }))].sort((a, b) => a.at.localeCompare(b.at))[0];
   if (first) lines.push(`Primero: ${first.at} ${first.t}`);
   if (overdueCount > 0) lines.push(`${overdueCount} ${overdueCount === 1 ? "atrasada" : "atrasadas"}.`);
+  if (noDate > 0) lines.push(`${noDate} sin fecha esperando.`);
   return { key: `digest:${now.date}`, kind: "digest", title: `Buenos días · ${dayLabel(now.date)}`, body: lines.join("\n"), url: "/tareas?v=hoy" };
 }
 

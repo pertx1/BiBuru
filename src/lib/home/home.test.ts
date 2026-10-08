@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chartStart, pickTotals, shortEuros } from "./finance";
-import { DEFAULT_LAYOUT, cleanSettings, layoutSchema, newInstance, normalizeLayout, WIDGET_BY_TYPE } from "./layout";
+import { DEFAULT_LAYOUT, cleanSettings, layoutSchema, newInstance, normalizeLayout, seedLayout, WIDGET_BY_TYPE } from "./layout";
 import { DEFAULT_TABS, maxTabs, moreSections, normalizeTabs, splitTabs } from "./nav";
 import { homeRange, pairSeries } from "./period";
 
@@ -127,5 +127,28 @@ describe("catálogo completo (tanda 2)", async () => {
     expect(cleanSettings(ring, { goal: "drop table" })).toEqual({ goal: "" });
     expect(cleanSettings(WIDGET_BY_TYPE.get("tasks-business")!, { business: "all" })).toEqual({ business: "" }); // ese widget exige un negocio
     expect(cleanSettings(WIDGET_BY_TYPE.get("orders")!, {})).toEqual({ business: "all", show: "pending" });
+  });
+});
+
+describe("widgets fijos añadidos una sola vez («Sin fecha»)", () => {
+  const custom = normalizeLayout([{ id: "aaaa", type: "tasks-today", size: "m", settings: {} }, { id: "bbbb", type: "agenda-today", size: "s", settings: {} }]);
+  it("la disposición por defecto ya lo trae, justo después de «Tareas de hoy»", () => {
+    expect(DEFAULT_LAYOUT.map((w) => w.type).slice(1, 3)).toEqual(["tasks-today", "tasks-nodate"]);
+  });
+  it("en un Inicio personalizado se añade detrás de «Tareas de hoy» y se recuerda", () => {
+    const r = seedLayout(custom, [], (t) => `seed-${t}`);
+    expect(r.changed).toBe(true);
+    expect(r.layout.map((w) => w.type)).toEqual(["tasks-today", "tasks-nodate", "agenda-today"]);
+    expect(r.seeded).toContain("tasks-nodate");
+  });
+  it("si ya se añadió (y luego lo quitaste), no vuelve", () => {
+    const r = seedLayout(custom, ["tasks-nodate"], (t) => `seed-${t}`);
+    expect(r.changed).toBe(false);
+    expect(r.layout.map((w) => w.type)).toEqual(["tasks-today", "agenda-today"]);
+  });
+  it("si no hay «Tareas de hoy», va al principio; si ya estaba, no se duplica", () => {
+    expect(seedLayout(normalizeLayout([{ id: "cccc", type: "inbox", size: "s", settings: {} }]), [], (t) => `seed-${t}`).layout[0].type).toBe("tasks-nodate");
+    const twice = seedLayout([...custom, { id: "dddd", type: "tasks-nodate", size: "m", settings: {} }], [], (t) => `seed-${t}`);
+    expect(twice.layout.filter((w) => w.type === "tasks-nodate")).toHaveLength(1);
   });
 });

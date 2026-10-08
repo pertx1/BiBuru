@@ -1,7 +1,8 @@
 import { TaskList } from "@/components/tasks/task-list";
 import { getContext } from "@/lib/context";
 import { addDays, nowLocal, startOfWeek, zonedToUtc } from "@/lib/dates";
-import { getNow, listTasks, type TaskView } from "@/lib/tasks/data";
+import { NoDateList } from "@/components/tasks/no-date-list";
+import { getNow, listNoDateTasks, listTasks, type TaskView } from "@/lib/tasks/data";
 import { groupTasks } from "@/lib/tasks/groups";
 import { WidgetCard } from "../widget-card";
 import { businessOf, type WidgetProps } from "../types";
@@ -22,6 +23,17 @@ async function TasksBlock({ w, ctx, view, title, href, onlyLate, businessId, emp
 
 export const TasksOverdueWidget = (p: WidgetProps) => <TasksBlock {...p} view="hoy" onlyLate title="Atrasadas" href="/tareas" empty="Nada atrasado. 👌" />;
 export const TasksWeekWidget = (p: WidgetProps) => <TasksBlock {...p} view="semana" title="Próximos 7 días" href="/tareas?f=semana" empty="Semana despejada." />;
+
+/** «Sin fecha»: bloque fijo de Inicio. Siguen aquí cada día hasta que se hacen; no cuentan como atrasadas. */
+export async function TasksNoDateWidget({ w, ctx }: WidgetProps) {
+  const { tasks, total } = await listNoDateTasks(w.size === "l" ? 12 : w.size === "s" ? 3 : 6);
+  const biz = new Map(ctx.businesses.map((b) => [b.id, b]));
+  return (
+    <WidgetCard title={total ? `Sin fecha · ${total}` : "Sin fecha"} href="/tareas?f=sinfecha">
+      <NoDateList today={ctx.today} total={total} tasks={tasks.map((t) => ({ id: t.id, title: t.title, priority: t.priority, business: t.business_id && biz.get(t.business_id) ? { name: biz.get(t.business_id)!.name, color: biz.get(t.business_id)!.color } : null }))} />
+    </WidgetCard>
+  );
+}
 
 export function TasksBusinessWidget(p: WidgetProps) {
   const biz = businessOf(p.w, p.ctx);

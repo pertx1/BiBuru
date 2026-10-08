@@ -95,6 +95,7 @@ export const WIDGETS: WidgetMeta[] = [
   w("pending-receivables", "negocios", "Pendiente de cobro", "Cuánto te deben, en cuántos pedidos y quién (de un negocio o de todos).", "number", ["m", "s", "l"], [business()]),
   w("stock-missing", "negocios", "Stock que falta", "Lo que hay que reponer: pedidos pendientes sin cubrir o por debajo del mínimo.", "list", ["m", "s", "l"], [business()]),
   w("business-compare", "negocios", "Comparativa entre negocios", "Ventas y beneficio de cada negocio en el periodo, frente al anterior.", "bars", ["m", "l"]),
+  w("tasks-nodate", "tareas", "Sin fecha", "Tareas sin fecha: siguen aquí cada día hasta que las hagas. Complétalas, ponles fecha o ábrelas.", "list", ["m", "l", "s"]),
   w("tasks-overdue", "tareas", "Atrasadas", "Tareas que se pasaron de fecha.", "list", ["m", "l", "s"]),
   w("tasks-week", "tareas", "Próximos 7 días", "Lo que viene esta semana, día a día.", "list", ["m", "l"]),
   w("tasks-business", "tareas", "Tareas de un negocio", "Tareas abiertas de un negocio concreto.", "list", ["m", "l"], [business(false)]),
@@ -142,11 +143,34 @@ export const layoutSchema = z.array(instanceSchema).max(MAX_WIDGETS);
 
 /** Disposición por defecto (el Resumen financiero siempre el primero). */
 export const DEFAULT_LAYOUT: WidgetInstance[] = [
-  "finance-summary", "tasks-today", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
+  "finance-summary", "tasks-today", "tasks-nodate", "news-today", "quick-capture", "agenda-today", "inbox", "sales", "profit", "goals-active", "videos-to-watch",
 ].map((type, i) => {
   const m = WIDGET_BY_TYPE.get(type)!;
   return { id: `def-${i + 1}`, type, size: m.defaultSize, settings: { ...m.defaults } };
 });
+
+/**
+ * Widgets fijos que la app añade UNA vez a un Inicio ya personalizado (detrás de `after` o al principio).
+ * Se recuerdan en `user_ui_prefs.seeded_widgets`: si luego los quitas, no vuelven.
+ */
+export const SEED_WIDGETS: { type: string; after: string | null }[] = [
+  { type: "tasks-nodate", after: "tasks-today" },
+];
+
+export function seedLayout(layout: WidgetInstance[], seeded: string[], idFor: (type: string) => string): { layout: WidgetInstance[]; seeded: string[]; changed: boolean } {
+  let out = layout, changed = false;
+  const done = new Set(seeded);
+  for (const s of SEED_WIDGETS) {
+    if (done.has(s.type)) continue;
+    done.add(s.type); changed = true;
+    if (out.some((w) => w.type === s.type)) continue;
+    const inst = newInstance(s.type, idFor(s.type));
+    if (!inst) continue;
+    const at = s.after ? out.findIndex((w) => w.type === s.after) : -1;
+    out = at >= 0 ? [...out.slice(0, at + 1), inst, ...out.slice(at + 1)] : [inst, ...out];
+  }
+  return { layout: out.slice(0, MAX_WIDGETS), seeded: [...done], changed };
+}
 
 /** Ajustes válidos para el widget: rellena los que falten y descarta los desconocidos o fuera de rango. */
 export function cleanSettings(meta: WidgetMeta, raw: Record<string, unknown> | undefined): Record<string, string> {
