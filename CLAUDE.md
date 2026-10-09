@@ -144,7 +144,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `saved_videos` / `video_categories` siguen la convención por espacio. `integrations` es la excepción deliberada: credencial personal, RLS por `user_id`, sin insert desde el cliente y sin permiso de lectura del token (`refresh_token_enc`); solo el servidor (clave de servicio) lo lee y descifra.
 - Los módulos de `src/lib/favorites/*` que usan servidor no se importan desde componentes de cliente (usar `labels.ts` para constantes compartidas).
 - Cualquier fetch a dominios externos desde enlaces del usuario se limita a dominios conocidos (anti-SSRF).
-- Análisis de vídeos **de uno en uno por espacio** (reclamo + cola en `analyzeAndDrain`): varios a la vez daban 429 en Gemini. Un 429 vuelve a la cola con la espera de Gemini sin gastar intento (`src/lib/ai/errors.ts`); vídeo con `mediaResolution: low`.
+- Análisis de vídeos: máx. `VIDEO_CONCURRENCY` (2) a la vez por espacio (reclamo + cola en `analyzeAndDrain`); más daban 429 en Gemini. Un 429 vuelve a la cola con la espera de Gemini sin gastar intento (`src/lib/ai/errors.ts`). Velocidad: `mediaResolution: low`, `thinking: "low"` (`src/lib/ai/thinking.ts`), menos fps en vídeos largos y la lista se refresca sola.
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
 
 ## Inicio personalizable y navegación

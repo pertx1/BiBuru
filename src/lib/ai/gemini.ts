@@ -1,6 +1,7 @@
 import "server-only";
 import { ApiError, GoogleGenAI, MediaResolution } from "@google/genai";
 import { parseRetryDelayMs } from "./errors";
+import { thinkingConfigFor } from "./thinking";
 import { AiError, isRetryableStatus, type AiProvider, type AiRequest, type AiResponse, type Content } from "./provider";
 
 export type ModelNames = { fast: string; video: string };
@@ -25,11 +26,14 @@ export function geminiProvider(): AiProvider {
 
   return {
     async generate(req: AiRequest): Promise<AiResponse> {
-      try {
-        const res = await ai.models.generateContent({
+      const thinkingConfig = req.thinking ? thinkingConfigFor(req.model) : undefined;
+      const hasFps = req.contents.some((c) => c.parts.some((p) => p.videoMetadata));
+      // Ajustes de velocidad opcionales: si el modelo no los admite (400), se repite la petición sin ellos.
+      const call = (extras: boolean) => ai.models.generateContent({
           model: req.model,
-          contents: req.contents as never,
+          contents: (extras ? req.contents : req.contents.map((c) => ({ ...c, parts: c.parts.map((p) => { const q = { ...p }; delete q.videoMetadata; return q; }) }))) as never,
           config: {
+            ...(extras && thinkingConfig ? { thinkingConfig: thinkingConfig as never } : {}),
             systemInstruction: req.system,
             temperature: req.temperature ?? 0.2,
             maxOutputTokens: req.maxOutputTokens,
@@ -38,6 +42,13 @@ export function geminiProvider(): AiProvider {
             ...(req.tools?.length ? { tools: [{ functionDeclarations: req.tools as never }] } : {}),
           },
         });
+      try {
+        let res;
+        try { res = await call(true); } catch (e) {
+          const status = e instanceof ApiError ? e.status : (e as { status?: number }).status;
+          if (status !== 400 || !(thinkingConfig || hasFps)) throw e;
+          res = await call(false);
+        }
         const calls = (res.functionCalls ?? []).map((c) => ({ name: c.name ?? "", args: (c.args ?? {}) as Record<string, unknown> }));
         const parts = res.candidates?.[0]?.content?.parts ?? [];
         const text = parts.map((p) => p.text ?? "").join("");

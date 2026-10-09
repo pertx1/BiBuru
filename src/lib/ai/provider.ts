@@ -3,6 +3,7 @@ export type Part = {
   text?: string;
   inlineData?: { mimeType: string; data: string };
   fileData?: { fileUri: string; mimeType?: string };
+  videoMetadata?: { fps?: number };
   functionCall?: { name: string; args: Record<string, unknown> };
   functionResponse?: { name: string; response: Record<string, unknown> };
 };
@@ -19,6 +20,7 @@ export type AiRequest = {
   temperature?: number;
   maxOutputTokens?: number;
   mediaResolution?: "low" | "medium"; // vídeo/imagen: «low» gasta ~3 veces menos tokens por segundo de vídeo
+  thinking?: "low";                   // pensar lo mínimo: respuestas mucho más rápidas en tareas sencillas
 };
 
 export type AiResponse = {

@@ -186,7 +186,7 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Causa: al guardar varios enlaces a la vez, cada vídeo lanzaba su análisis en paralelo. Un vídeo de YouTube gasta muchos tokens y el plan
   gratuito de Gemini tiene tope por minuto: el segundo vídeo recibía **429 RESOURCE_EXHAUSTED**. `runAi` reintentaba a 1 s y 2 s (más cupo
   gastado), contaba como intento fallido y, tras 4, el vídeo quedaba en «Error» con el texto técnico en inglés.
-- Ahora los vídeos se analizan **de uno en uno por espacio**: se reclama el vídeo con un `update … where analysis_status <> 'analyzing'` y, si
+- Ahora los vídeos se analizan **como mucho 2 a la vez por espacio** (`VIDEO_CONCURRENCY`, 1–4; antes de la mejora de velocidad era 1): se reclama el vídeo con un `update … where analysis_status <> 'analyzing'` y, si
   hay otro analizándose (actualizado hace < 6 min), vuelve a la cola sin espera. Quien está analizando sigue con el resto de la cola
   (`analyzeAndDrain`, máx. 150 s); varios `analyzeSoon` de una misma petición van en fila. El cron también va de uno en uno y para a los 35 s.
 - Un 429 no gasta intento: vuelve a la cola con la espera que pide Gemini (`retryDelay`, mín. 1 min; 3 h si el tope es diario) y un mensaje en
@@ -196,3 +196,12 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   un análisis válido»). Solo se paga lo que se usa.
 - Los vídeos que ya estaban en «Error» por esto (429, cuota, saturado o análisis no válido) vuelven solos a la cola en la siguiente pasada del cron.
 - Prueba: `scripts/e2e/videos-queue.mjs` (Gemini falso que da 429 si recibe dos vídeos a la vez).
+
+## Velocidad del análisis de vídeos
+- **Pensamiento mínimo** (`thinking: "low"` → Gemini 3 `thinkingLevel: LOW`; 2.5 `thinkingBudget` 0/128; `src/lib/ai/thinking.ts`): era lo que más tardaba.
+- **Menos fotogramas** en vídeos largos (`videoMetadata.fps`: 0,5 hasta 15 min, 0,25 más): menos tokens, respuesta antes. Si un modelo rechaza
+  `thinkingConfig` o `fps` (400), el proveedor repite la petición sin ellos.
+- **2 vídeos a la vez** por espacio (trabajadores locales en `analyzeSoon` + reclamo en BD); con más, 429.
+- **Esperas cortas**: un 429 de ≤ 15 s lo reintenta `runAi`; si no, el vídeo espera lo que pide Gemini (mín. 15 s) y el propio trabajador lo
+  retoma si son ≤ 45 s (antes: mín. 1 min y luego el cron, cada 3 min). Mientras espera, sigue con otros vídeos.
+- **La lista se refresca sola** cada 4 s mientras haya vídeos en cola o analizándose (antes había que recargar).

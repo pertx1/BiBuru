@@ -13,14 +13,14 @@ export function parseRetryDelayMs(message: string): number | undefined {
 
 export type RateLimit = { daily: boolean; waitMs: number };
 
-/** ¿Es un límite de uso de Gemini (429 / RESOURCE_EXHAUSTED)? Con la espera recomendada (mín. 1 min; 3 h si es el diario). */
+/** ¿Es un límite de uso de Gemini (429 / RESOURCE_EXHAUSTED)? Con la espera que pide (15 s – 10 min; 30 s si no dice; 3 h si es el diario). */
 export function rateLimitOf(e: unknown): RateLimit | null {
   if (!(e instanceof Error)) return null;
   const status = e instanceof AiError ? e.status : undefined;
   if (status !== 429 && !/RESOURCE_EXHAUSTED|quota|rate limit|too many requests/i.test(e.message)) return null;
   const daily = /per ?day|PerDay|daily/i.test(e.message);
-  const suggested = (e instanceof AiError ? e.retryAfterMs : undefined) ?? parseRetryDelayMs(e.message) ?? 0;
-  return { daily, waitMs: daily ? 3 * 60 * 60_000 : Math.min(10 * 60_000, Math.max(60_000, suggested + 5_000)) };
+  const suggested = (e instanceof AiError ? e.retryAfterMs : undefined) ?? parseRetryDelayMs(e.message);
+  return { daily, waitMs: daily ? 3 * 60 * 60_000 : suggested === undefined ? 30_000 : Math.min(10 * 60_000, Math.max(15_000, suggested + 2_000)) };
 }
 
 /** Mensaje en español para la ficha del vídeo (nunca el texto técnico en inglés). */

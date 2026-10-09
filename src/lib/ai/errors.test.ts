@@ -12,10 +12,10 @@ describe("errores de Gemini", () => {
     expect(parseRetryDelayMs("otra cosa")).toBeUndefined();
   });
 
-  it("429 por minuto: vuelve a la cola con la espera de Gemini (mín. 1 min)", () => {
-    expect(rateLimitOf(new AiError(perMinute.slice(0, 280), 429, true, 37_000))).toEqual({ daily: false, waitMs: 60_000 });
-    expect(rateLimitOf(new AiError("x", 429, true, 120_000))).toEqual({ daily: false, waitMs: 125_000 });
-    expect(rateLimitOf(new AiError("x", 429, true))).toEqual({ daily: false, waitMs: 60_000 });
+  it("429 por minuto: vuelve a la cola con la espera de Gemini (mín. 15 s)", () => {
+    expect(rateLimitOf(new AiError(perMinute.slice(0, 280), 429, true, 37_000))).toEqual({ daily: false, waitMs: 39_000 });
+    expect(rateLimitOf(new AiError("x", 429, true, 3_000))).toEqual({ daily: false, waitMs: 15_000 });
+    expect(rateLimitOf(new AiError("x", 429, true))).toEqual({ daily: false, waitMs: 30_000 });
   });
 
   it("429 diario: espera horas", () => {
