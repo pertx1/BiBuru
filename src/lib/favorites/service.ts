@@ -2,7 +2,9 @@ import "server-only";
 import { after } from "next/server";
 import { addTagsTo, resolveBusiness, type Actor } from "@/lib/ai/actors";
 import { AiBlockedError, priceFor, runAi, type AiContext } from "@/lib/ai/run";
-import { estimateVideoCostMicros } from "@/lib/ai/pricing";
+import { rateLimitOf, videoErrorMessage } from "@/lib/ai/errors";
+import { estimateVideoCostMicros, VIDEO_TOKENS_PER_SECOND_LOW } from "@/lib/ai/pricing";
+import { videoFps } from "@/lib/ai/thinking";
 import { geminiProvider, getModelNames } from "@/lib/ai/gemini";
 import type { Json } from "@/lib/supabase/database.types";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
@@ -78,7 +80,11 @@ async function accessTokenFor(admin: AdminClient, userId: string): Promise<strin
 }
 
 // ------------------------------------------------------------------ análisis
-export type AnalyzeOutcome = "ready" | "needs_confirm" | "retry" | "blocked" | "error" | "skipped";
+export type AnalyzeOutcome = "ready" | "needs_confirm" | "retry" | "blocked" | "rate_limited" | "queued" | "error" | "skipped";
+/** Un análisis «en curso» más antiguo que esto se considera colgado y no bloquea a los demás. */
+const LOCK_STALE_MS = 6 * 60_000;
+/** Vídeos analizándose a la vez por espacio (VIDEO_CONCURRENCY, 1–4; por defecto 2). Más rápido sin chocar con el límite de Gemini. */
+export const videoConcurrency = () => Math.min(4, Math.max(1, Number(process.env.VIDEO_CONCURRENCY) || 2));
 const RETRY_MINUTES = [5, 15, 60];
 const UNKNOWN_DURATION_ESTIMATE_SEC = 30 * 60;
 
@@ -86,7 +92,7 @@ type Ctx = AiContext & { videoLongMinutes: number };
 
 /** Coste estimado (micro-€) de analizar un vídeo con el modelo de vídeo; para pedir confirmación. */
 export async function estimateVideoCost(ctx: Pick<AiContext, "supabase" | "workspaceId" | "models">, durationSec: number | null): Promise<number> {
-  return estimateVideoCostMicros(durationSec ?? UNKNOWN_DURATION_ESTIMATE_SEC, await priceFor(ctx, ctx.models.video));
+  return estimateVideoCostMicros(durationSec ?? UNKNOWN_DURATION_ESTIMATE_SEC, await priceFor(ctx, ctx.models.video), 1500, VIDEO_TOKENS_PER_SECOND_LOW);
 }
 
 /**
@@ -124,9 +130,20 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
   const isLong = !upload && !textOnly && !light && (duration == null ? false : duration > ctx.videoLongMinutes * 60);
   if (isLong && !o.confirmed) { await save({ analysis_status: "needs_confirm", analysis_error: null }); return "needs_confirm"; }
 
+  // Se reclama el vídeo (nadie más lo analiza a la vez) y, si ya hay otro vídeo analizándose en este espacio, se
+  // queda en la cola: varios vídeos a la vez superan el límite por minuto de Gemini (era el error al analizar varios).
+  const claimed = await supabase.from("saved_videos").update({ analysis_status: "analyzing", analysis_attempts: v.analysis_attempts + 1 })
+    .eq("id", videoId).eq("workspace_id", workspaceId).neq("analysis_status", "analyzing").select("id");
+  if (!claimed.data?.length) return "skipped";
+  const busy = await supabase.from("saved_videos").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId)
+    .eq("analysis_status", "analyzing").neq("id", videoId).gt("updated_at", new Date(Date.now() - LOCK_STALE_MS).toISOString());
+  if ((busy.count ?? 0) >= videoConcurrency()) {
+    await save({ analysis_status: "pending", analysis_attempts: v.analysis_attempts, analysis_error: null, analysis_next_try_at: null });
+    return "queued";
+  }
+
   let geminiFile: string | null = null;
   try {
-    await save({ analysis_status: "analyzing", analysis_attempts: v.analysis_attempts + 1 });
     const a: Actor = { supabase, workspaceId, userId: v.user_id, timezone: ctx.timezone };
     const [biz, cats] = await Promise.all([
       supabase.from("businesses").select("name, description").eq("workspace_id", workspaceId).eq("archived", false).limit(30),
@@ -143,15 +160,19 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
       if (file.error || !file.data) throw new Error("No se encontró el vídeo subido. Vuelve a subirlo.");
       const bytes = Buffer.from(await file.data.arrayBuffer());
       const mimeType = file.data.type || "video/mp4";
-      if (bytes.length <= INLINE_VIDEO_MAX) parts = [{ inlineData: { mimeType, data: bytes.toString("base64") } }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }];
-      else { const g = await uploadGeminiFile(bytes, mimeType); geminiFile = g.name; parts = [{ fileData: { fileUri: g.uri, mimeType } }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }]; }
+      const fps = videoFps(v.upload_duration_sec);
+      const upFps = fps ? { videoMetadata: { fps } } : {};
+      if (bytes.length <= INLINE_VIDEO_MAX) parts = [{ inlineData: { mimeType, data: bytes.toString("base64") }, ...upFps }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }];
+      else { const g = await uploadGeminiFile(bytes, mimeType); geminiFile = g.name; parts = [{ fileData: { fileUri: g.uri, mimeType }, ...upFps }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }]; }
     } else if (useText) parts = cover ? [{ text: `${info}\nTe adjunto la imagen de portada del vídeo.` }, { inlineData: cover }] : [{ text: info }];
-    else parts = [{ fileData: { fileUri: v.url } }, { text: `Analiza este vídeo.\n${info}` }];
+    else { const fps = videoFps(duration); parts = [{ fileData: { fileUri: v.url }, ...(fps ? { videoMetadata: { fps } } : {}) }, { text: `Analiza este vídeo.\n${info}` }]; }
     const estimated = useText ? 0 : await estimateVideoCost(ctx, upload ? v.upload_duration_sec : duration);
     const res = await runAi(ctx, light ? "video_light" : useText ? "video_light" : "video", {
       model: useText ? ctx.models.fast : ctx.models.video,
       system: buildVideoPrompt({ businesses: biz.data ?? [], categories: (cats.data ?? []).map((c) => c.name), textOnly: useText, light, cover: !!cover }),
-      contents: [{ role: "user", parts: parts as never }], jsonSchema: videoAnalysisJsonSchema(), temperature: 0.2, maxOutputTokens: 1500,
+      // Margen amplio: en los modelos que «piensan», el pensamiento cuenta dentro de este tope y cortaba el JSON.
+      contents: [{ role: "user", parts: parts as never }], jsonSchema: videoAnalysisJsonSchema(), temperature: 0.2, maxOutputTokens: 8192,
+      ...(useText ? {} : { mediaResolution: "low" as const }), thinking: "low",
     }, { estimatedMicros: estimated });
     const an = parseVideoAnalysis(res.text);
     if (!an) throw new Error("La IA no devolvió un análisis válido");
@@ -178,8 +199,14 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
       await save({ analysis_status: "pending", analysis_error: e.message.slice(0, 300), analysis_next_try_at: new Date(Date.now() + wait * 60_000).toISOString(), analysis_attempts: v.analysis_attempts });
       return "blocked";
     }
+    // Límite de Gemini (429): vuelve a la cola con la espera que pide, sin gastar un intento.
+    const rl = rateLimitOf(e);
+    if (rl) {
+      await save({ analysis_status: "pending", analysis_error: videoErrorMessage(e), analysis_next_try_at: new Date(Date.now() + rl.waitMs).toISOString(), analysis_attempts: v.analysis_attempts });
+      return "rate_limited";
+    }
     const attempts = v.analysis_attempts + 1;
-    const msg = (e instanceof Error ? e.message : "Error de IA").slice(0, 300);
+    const msg = videoErrorMessage(e);
     if (attempts >= 4) {
       await save({ analysis_status: "error", analysis_error: msg, analysis_next_try_at: null });
       if (upload) await dropUpload(admin, videoId, v.upload_path!); // no se guarda el vídeo si no se puede analizar
@@ -208,31 +235,103 @@ export async function adminVideoContext(admin: AdminClient, userId: string, work
   return { supabase: admin, workspaceId, userId, timezone: p.timezone, budgetCents: p.ai_monthly_budget_cents, provider: geminiProvider(), models: getModelNames(), videoLongMinutes: p.video_long_minutes };
 }
 
-/** Lanza el análisis de un vídeo recién guardado una vez enviada la respuesta (no hace esperar a la persona). */
+/** Tras estos resultados se sigue con el siguiente de la cola; con los demás (límite, presupuesto, otro en curso) se para. */
+const KEEP_GOING: AnalyzeOutcome[] = ["ready", "needs_confirm", "retry", "error", "skipped"];
+
+/** Siguiente vídeo pendiente de un espacio cuya espera ya ha pasado (el más antiguo primero). */
+async function nextDue(admin: AdminClient, workspaceId: string, skip: Set<string>) {
+  const { data } = await admin.from("saved_videos").select("id, user_id").eq("workspace_id", workspaceId).eq("analysis_status", "pending")
+    .or(`analysis_next_try_at.is.null,analysis_next_try_at.lte.${new Date().toISOString()}`).order("created_at").limit(skip.size + 1);
+  return (data ?? []).find((r) => !skip.has(r.id)) ?? null;
+}
+
+/** Analiza un vídeo y luego el resto de la cola del espacio, mientras quede tiempo. Si Gemini pide esperar poco, espera aquí. */
+async function analyzeAndDrain(userId: string, workspaceId: string, videoId: string, budgetMs: number) {
+  const started = Date.now();
+  const admin = createAdminClient();
+  const ctxs = new Map<string, Ctx | null>();
+  const ctxFor = async (uid: string) => { if (!ctxs.has(uid)) ctxs.set(uid, await adminVideoContext(admin, uid, workspaceId)); return ctxs.get(uid)!; };
+  const first = await ctxFor(userId);
+  if (!first) return;
+  const seen = new Set([videoId]);
+  let r = await analyzeVideo(first, videoId);
+  for (let rounds = 0; rounds < 50; rounds++) {
+    if (!KEEP_GOING.includes(r) && r !== "rate_limited") break;
+    if (Date.now() - started > budgetMs) break;
+    let next = await nextDue(admin, workspaceId, seen);
+    if (!next) {
+      // Nada listo ya: si alguno espera a Gemini poco tiempo (≤ 45 s), se espera aquí en vez de dejarlo al cron.
+      const { data: soon } = await admin.from("saved_videos").select("id, analysis_next_try_at").eq("workspace_id", workspaceId).eq("analysis_status", "pending")
+        .lte("analysis_next_try_at", new Date(Date.now() + 45_000).toISOString()).order("analysis_next_try_at").limit(1).maybeSingle();
+      if (!soon?.analysis_next_try_at) break;
+      const wait = Math.max(0, new Date(soon.analysis_next_try_at).getTime() - Date.now());
+      if (Date.now() - started + wait > budgetMs) break;
+      await new Promise((res) => setTimeout(res, wait + 250));
+      seen.delete(soon.id);
+      next = await nextDue(admin, workspaceId, seen);
+      if (!next) break;
+    }
+    seen.add(next.id);
+    const ctx = await ctxFor(next.user_id);
+    if (!ctx) break;
+    r = await analyzeVideo(ctx, next.id);
+  }
+}
+
+/** Cola local de cada espacio en esta instancia: varios `analyzeSoon` de una petición se reparten entre `videoConcurrency()` trabajadores. */
+const local = new Map<string, { ids: string[]; workers: number }>();
+
+/**
+ * Lanza el análisis de un vídeo recién guardado una vez enviada la respuesta (no hace esperar a la persona).
+ * Como mucho `videoConcurrency()` vídeos a la vez por espacio: con más, Gemini corta con 429.
+ */
 export function analyzeSoon(userId: string, workspaceId: string, videoId: string) {
   after(async () => {
-    try {
-      const admin = createAdminClient();
-      const ctx = await adminVideoContext(admin, userId, workspaceId);
-      if (ctx) await analyzeVideo(ctx, videoId);
-    } catch (e) { console.error("[videos] analyzeSoon:", e instanceof Error ? e.message : e); }
+    const q = local.get(workspaceId) ?? { ids: [], workers: 0 };
+    local.set(workspaceId, q);
+    q.ids.push(videoId);
+    const runs: Promise<void>[] = [];
+    while (q.workers < videoConcurrency() && q.ids.length) {
+      q.workers++;
+      runs.push((async () => {
+        try {
+          for (let id = q.ids.shift(); id; id = q.ids.shift()) await analyzeAndDrain(userId, workspaceId, id, 150_000);
+        } catch (e) { console.error("[videos] analyzeSoon:", e instanceof Error ? e.message : e); }
+        finally { q.workers--; if (!q.workers && !q.ids.length) local.delete(workspaceId); }
+      })());
+    }
+    await Promise.all(runs);
   });
 }
 
-/** Cola (cron): hasta `limit` vídeos pendientes por pasada, respetando reintentos. */
-export async function processVideoQueue(admin: AdminClient, limit = 3) {
+/** Errores antiguos (texto técnico de Gemini) que no eran culpa del vídeo. Los mensajes nuevos van en español y no encajan. */
+const RECOVERABLE = ["RESOURCE_EXHAUSTED", "429", "quota", "UNAVAILABLE", "overloaded", "análisis válido"];
+
+/** Cola (cron): hasta `limit` vídeos pendientes por pasada, de uno en uno y sin pasarse del tiempo de la función. */
+export async function processVideoQueue(admin: AdminClient, limit = 3, budgetMs = 35_000) {
+  const started = Date.now();
   const now = new Date().toISOString();
   // Un análisis que lleva más de 10 minutos «en curso» se quedó colgado (la función se cortó): vuelve a la cola.
   await admin.from("saved_videos").update({ analysis_status: "pending" }).eq("analysis_status", "analyzing").lt("updated_at", new Date(Date.now() - 10 * 60_000).toISOString());
+  // Los que fallaron por el límite de Gemini o por respuesta cortada (antes de este arreglo) vuelven solos a la cola.
+  await admin.from("saved_videos").update({ analysis_status: "pending", analysis_attempts: 0, analysis_error: null, analysis_next_try_at: null })
+    .eq("analysis_status", "error").or(RECOVERABLE.map((t) => `analysis_error.ilike.%${t}%`).join(","));
   const { data: rows } = await admin.from("saved_videos").select("id, user_id, workspace_id")
     .eq("analysis_status", "pending").or(`analysis_next_try_at.is.null,analysis_next_try_at.lte.${now}`).order("created_at").limit(limit);
-  const out: Record<AnalyzeOutcome, number> = { ready: 0, needs_confirm: 0, retry: 0, blocked: 0, error: 0, skipped: 0 };
+  const out: Record<AnalyzeOutcome, number> = { ready: 0, needs_confirm: 0, retry: 0, blocked: 0, rate_limited: 0, queued: 0, error: 0, skipped: 0 };
+  const stopped = new Set<string>(); // espacios al límite o con otro análisis en curso: se dejan para la próxima pasada
+  let processed = 0;
   for (const r of rows ?? []) {
+    if (Date.now() - started > budgetMs) break;
+    if (stopped.has(r.workspace_id)) continue;
     const ctx = await adminVideoContext(admin, r.user_id, r.workspace_id);
     if (!ctx) continue;
-    out[await analyzeVideo(ctx, r.id)]++;
+    const res = await analyzeVideo(ctx, r.id);
+    out[res]++;
+    processed++;
+    if (!KEEP_GOING.includes(res)) stopped.add(r.workspace_id);
   }
-  return { processed: rows?.length ?? 0, ...out };
+  return { processed, ...out };
 }
 
 // ------------------------------------------------------------------ sincronización con YouTube

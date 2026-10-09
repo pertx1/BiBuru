@@ -73,6 +73,24 @@ describe("runAi", () => {
     expect(usage[0]).toMatchObject({ ok: true });
   });
 
+  it("429 con espera larga: no reintenta al segundo (solo gastaría cupo) y lo deja a quien llama", async () => {
+    const { db } = fakeDb();
+    const waits: number[] = [];
+    const provider = fakeProvider(() => new AiError("RESOURCE_EXHAUSTED", 429, true, 37_000));
+    await expect(runAi({ ...base, supabase: db, budgetCents: 1000, provider, sleep: async (ms) => { waits.push(ms); } }, "video", req)).rejects.toMatchObject({ status: 429, retryAfterMs: 37_000 });
+    expect(provider.requests).toHaveLength(1);
+    expect(waits).toEqual([]);
+  });
+
+  it("429 con espera corta: espera lo que pide Gemini y reintenta", async () => {
+    const { db } = fakeDb();
+    const waits: number[] = [];
+    const provider = fakeProvider((_r, n) => (n < 2 ? new AiError("RESOURCE_EXHAUSTED", 429, true, 3_000) : { text: "ya" }));
+    const r = await runAi({ ...base, supabase: db, budgetCents: 1000, provider, sleep: async (ms) => { waits.push(ms); } }, "chat", req);
+    expect(r.text).toBe("ya");
+    expect(waits).toEqual([3_500]);
+  });
+
   it("no reintenta errores definitivos y deja constancia", async () => {
     const { db, usage } = fakeDb();
     const provider = fakeProvider(() => new AiError("clave no válida", 403, false));

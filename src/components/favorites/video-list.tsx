@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Check, CheckCircle2, EyeOff, ExternalLink, Loader2, Play, RotateCw, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { confirmAnalysis, deleteVideo, retryAnalysis, setVideoStatus, updateVideo, videoToNote, videoToTask } from "@/app/(app)/favoritos/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,14 @@ export function VideoList({ videos, categories, businesses, tags, costs, openId 
   videos: VideoRow[]; categories: VideoCategory[]; businesses: Biz[]; tags: Record<string, Tag[]>; costs: Record<string, number>; openId: string | null;
 }) {
   const [open, setOpen] = useState<string | null>(openId);
+  const router = useRouter();
+  // Mientras haya vídeos en cola o analizándose, la lista se actualiza sola cada 4 s (solo con la pantalla visible).
+  const working = videos.some((v) => v.analysis_status === "pending" || v.analysis_status === "analyzing");
+  useEffect(() => {
+    if (!working) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") router.refresh(); }, 4000);
+    return () => clearInterval(t);
+  }, [working, router]);
   const current = videos.find((v) => v.id === open) ?? null;
   const catName = new Map(categories.map((c) => [c.id, c.name]));
   const bizName = new Map(businesses.map((b) => [b.id, b.name]));
@@ -136,7 +144,8 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
         {v.analysis_status === "error" && (
           <div className="rounded-xl border border-danger/40 bg-danger/5 p-3"><p>{v.analysis_error ?? "No se pudo analizar."}</p>{!v.unavailable && <Button className="mt-2" variant="secondary" disabled={pending} onClick={() => run(() => retryAnalysis(v.id), "Reintentando…")}>Reintentar</Button>}</div>
         )}
-        {(v.analysis_status === "pending" || v.analysis_status === "analyzing") && <p className="text-muted">En la cola de análisis. {v.analysis_error ? `Último aviso: ${v.analysis_error}` : "Se hace solo en unos minutos."}</p>}
+        {v.analysis_status === "analyzing" && <p className="text-muted">Analizando…</p>}
+        {v.analysis_status === "pending" && <p className="text-muted">En la cola de análisis (los vídeos se analizan de uno en uno). {v.analysis_error ? v.analysis_error : "Se hace solo en unos minutos."}</p>}
 
         {v.summary && (
           <section>

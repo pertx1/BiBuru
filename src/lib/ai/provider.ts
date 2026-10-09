@@ -3,6 +3,7 @@ export type Part = {
   text?: string;
   inlineData?: { mimeType: string; data: string };
   fileData?: { fileUri: string; mimeType?: string };
+  videoMetadata?: { fps?: number };
   functionCall?: { name: string; args: Record<string, unknown> };
   functionResponse?: { name: string; response: Record<string, unknown> };
 };
@@ -18,6 +19,8 @@ export type AiRequest = {
   tools?: FunctionDecl[];
   temperature?: number;
   maxOutputTokens?: number;
+  mediaResolution?: "low" | "medium"; // vídeo/imagen: «low» gasta ~3 veces menos tokens por segundo de vídeo
+  thinking?: "low";                   // pensar lo mínimo: respuestas mucho más rápidas en tareas sencillas
 };
 
 export type AiResponse = {
@@ -32,8 +35,11 @@ export interface AiProvider {
 }
 
 export class AiError extends Error {
-  constructor(message: string, readonly status?: number, readonly retryable = false) {
+  /** Espera que pide el propio modelo antes de reintentar (429), si la indica. */
+  readonly retryAfterMs?: number;
+  constructor(message: string, readonly status?: number, readonly retryable = false, retryAfterMs?: number) {
     super(message);
+    this.retryAfterMs = retryAfterMs;
   }
 }
 

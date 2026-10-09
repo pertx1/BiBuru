@@ -1,5 +1,7 @@
 import "server-only";
-import { ApiError, GoogleGenAI } from "@google/genai";
+import { ApiError, GoogleGenAI, MediaResolution } from "@google/genai";
+import { parseRetryDelayMs } from "./errors";
+import { thinkingConfigFor } from "./thinking";
 import { AiError, isRetryableStatus, type AiProvider, type AiRequest, type AiResponse, type Content } from "./provider";
 
 export type ModelNames = { fast: string; video: string };
@@ -24,22 +26,35 @@ export function geminiProvider(): AiProvider {
 
   return {
     async generate(req: AiRequest): Promise<AiResponse> {
-      try {
-        const res = await ai.models.generateContent({
+      const thinkingConfig = req.thinking ? thinkingConfigFor(req.model) : undefined;
+      const hasFps = req.contents.some((c) => c.parts.some((p) => p.videoMetadata));
+      // Ajustes de velocidad opcionales: si el modelo no los admite (400), se repite la petición sin ellos.
+      const call = (extras: boolean) => ai.models.generateContent({
           model: req.model,
-          contents: req.contents as never,
+          contents: (extras ? req.contents : req.contents.map((c) => ({ ...c, parts: c.parts.map((p) => { const q = { ...p }; delete q.videoMetadata; return q; }) }))) as never,
           config: {
+            ...(extras && thinkingConfig ? { thinkingConfig: thinkingConfig as never } : {}),
             systemInstruction: req.system,
             temperature: req.temperature ?? 0.2,
             maxOutputTokens: req.maxOutputTokens,
+            ...(req.mediaResolution ? { mediaResolution: req.mediaResolution === "low" ? MediaResolution.MEDIA_RESOLUTION_LOW : MediaResolution.MEDIA_RESOLUTION_MEDIUM } : {}),
             ...(req.jsonSchema ? { responseMimeType: "application/json", responseJsonSchema: req.jsonSchema } : {}),
             ...(req.tools?.length ? { tools: [{ functionDeclarations: req.tools as never }] } : {}),
           },
         });
+      try {
+        let res;
+        try { res = await call(true); } catch (e) {
+          const status = e instanceof ApiError ? e.status : (e as { status?: number }).status;
+          if (status !== 400 || !(thinkingConfig || hasFps)) throw e;
+          res = await call(false);
+        }
         const calls = (res.functionCalls ?? []).map((c) => ({ name: c.name ?? "", args: (c.args ?? {}) as Record<string, unknown> }));
         const parts = res.candidates?.[0]?.content?.parts ?? [];
         const text = parts.map((p) => p.text ?? "").join("");
         const u = res.usageMetadata;
+        // Sin texto y cortada por el tope: el «pensamiento» se comió los tokens. Se trata como reintentable.
+        if (!text && !calls.length && res.candidates?.[0]?.finishReason === "MAX_TOKENS") throw new AiError("La respuesta de la IA se cortó (MAX_TOKENS)", undefined, true);
         return {
           text,
           calls,
@@ -48,8 +63,12 @@ export function geminiProvider(): AiProvider {
           usage: { inputTokens: u?.promptTokenCount ?? 0, outputTokens: (u?.candidatesTokenCount ?? 0) + (u?.thoughtsTokenCount ?? 0) },
         };
       } catch (e) {
+        if (e instanceof AiError) throw e;
         const status = e instanceof ApiError ? e.status : (e as { status?: number }).status;
-        throw new AiError(e instanceof Error ? e.message.slice(0, 300) : "Error de IA", status, isRetryableStatus(status));
+        const full = e instanceof Error ? e.message : "Error de IA";
+        // El detalle útil del 429 (espera sugerida y si el tope es diario) va al final del mensaje: se extrae antes de recortarlo.
+        const daily = status === 429 && /PerDay|per day/i.test(full);
+        throw new AiError(full.slice(0, 280) + (daily ? " [PerDay]" : ""), status, isRetryableStatus(status), status === 429 ? parseRetryDelayMs(full) : undefined);
       }
     },
   };

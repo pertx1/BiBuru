@@ -87,6 +87,13 @@ export async function runAi(ctx: AiContext, feature: Feature, req: AiRequest, op
       lastError = e;
       const retryable = e instanceof AiError && e.retryable;
       if (!retryable || attempt === 2) break;
+      // Límite de uso (429): reintentar al segundo solo gasta más cupo. Se espera lo que pide Gemini si es poco;
+      // si no, quien llama decide (los vídeos vuelven a la cola con la espera indicada).
+      if (e instanceof AiError && e.status === 429) {
+        if (e.retryAfterMs === undefined || e.retryAfterMs > 15_000 || /PerDay/.test(e.message)) break;
+        await sleep(e.retryAfterMs + 500);
+        continue;
+      }
       await sleep(1000 * 2 ** attempt + Math.floor(Math.random() * 250)); // 1 s, 2 s (+ ruido)
     }
   }
