@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createNote, createTask, type Actor } from "@/lib/ai/actors";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { getContext } from "@/lib/context";
-import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, importTiktokIds, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
 import { allUrls } from "@/lib/favorites/url";
 import { getBudget } from "@/lib/ai/run";
 import { microsToEuros } from "@/lib/ai/pricing";
@@ -342,4 +342,25 @@ export async function checkPlaylistFeedsNow(): Promise<ActionResult & { added?: 
   refresh();
   revalidatePath("/ajustes");
   return errors.length ? { ok: false, error: errors.join(" · ").slice(0, 400) } : { ok: true, added };
+}
+
+// ------------------------------------------------------------------ importar Favoritos / «Me gusta» de TikTok (archivo de «Descargar tus datos»)
+const tiktokImportSchema = z.object({
+  kind: z.enum(["favoritos", "me_gusta"]),
+  items: z.array(z.object({ id: z.string().regex(/^\d{6,25}$/), date: z.string().max(25).nullable() })).min(1).max(500),
+});
+
+/** El navegador lee el archivo y manda solo los números de los vídeos, de 500 en 500. El análisis va solo, de 2 en 2. */
+export async function importTiktokExport(input: z.infer<typeof tiktokImportSchema>): Promise<ActionResult & { added?: number; duplicates?: number }> {
+  const p = tiktokImportSchema.safeParse(input);
+  if (!p.success) return { ok: false, error: "Datos no válidos" };
+  const a = await actorOf();
+  try {
+    const r = await importTiktokIds(a, p.data.items, p.data.kind === "favoritos" ? "Favoritos de TikTok" : "Me gusta de TikTok");
+    if (r.firstId && hasGeminiKey()) analyzeSoon(a.userId, a.workspaceId, r.firstId);
+    refresh();
+    return { ok: true, added: r.added, duplicates: r.duplicates };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "No se pudo importar" };
+  }
 }

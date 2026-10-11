@@ -5,8 +5,9 @@
  * con tiempo y tamaño máximos y redirecciones comprobadas (anti-SSRF). Si todo falla, se analiza con el texto y la portada.
  */
 type Fetch = typeof fetch;
-export type TiktokVideo = { bytes: Buffer; mimeType: string; durationSec: number | null; via: "tiktok" | "tikwm" };
-export type TiktokMeta = { urls: string[]; durationSec: number | null };
+export type TiktokInfo = { title: string | null; author: string | null; cover: string | null };
+export type TiktokVideo = { bytes: Buffer; mimeType: string; durationSec: number | null; via: "tiktok" | "tikwm"; info: TiktokInfo };
+export type TiktokMeta = { urls: string[]; durationSec: number | null; info: TiktokInfo };
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 export const TIKTOK_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
@@ -21,6 +22,7 @@ export function isTiktokMediaHost(raw: string): boolean {
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.round(v) : null);
 const str = (v: unknown) => (typeof v === "string" && v.startsWith("https://") ? v : null);
+const txt = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 
 /** Direcciones del vídeo y duración desde el JSON incrustado de la página de TikTok. */
 export function parseTiktokPage(html: string): TiktokMeta | null {
@@ -40,16 +42,22 @@ export function parseTiktokPage(html: string): TiktokMeta | null {
   add(str(video.playAddr));
   add(str(video.downloadAddr));
   for (const b of (Array.isArray(video.bitrateInfo) ? video.bitrateInfo : []) as { PlayAddr?: { UrlList?: unknown[] } }[]) for (const u of b.PlayAddr?.UrlList ?? []) add(str(u));
-  return urls.length ? { urls, durationSec: num(video.duration) } : null;
+  const author = item?.author;
+  const info: TiktokInfo = {
+    title: txt(item?.desc, 300),
+    author: txt(typeof author === "string" ? author : (author as { uniqueId?: unknown } | undefined)?.uniqueId, 200),
+    cover: str(video.cover) ?? str(video.originCover),
+  };
+  return urls.length ? { urls, durationSec: num(video.duration), info } : null;
 }
 
 /** Respuesta de tikwm.com/api: `data.play` (sin marca de agua; a veces relativa a tikwm.com) y `data.duration`. */
 export function parseTikwm(json: unknown): TiktokMeta | null {
-  const j = json as { code?: number; data?: { play?: unknown; wmplay?: unknown; duration?: unknown; images?: unknown } } | null;
+  const j = json as { code?: number; data?: { play?: unknown; wmplay?: unknown; duration?: unknown; images?: unknown; title?: unknown; cover?: unknown; author?: { unique_id?: unknown } } } | null;
   if (!j || j.code !== 0 || !j.data || Array.isArray(j.data.images)) return null; // `images` = carrusel de fotos, sin vídeo
   const abs = (v: unknown) => (typeof v === "string" && v ? (v.startsWith("/") ? `https://www.tikwm.com${v}` : v) : null);
   const urls = [abs(j.data.play), abs(j.data.wmplay)].filter((u): u is string => !!u && isTiktokMediaHost(u));
-  return urls.length ? { urls, durationSec: num(j.data.duration) } : null;
+  return urls.length ? { urls, durationSec: num(j.data.duration), info: { title: txt(j.data.title, 300), author: txt(j.data.author?.unique_id, 200), cover: str(abs(j.data.cover)) } } : null;
 }
 
 /**
@@ -130,7 +138,7 @@ export async function fetchTiktokVideo(pageUrl: string, o: { f?: Fetch; maxBytes
     const meta = parseTiktokPage(html);
     if (meta) {
       const v = await download(f, meta, cookie ? { Cookie: cookie } : {}, max);
-      if (v) return { ...v, durationSec: meta.durationSec, via: "tiktok" };
+      if (v) return { ...v, durationSec: meta.durationSec, via: "tiktok", info: meta.info };
     }
   }
 
@@ -140,7 +148,7 @@ export async function fetchTiktokVideo(pageUrl: string, o: { f?: Fetch; maxBytes
     const meta = res?.ok ? parseTikwm(await res.json().catch(() => null)) : null;
     if (meta) {
       const v = await download(f, meta, {}, max);
-      if (v) return { ...v, durationSec: meta.durationSec, via: "tikwm" };
+      if (v) return { ...v, durationSec: meta.durationSec, via: "tikwm", info: meta.info };
     }
   }
   return null;

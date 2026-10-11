@@ -4,6 +4,7 @@ import { Video } from "lucide-react";
 import { z } from "zod";
 import { BudgetBanner } from "@/components/ai/budget-banner";
 import { AddVideoForm } from "@/components/favorites/add-video-form";
+import { TiktokImport } from "@/components/favorites/tiktok-import";
 import { CategoriesManager } from "@/components/favorites/categories-manager";
 import { VideoList } from "@/components/favorites/video-list";
 import { PageHeader } from "@/components/layout/page-header";
@@ -50,6 +51,7 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
       <PageHeader title="Favoritos" subtitle="Vídeos guardados, resumidos y listos para aplicar." />
       <BudgetBanner />
       <AddVideoForm />
+      <TiktokImport />
 
       <nav aria-label="Estado" className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
         {(["por_ver", "visto", "aplicado", "archivado", "todos"] as const).map((s) => (

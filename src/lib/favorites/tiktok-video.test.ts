@@ -31,13 +31,16 @@ describe("vídeo de TikTok", () => {
 
   it("lee las direcciones y la duración de la página", () => {
     expect(parseTiktokPage(html({ playAddr: PLAY, duration: 42, bitrateInfo: [{ PlayAddr: { UrlList: [PLAY, "https://v19.tiktokcdn.com/b.mp4", "https://otro.com/c.mp4"] } }] })))
-      .toEqual({ urls: [PLAY, "https://v19.tiktokcdn.com/b.mp4"], durationSec: 42 });
+      .toMatchObject({ urls: [PLAY, "https://v19.tiktokcdn.com/b.mp4"], durationSec: 42 });
+    const withInfo = `<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">${JSON.stringify({ __DEFAULT_SCOPE__: { "webapp.video-detail": { itemInfo: { itemStruct: { desc: "Tutorial #ropa", author: { uniqueId: "akerra" }, video: { playAddr: PLAY, cover: "https://p16-sign.tiktokcdn.com/c.jpg" } } } } } })}</script>`;
+    expect(parseTiktokPage(withInfo)?.info).toEqual({ title: "Tutorial #ropa", author: "akerra", cover: "https://p16-sign.tiktokcdn.com/c.jpg" });
     expect(parseTiktokPage("<html>sin datos</html>")).toBeNull();
     expect(parseTiktokPage(html({ duration: 5 }))).toBeNull();
   });
 
   it("tikwm: dirección relativa y carrusel de fotos", () => {
-    expect(parseTikwm({ code: 0, data: { play: "/video/media/play/1.mp4", duration: 9 } })).toEqual({ urls: ["https://www.tikwm.com/video/media/play/1.mp4"], durationSec: 9 });
+    expect(parseTikwm({ code: 0, data: { play: "/video/media/play/1.mp4", duration: 9, title: "Cómo doblar camisetas", author: { unique_id: "akerra" }, cover: "https://p16-sign.tiktokcdn.com/c.jpg" } }))
+      .toEqual({ urls: ["https://www.tikwm.com/video/media/play/1.mp4"], durationSec: 9, info: { title: "Cómo doblar camisetas", author: "akerra", cover: "https://p16-sign.tiktokcdn.com/c.jpg" } });
     expect(parseTikwm({ code: 0, data: { images: ["a.jpg"], play: "/x.mp4" } })).toBeNull();
     expect(parseTikwm({ code: -1, msg: "error" })).toBeNull();
   });

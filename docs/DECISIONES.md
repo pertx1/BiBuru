@@ -218,3 +218,14 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   cron), respetando la categoría y el negocio que ya tuvieran. Al volver a analizar cualquier vídeo, la categoría y el negocio puestos se mantienen.
 - Un TikTok más largo que el límite de «vídeo largo» pide confirmación, como YouTube.
 - Prueba: `scripts/e2e/tiktok-video.mjs` (TikTok falso con `TIKTOK_FETCH_TEST_BASE`, que solo existe para pruebas locales y se ignora en Vercel).
+
+## Importar Favoritos de TikTok (de cualquier cuenta)
+- TikTok no da los Favoritos ni los «Me gusta» por su API (ni con inicio de sesión), así que no se «vincula» la cuenta: se importa el archivo
+  de **«Descargar tus datos»** de la cuenta que quieras (Ajustes y privacidad → Cuenta → Descargar tus datos, formato JSON).
+- El archivo (ZIP tal cual, JSON o TXT) se lee **en el móvil** (`src/lib/favorites/tiktok-export.ts`, lector ZIP propio con `DecompressionStream`,
+  sin dependencias); al servidor solo van los números de los vídeos, de 500 en 500 (`importTiktokExport`, Zod). Se ignoran sonidos, hashtags
+  e historial. «Me gusta» opcional (apagado por defecto: pueden ser miles).
+- Se guardan con `added_via = 'tiktok_import'`, `origin_list` «Favoritos de TikTok» / «Me gusta de TikTok», enlace `tiktok.com/@/video/<id>`
+  y título provisional. El análisis (de 2 en 2, cola + cron, ahora 6 por pasada) baja el vídeo y rellena título, autor, enlace y portada.
+  Si un importado no se puede abrir, no se analiza texto vacío: va a reintentos y, tras 4, a error.
+- Para traer favoritos nuevos más adelante: volver a pedir el archivo e importarlo (no se repiten), o pegar enlaces / compartir.

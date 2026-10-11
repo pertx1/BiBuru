@@ -15,6 +15,7 @@ import { FeedError, fetchPlaylistFeed } from "./rss";
 import { classifyVideoUrl, firstUrl, hashtags, isTiktokImageHost } from "./url";
 import { deleteGeminiFile, uploadGeminiFile } from "@/lib/ai/gemini";
 import { fetchTiktokVideo, type TiktokVideo } from "./tiktok-video";
+import { tiktokUrlFor } from "./tiktok-export";
 import { GoogleError, likedPage, playlistPage, refreshAccessToken, videoDetails, type YtVideo } from "./youtube";
 
 export type VideoMeta = { title?: string | null; channel?: string | null; thumbnail?: string | null; durationSec?: number | null; publishedAt?: string | null };
@@ -82,6 +83,7 @@ async function accessTokenFor(admin: AdminClient, userId: string): Promise<strin
 
 // ------------------------------------------------------------------ análisis
 export type AnalyzeOutcome = "ready" | "needs_confirm" | "retry" | "blocked" | "rate_limited" | "queued" | "error" | "skipped";
+export const TIKTOK_PLACEHOLDER = "Vídeo de TikTok";
 /** Un análisis «en curso» más antiguo que esto se considera colgado y no bloquea a los demás. */
 const LOCK_STALE_MS = 6 * 60_000;
 /** Vídeos analizándose a la vez por espacio (VIDEO_CONCURRENCY, 1–4; por defecto 2). Más rápido sin chocar con el límite de Gemini. */
@@ -150,6 +152,16 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     let tk: TiktokVideo | null = null;
     if (tryTiktok) {
       tk = await fetchTiktokVideo(v.url).catch(() => null);
+      // Importados del archivo de TikTok: solo traen el número del vídeo; título, autor y portada salen de la descarga.
+      if (tk && (v.title === TIKTOK_PLACEHOLDER || !v.channel)) {
+        const patch = {
+          ...(v.title === TIKTOK_PLACEHOLDER && tk.info.title ? { title: tk.info.title } : {}),
+          ...(!v.channel && tk.info.author ? { channel: tk.info.author, ...(v.external_id ? { url: `https://www.tiktok.com/@${tk.info.author}/video/${v.external_id}` } : {}) } : {}),
+          ...(!v.thumbnail_url && tk.info.cover ? { thumbnail_url: tk.info.cover } : {}),
+        };
+        if (Object.keys(patch).length) { await save(patch); Object.assign(v, patch); }
+      }
+      if (!tk && v.added_via === "tiktok_import" && v.title === TIKTOK_PLACEHOLDER) throw new Error("No se pudo abrir este TikTok (¿borrado, privado o TikTok lo bloqueó un momento?). Se reintenta solo.");
       if (tk?.durationSec && duration == null) { duration = tk.durationSec; await save({ duration_sec: duration }); }
       if (tk && !o.confirmed && duration != null && duration > ctx.videoLongMinutes * 60) {
         await save({ analysis_status: "needs_confirm", analysis_error: null, analysis_attempts: v.analysis_attempts });
@@ -331,7 +343,7 @@ const RECOVERABLE = ["RESOURCE_EXHAUSTED", "429", "quota", "UNAVAILABLE", "overl
 const TIKTOK_UPGRADE_BATCH = 5;
 
 /** Cola (cron): hasta `limit` vídeos pendientes por pasada, de uno en uno y sin pasarse del tiempo de la función. */
-export async function processVideoQueue(admin: AdminClient, limit = 3, budgetMs = 35_000) {
+export async function processVideoQueue(admin: AdminClient, limit = 6, budgetMs = 40_000) {
   const started = Date.now();
   const now = new Date().toISOString();
   // Un análisis que lleva más de 10 minutos «en curso» se quedó colgado (la función se cortó): vuelve a la cola.
@@ -459,4 +471,34 @@ export async function syncStaleFeeds(admin: AdminClient, o: { workspaceId?: stri
     if (r.error) errors++;
   }
   return { feeds: data?.length ?? 0, added, errors };
+}
+
+// ------------------------------------------------------------------ importar del archivo de TikTok
+export type TiktokImportResult = { added: number; duplicates: number; firstId?: string };
+
+/** Guarda los vídeos (por número) que aún no están; el análisis lo hace la cola, de 2 en 2. Sin red: es rápido aunque sean cientos. */
+export async function importTiktokIds(a: Actor, items: { id: string; date: string | null }[], origin: string): Promise<TiktokImportResult> {
+  const out: TiktokImportResult = { added: 0, duplicates: 0 };
+  for (let i = 0; i < items.length; i += 200) {
+    const chunk = items.slice(i, i + 200);
+    const { data: known } = await a.supabase.from("saved_videos").select("external_id").eq("workspace_id", a.workspaceId).eq("source", "tiktok").in("external_id", chunk.map((x) => x.id));
+    const have = new Set((known ?? []).map((k) => k.external_id));
+    const rows = chunk.filter((x) => !have.has(x.id)).map((x) => ({
+      workspace_id: a.workspaceId, user_id: a.userId, source: "tiktok", external_id: x.id, url: tiktokUrlFor(x.id), title: TIKTOK_PLACEHOLDER,
+      added_via: "tiktok_import", origin_list: origin,
+    }));
+    out.duplicates += chunk.length - rows.length;
+    if (!rows.length) continue;
+    let { data, error } = await a.supabase.from("saved_videos").insert(rows).select("id");
+    if (error?.code === "23505") {
+      // Alguno se guardó a la vez por otro lado: uno a uno, saltando los repetidos.
+      data = [];
+      for (const r of rows) { const one = await a.supabase.from("saved_videos").insert(r).select("id").maybeSingle(); if (one.data) data.push(one.data); else out.duplicates++; }
+      error = null;
+    }
+    if (error) throw new Error("No se pudieron guardar los vídeos");
+    out.added += data?.length ?? 0;
+    out.firstId ??= data?.[0]?.id;
+  }
+  return out;
 }
