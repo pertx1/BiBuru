@@ -147,6 +147,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Análisis de vídeos: máx. `VIDEO_CONCURRENCY` (2) a la vez por espacio (reclamo + cola en `analyzeAndDrain`); más daban 429 en Gemini. Un 429 vuelve a la cola con la espera de Gemini sin gastar intento (`src/lib/ai/errors.ts`). Velocidad: `mediaResolution: low`, `thinking: "low"` (`src/lib/ai/thinking.ts`), menos fps en vídeos largos y la lista se refresca sola.
 - TikTok: el análisis baja el vídeo (página pública con sus cookies → respaldo tikwm.com) con `src/lib/favorites/tiktok-video.ts` (solo dominios de TikTok/tikwm, máx. 50 MB); si falla, texto + portada y `tiktok_fetch = 'failed'`. Re-analizar respeta categoría y negocio ya puestos.
 - Importar Favoritos/«Me gusta» de TikTok desde el archivo de «Descargar tus datos» (`tiktok-export.ts`, se lee en el navegador; `importTiktokExport` recibe solo números de vídeo; `added_via = 'tiktok_import'`). TikTok no tiene API para esto.
+- Atajo de iPhone «Compartir → BiBuru»: `POST /api/compartir` (`{ clave, enlace }`, público en el proxy) con clave personal en `share_tokens` (solo hash, RLS por `user_id`); lógica en `src/lib/favorites/share.ts`.
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
 
 ## Inicio personalizable y navegación

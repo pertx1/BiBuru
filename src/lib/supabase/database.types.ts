@@ -913,6 +913,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"share_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"last_used_at": string | null,"token_hash": string,"updated_at": string,"user_id": string,"uses": number,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"last_used_at"?: string | null,"token_hash": string,"updated_at"?: string,"user_id"?: string,"uses"?: number,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"last_used_at"?: string | null,"token_hash"?: string,"updated_at"?: string,"user_id"?: string,"uses"?: number,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "share_tokens_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"shirt_dtf_rules": {
                   Row: {
                     "business_id": string,"created_at": string,"dtf_color": string,"id": string,"shirt_color": string,"shirt_color_key": string,"updated_at": string,"user_id": string,"workspace_id": string

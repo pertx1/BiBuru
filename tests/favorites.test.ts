@@ -44,6 +44,19 @@ d("Favoritos: permisos y reglas", () => {
     await expect(as(ids.alice, (c) => c.query("insert into youtube_feeds (workspace_id,user_id,playlist_id) values ($1,$2,'PLaliceaaaaaaaaaa')", [ids.aWs, ids.alice]))).rejects.toThrow();
   });
 
+  it("share_tokens (atajo de iPhone): clave personal, una por espacio, nadie más la ve", async () => {
+    const h = (c: string) => c.repeat(64);
+    await q("insert into share_tokens (workspace_id,user_id,token_hash) values ($1,$2,$3),($4,$5,$6)", [ids.aWs, ids.alice, h("a"), ids.bWs, ids.bob, h("b")]);
+    const mine = await as(ids.alice, (c) => c.query("select token_hash from share_tokens"));
+    expect(mine.rows.map((r) => r.token_hash)).toEqual([h("a")]);
+    expect((await as(ids.alice, (c) => c.query("delete from share_tokens where user_id=$1", [ids.bob]))).rowCount).toBe(0);
+    await expect(as(ids.alice, (c) => c.query("insert into share_tokens (workspace_id,user_id,token_hash) values ($1,$2,$3)", [ids.bWs, ids.alice, h("c")]))).rejects.toThrow();
+    await expect(as(ids.alice, (c) => c.query("insert into share_tokens (workspace_id,user_id,token_hash) values ($1,$2,$3)", [ids.aWs, ids.alice, h("d")]))).rejects.toThrow(/duplicate|unique/i);
+    await expect(as(ids.alice, (c) => c.query("insert into share_tokens (workspace_id,user_id,token_hash) values ($1,$2,'corto')", [ids.aWs, ids.alice]))).rejects.toThrow();
+    await expect(as(ids.alice, (c) => c.query("insert into saved_videos (workspace_id,user_id,source,url,added_via) values ($1,$2,'tiktok','https://www.tiktok.com/@/video/7400000000000000001','tiktok_import')", [ids.aWs, ids.alice]))).resolves.toBeTruthy();
+    await q("delete from share_tokens");
+  });
+
   it.each(["saved_videos", "video_categories"])("%s: aislamiento entre usuarios", async (t) => {
     const r = await as(ids.alice, (c) => c.query(`select workspace_id from ${t}`));
     expect(r.rows.length).toBeGreaterThan(0);

@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { after } from "next/server";
 import { Video } from "lucide-react";
 import { z } from "zod";
 import { BudgetBanner } from "@/components/ai/budget-banner";
 import { AddVideoForm } from "@/components/favorites/add-video-form";
 import { TiktokImport } from "@/components/favorites/tiktok-import";
+import { ShareShortcut } from "@/components/favorites/share-shortcut";
 import { CategoriesManager } from "@/components/favorites/categories-manager";
 import { VideoList } from "@/components/favorites/video-list";
 import { PageHeader } from "@/components/layout/page-header";
@@ -32,9 +34,10 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
   const { supabase, workspaceId } = await getContext();
   // Respaldo del cron: las listas de YouTube con más de una hora sin revisar se miran tras enviar la página.
   after(async () => { try { await syncStaleFeeds(createAdminClient(), { workspaceId, staleMinutes: 60, limit: 3 }); } catch (e) { console.error("[videos] feeds:", e instanceof Error ? e.message : e); } });
-  const [{ videos, tags, byStatus, byCat, categories, costs }, biz] = await Promise.all([
+  const [{ videos, tags, byStatus, byCat, categories, costs }, biz, share] = await Promise.all([
     listFavorites(f),
     supabase.from("businesses").select("id, name").eq("workspace_id", workspaceId).eq("archived", false).order("name"),
+    supabase.from("share_tokens").select("created_at, last_used_at, uses").eq("workspace_id", workspaceId).maybeSingle(),
   ]);
   const href = (patch: Partial<SP>) => {
     const p = new URLSearchParams();
@@ -44,6 +47,8 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
   };
   const chip = (active: boolean) => cn("inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm md:min-h-9", active ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface hover:bg-surface-2");
   const businesses = biz.data ?? [];
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "localhost"}`;
   const opened = uuid.safeParse(sp.abrir).success ? sp.abrir! : null;
 
   return (
@@ -51,6 +56,7 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
       <PageHeader title="Favoritos" subtitle="Vídeos guardados, resumidos y listos para aplicar." />
       <BudgetBanner />
       <AddVideoForm />
+      <ShareShortcut status={share.data ? { createdAt: share.data.created_at, lastUsedAt: share.data.last_used_at, uses: share.data.uses } : null} origin={origin} />
       <TiktokImport />
 
       <nav aria-label="Estado" className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">

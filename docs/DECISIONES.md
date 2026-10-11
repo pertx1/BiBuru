@@ -229,3 +229,13 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   y título provisional. El análisis (de 2 en 2, cola + cron, ahora 6 por pasada) baja el vídeo y rellena título, autor, enlace y portada.
   Si un importado no se puede abrir, no se analiza texto vacío: va a reintentos y, tras 4, a error.
 - Para traer favoritos nuevos más adelante: volver a pedir el archivo e importarlo (no se repiten), o pegar enlaces / compartir.
+
+## Atajo de iPhone «Compartir → BiBuru»
+- Una PWA de iOS no puede salir en la hoja de compartir, así que se usa un atajo de la app Atajos que hace `POST /api/compartir` con JSON
+  `{ clave, enlace }` (también formulario o `Authorization: Bearer`). Guarda los enlaces (máx. 20) en Favoritos y los analiza solos; responde un texto
+  corto que el atajo enseña como notificación.
+- No se puede entregar un atajo «para instalar con un toque»: Apple solo importa atajos firmados o compartidos desde un iPhone (enlace de iCloud).
+  En Favoritos hay una guía de 7 pasos con botones para copiar la dirección y la clave.
+- Clave personal en `share_tokens` (una por persona y espacio, RLS por `user_id` como `push_subscriptions`). Se guarda solo el sha256; la clave
+  (`bb_` + 192 bits aleatorios) se ve una vez. Crear otra invalida la anterior; «Borrar clave» corta el atajo al momento. `/api/compartir` es
+  público para el proxy de sesión pero exige la clave. Se cuentan los usos y la última vez.

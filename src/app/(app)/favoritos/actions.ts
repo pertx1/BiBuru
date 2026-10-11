@@ -13,6 +13,7 @@ import { parsePlaylistId } from "@/lib/favorites/rss";
 import { myPlaylists, refreshAccessToken } from "@/lib/favorites/youtube";
 import { decryptSecret } from "@/lib/favorites/crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { newShareToken } from "@/lib/favorites/share";
 import type { ActionResult } from "@/lib/schemas";
 
 const uuid = z.uuid();
@@ -363,4 +364,25 @@ export async function importTiktokExport(input: z.infer<typeof tiktokImportSchem
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "No se pudo importar" };
   }
+}
+
+// ------------------------------------------------------------------ atajo de iPhone «Compartir → BiBuru»
+/** Crea (o cambia) la clave personal del atajo. Se devuelve una sola vez; la anterior deja de valer. */
+export async function createShareToken(): Promise<ActionResult & { token?: string }> {
+  const a = await actorOf();
+  const { token, hash } = newShareToken();
+  await a.supabase.from("share_tokens").delete().eq("user_id", a.userId).eq("workspace_id", a.workspaceId);
+  const { error } = await a.supabase.from("share_tokens").insert({ workspace_id: a.workspaceId, user_id: a.userId, token_hash: hash });
+  if (error) return { ok: false, error: "No se pudo crear la clave" };
+  revalidatePath("/favoritos");
+  return { ok: true, token };
+}
+
+/** Borra la clave: el atajo deja de funcionar al momento. */
+export async function revokeShareToken(): Promise<ActionResult> {
+  const a = await actorOf();
+  const { error } = await a.supabase.from("share_tokens").delete().eq("user_id", a.userId).eq("workspace_id", a.workspaceId);
+  if (error) return { ok: false, error: "No se pudo borrar la clave" };
+  revalidatePath("/favoritos");
+  return { ok: true };
 }
