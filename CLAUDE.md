@@ -145,6 +145,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Los módulos de `src/lib/favorites/*` que usan servidor no se importan desde componentes de cliente (usar `labels.ts` para constantes compartidas).
 - Cualquier fetch a dominios externos desde enlaces del usuario se limita a dominios conocidos (anti-SSRF).
 - Análisis de vídeos: máx. `VIDEO_CONCURRENCY` (2) a la vez por espacio (reclamo + cola en `analyzeAndDrain`); más daban 429 en Gemini. Un 429 vuelve a la cola con la espera de Gemini sin gastar intento (`src/lib/ai/errors.ts`). Velocidad: `mediaResolution: low`, `thinking: "low"` (`src/lib/ai/thinking.ts`), menos fps en vídeos largos y la lista se refresca sola.
+- TikTok: el análisis baja el vídeo (página pública con sus cookies → respaldo tikwm.com) con `src/lib/favorites/tiktok-video.ts` (solo dominios de TikTok/tikwm, máx. 50 MB); si falla, texto + portada y `tiktok_fetch = 'failed'`. Re-analizar respeta categoría y negocio ya puestos.
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
 
 ## Inicio personalizable y navegación

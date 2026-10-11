@@ -159,6 +159,12 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
         {v.business_reason && <section><h4 className="mb-1 font-semibold">Útil para tu negocio</h4><p>{v.business_reason}</p></section>}
         {tags.length > 0 && <div className="flex flex-wrap gap-1.5">{tags.map((t) => <Badge key={t.id} color={t.color}>{t.name}</Badge>)}</div>}
 
+        {v.source === "tiktok" && v.tiktok_fetch === "failed" && basisOf(v) !== "video_completo" && (
+          <div className="rounded-xl bg-fill p-3 text-sm">
+            <p>No se pudo bajar el vídeo de TikTok (privado, un carrusel de fotos o TikTok lo bloqueó un momento), así que se analizó sin verlo (con la descripción y, si la hay, la portada).</p>
+            <Button className="mt-2" variant="secondary" disabled={pending} onClick={() => run(() => retryAnalysis(v.id), "Reintentando con el vídeo…")}>Reintentar con el vídeo</Button>
+          </div>
+        )}
         {v.source !== "youtube" && basisOf(v) !== "video_completo" && !v.upload_path && <UploadFull videoId={v.id} />}
 
         <div className="grid gap-3 sm:grid-cols-2">

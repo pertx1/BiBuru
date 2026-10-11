@@ -39,7 +39,7 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 
 ## 4. Favoritos de TikTok
 - Ya existía guardar enlaces de TikTok (con oEmbed y enlaces cortos): lo he mejorado en lugar de duplicarlo.
-- Datos del vídeo solo por el **oEmbed oficial** de TikTok (descripción, autor y portada). Nunca se descarga el vídeo de TikTok.
+- Datos del vídeo por el **oEmbed oficial** de TikTok (descripción, autor y portada). *(Cambiado después: ver «TikTok: la IA ve el vídeo entero».)*
 - «No disponible» = TikTok responde 400/404 al oEmbed (privado o borrado). Un 403/429 (bloqueo temporal) no lo marca.
 - La portada se descarga solo de los servidores de imágenes de TikTok (`*.tiktokcdn.com`…) y como mucho 3 MB, para pasársela al modelo como imagen.
 - Tu nota se envía al modelo junto al texto. Si la escribes después, hay un botón «Volver a analizar con mi nota».
@@ -205,3 +205,16 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - **Esperas cortas**: un 429 de ≤ 15 s lo reintenta `runAi`; si no, el vídeo espera lo que pide Gemini (mín. 15 s) y el propio trabajador lo
   retoma si son ≤ 45 s (antes: mín. 1 min y luego el cron, cada 3 min). Mientras espera, sigue con otros vídeos.
 - **La lista se refresca sola** cada 4 s mientras haya vídeos en cola o analizándose (antes había que recargar).
+
+## TikTok: la IA ve el vídeo entero
+- A petición de la persona (sabiendo que va contra las normas de TikTok y que puede dejar de funcionar si lo bloquean), el análisis
+  **baja el vídeo** de los TikTok públicos y se lo pasa a Gemini como un vídeo subido (dentro de la petición hasta 14 MB; si no, Files API).
+- Cómo (`src/lib/favorites/tiktok-video.ts`): 1) la página pública del vídeo (JSON `__UNIVERSAL_DATA_FOR_REHYDRATION__` → `playAddr`; la descarga
+  lleva las cookies de la página y `Referer`); 2) si TikTok bloquea (habitual desde servidores), el servicio público **tikwm.com** (sin clave;
+  recibe solo el enlace público). Se apaga con `TIKTOK_FETCH_FALLBACK=off`.
+- Seguridad: solo `https` a dominios de TikTok, sus CDN y tikwm (también en cada redirección), máx. 50 MB, tiempos máximos. Carruseles de fotos,
+  privados o bloqueos → se analiza como antes (texto + portada) y la ficha lo dice con «Reintentar con el vídeo» o «Subir el vídeo».
+- `saved_videos.tiktok_fetch` ('ok' | 'failed' | null). Los TikTok analizados antes solo con texto vuelven a la cola **una vez** (5 por pasada del
+  cron), respetando la categoría y el negocio que ya tuvieran. Al volver a analizar cualquier vídeo, la categoría y el negocio puestos se mantienen.
+- Un TikTok más largo que el límite de «vídeo largo» pide confirmación, como YouTube.
+- Prueba: `scripts/e2e/tiktok-video.mjs` (TikTok falso con `TIKTOK_FETCH_TEST_BASE`, que solo existe para pruebas locales y se ignora en Vercel).

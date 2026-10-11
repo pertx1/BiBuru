@@ -14,6 +14,7 @@ import { resolveTiktokShort, tiktokOembedStatus, youtubeOembed } from "./oembed"
 import { FeedError, fetchPlaylistFeed } from "./rss";
 import { classifyVideoUrl, firstUrl, hashtags, isTiktokImageHost } from "./url";
 import { deleteGeminiFile, uploadGeminiFile } from "@/lib/ai/gemini";
+import { fetchTiktokVideo, type TiktokVideo } from "./tiktok-video";
 import { GoogleError, likedPage, playlistPage, refreshAccessToken, videoDetails, type YtVideo } from "./youtube";
 
 export type VideoMeta = { title?: string | null; channel?: string | null; thumbnail?: string | null; durationSec?: number | null; publishedAt?: string | null };
@@ -127,6 +128,8 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
   const upload = o.mode === "upload" && !!v.upload_path;
   const textOnly = v.source !== "youtube" && !upload;
   const light = o.mode === "light";
+  // TikTok: se intenta bajar el vídeo para que la IA lo vea entero; si no se puede, texto y portada como antes.
+  const tryTiktok = v.source === "tiktok" && !upload && !light && !v.unavailable && /\/video\/\d+/.test(v.url);
   const isLong = !upload && !textOnly && !light && (duration == null ? false : duration > ctx.videoLongMinutes * 60);
   if (isLong && !o.confirmed) { await save({ analysis_status: "needs_confirm", analysis_error: null }); return "needs_confirm"; }
 
@@ -144,27 +147,42 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
 
   let geminiFile: string | null = null;
   try {
+    let tk: TiktokVideo | null = null;
+    if (tryTiktok) {
+      tk = await fetchTiktokVideo(v.url).catch(() => null);
+      if (tk?.durationSec && duration == null) { duration = tk.durationSec; await save({ duration_sec: duration }); }
+      if (tk && !o.confirmed && duration != null && duration > ctx.videoLongMinutes * 60) {
+        await save({ analysis_status: "needs_confirm", analysis_error: null, analysis_attempts: v.analysis_attempts });
+        return "needs_confirm";
+      }
+    }
     const a: Actor = { supabase, workspaceId, userId: v.user_id, timezone: ctx.timezone };
     const [biz, cats] = await Promise.all([
       supabase.from("businesses").select("name, description").eq("workspace_id", workspaceId).eq("archived", false).limit(30),
       supabase.from("video_categories").select("id, name").eq("workspace_id", workspaceId),
     ]);
-    const useText = textOnly || light;
+    const useText = (textOnly && !tk) || light;
     const tags = v.source === "tiktok" ? hashtags(v.title) : [];
     const info = `${v.source === "tiktok" ? "Descripción" : "Título"}: ${v.title}\nAutor: ${v.channel ?? "desconocido"}\nEnlace: ${v.url}${description ? `\nDescripción: ${description}` : ""}${tags.length ? `\nHashtags: ${tags.map((t) => `#${t}`).join(" ")}` : ""}${v.notes ? `\nNota de la persona (tenla en cuenta): ${v.notes.slice(0, 1500)}` : ""}`;
-    // TikTok sin vídeo: la portada va como imagen (oficial vía oEmbed; nunca se descarga el vídeo de TikTok).
+    // TikTok sin vídeo (no se pudo bajar): la portada va como imagen.
     const cover = useText && v.source === "tiktok" ? await fetchCoverImage(v.thumbnail_url) : null;
     let parts: unknown[];
+    // Vídeo en bytes (subido o bajado de TikTok): dentro de la petición si cabe; si no, por la Files API de Gemini.
+    const fromBytes = async (bytes: Buffer, mimeType: string, durationSec: number | null) => {
+      const fps = videoFps(durationSec);
+      const meta = fps ? { videoMetadata: { fps } } : {};
+      const ask = { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` };
+      if (bytes.length <= INLINE_VIDEO_MAX) return [{ inlineData: { mimeType, data: bytes.toString("base64") }, ...meta }, ask];
+      const g = await uploadGeminiFile(bytes, mimeType);
+      geminiFile = g.name;
+      return [{ fileData: { fileUri: g.uri, mimeType }, ...meta }, ask];
+    };
     if (upload) {
       const file = await admin.storage.from("video-uploads").download(v.upload_path!);
       if (file.error || !file.data) throw new Error("No se encontró el vídeo subido. Vuelve a subirlo.");
-      const bytes = Buffer.from(await file.data.arrayBuffer());
-      const mimeType = file.data.type || "video/mp4";
-      const fps = videoFps(v.upload_duration_sec);
-      const upFps = fps ? { videoMetadata: { fps } } : {};
-      if (bytes.length <= INLINE_VIDEO_MAX) parts = [{ inlineData: { mimeType, data: bytes.toString("base64") }, ...upFps }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }];
-      else { const g = await uploadGeminiFile(bytes, mimeType); geminiFile = g.name; parts = [{ fileData: { fileUri: g.uri, mimeType }, ...upFps }, { text: `Analiza este vídeo (lo que se ve y lo que se dice).\n${info}` }]; }
-    } else if (useText) parts = cover ? [{ text: `${info}\nTe adjunto la imagen de portada del vídeo.` }, { inlineData: cover }] : [{ text: info }];
+      parts = await fromBytes(Buffer.from(await file.data.arrayBuffer()), file.data.type || "video/mp4", v.upload_duration_sec);
+    } else if (tk && !light) parts = await fromBytes(tk.bytes, tk.mimeType, duration);
+    else if (useText) parts = cover ? [{ text: `${info}\nTe adjunto la imagen de portada del vídeo.` }, { inlineData: cover }] : [{ text: info }];
     else { const fps = videoFps(duration); parts = [{ fileData: { fileUri: v.url }, ...(fps ? { videoMetadata: { fps } } : {}) }, { text: `Analiza este vídeo.\n${info}` }]; }
     const estimated = useText ? 0 : await estimateVideoCost(ctx, upload ? v.upload_duration_sec : duration);
     const res = await runAi(ctx, light ? "video_light" : useText ? "video_light" : "video", {
@@ -188,7 +206,10 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
       analysis_status: "ready", analysis_mode: useText ? (light && !textOnly ? "light" : "text") : "video", analysis_error: null, analysis_next_try_at: null,
       analysis_basis: upload || !useText ? "video_completo" : cover ? "texto_portada" : "texto",
       analysis_cost_micros: v.analysis_cost_micros + res.costMicros, summary: an.summary, key_points: an.key_points as unknown as Json, actions: an.actions as unknown as Json,
-      utility: an.utility, category_id: categoryId, business_id: b?.id ?? null, business_reason: b ? an.business_reason : null,
+      // Si ya tenía categoría o negocio (p. ej. elegidos a mano), se respetan al volver a analizar.
+      utility: an.utility, category_id: v.category_id ?? categoryId,
+      ...(v.business_id ? {} : { business_id: b?.id ?? null, business_reason: b ? an.business_reason : null }),
+      ...(tryTiktok ? { tiktok_fetch: tk ? "ok" : "failed" } : {}),
     });
     if (an.tags.length) await addTagsTo(a, "video", videoId, an.tags);
     if (upload) await dropUpload(admin, videoId, v.upload_path!);
@@ -306,6 +327,8 @@ export function analyzeSoon(userId: string, workspaceId: string, videoId: string
 
 /** Errores antiguos (texto técnico de Gemini) que no eran culpa del vídeo. Los mensajes nuevos van en español y no encajan. */
 const RECOVERABLE = ["RESOURCE_EXHAUSTED", "429", "quota", "UNAVAILABLE", "overloaded", "análisis válido"];
+/** Lotes de TikTok analizados antes de bajar el vídeo que vuelven a la cola en cada pasada (sin saturar a TikTok ni a Gemini). */
+const TIKTOK_UPGRADE_BATCH = 5;
 
 /** Cola (cron): hasta `limit` vídeos pendientes por pasada, de uno en uno y sin pasarse del tiempo de la función. */
 export async function processVideoQueue(admin: AdminClient, limit = 3, budgetMs = 35_000) {
@@ -316,6 +339,11 @@ export async function processVideoQueue(admin: AdminClient, limit = 3, budgetMs 
   // Los que fallaron por el límite de Gemini o por respuesta cortada (antes de este arreglo) vuelven solos a la cola.
   await admin.from("saved_videos").update({ analysis_status: "pending", analysis_attempts: 0, analysis_error: null, analysis_next_try_at: null })
     .eq("analysis_status", "error").or(RECOVERABLE.map((t) => `analysis_error.ilike.%${t}%`).join(","));
+  // TikTok analizados solo con texto antes de bajar el vídeo: vuelven a la cola (una vez; luego `tiktok_fetch` queda marcado).
+  const { data: old } = await admin.from("saved_videos").select("id").eq("source", "tiktok").eq("analysis_status", "ready").is("tiktok_fetch", null)
+    .eq("unavailable", false).or("analysis_mode.is.null,analysis_mode.neq.light").or("analysis_basis.is.null,analysis_basis.neq.video_completo").order("created_at", { ascending: false }).limit(TIKTOK_UPGRADE_BATCH);
+  if (old?.length) await admin.from("saved_videos").update({ analysis_status: "pending", analysis_attempts: 0, analysis_error: null, analysis_next_try_at: null })
+    .in("id", old.map((r) => r.id)).eq("analysis_status", "ready");
   const { data: rows } = await admin.from("saved_videos").select("id, user_id, workspace_id")
     .eq("analysis_status", "pending").or(`analysis_next_try_at.is.null,analysis_next_try_at.lte.${now}`).order("created_at").limit(limit);
   const out: Record<AnalyzeOutcome, number> = { ready: 0, needs_confirm: 0, retry: 0, blocked: 0, rate_limited: 0, queued: 0, error: 0, skipped: 0 };
