@@ -155,7 +155,7 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
         </Field>
         <Field label="Cliente" htmlFor="o-customer"><Input id="o-customer" name="customer" defaultValue={v("customer", order?.customer ?? prefill?.customer ?? "")} maxLength={120} autoComplete="off" /></Field>
         <Field label="Nº de pedido" htmlFor="o-number"><Input id="o-number" name="order_number" defaultValue={v("order_number", order?.order_number ?? "")} maxLength={40} autoComplete="off" /></Field>
-        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? prefill?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" /></Field>
+        <Field label="Canal" htmlFor="o-channel" className="col-span-2"><Input id="o-channel" name="channel" defaultValue={v("channel", order?.channel ?? prefill?.channel ?? "")} maxLength={60} placeholder="Instagram, web, Vinted…" aria-describedby="o-channel-hint" /><span id="o-channel-hint" className="mt-1 block text-xs text-muted">Si el canal es «web», el pedido sale como pagado solo.</span></Field>
       </div>
 
       <fieldset className="flex flex-col gap-3">

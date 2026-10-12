@@ -58,6 +58,55 @@ d("Pedidos: cobros, pendiente calculado y permisos", () => {
     expect(await row(cancelled)).toMatchObject({ due_cents: 0 });
   });
 
+  it("pedidos de la web: salen pagados solos y se ajustan al total, cobros a mano, cancelación y «No pagado»", async () => {
+    const autos = async (id: string) => (await q("select amount_cents::int a, paid_on::text d, method from order_payments where order_id=$1 and auto_web", [id])).rows;
+    // Creado como haría la app (con RLS): canal «Tienda web».
+    const id = await as(ids.alice, async (c) => {
+      const o = (await c.query("insert into orders (workspace_id,user_id,business_id,order_date,channel) values ($1,$2,$3,'2026-09-10','Tienda web') returning id", [ids.aWs, ids.alice, ids.biz])).rows[0].id;
+      await c.query("insert into order_items (workspace_id,user_id,order_id,product_name,quantity,unit_price_cents) values ($1,$2,$3,'Camiseta',2,1500)", [ids.aWs, ids.alice, o]);
+      const r = (await c.query("select paid_cents::int, due_cents::int from orders where id=$1", [o])).rows[0];
+      expect(r).toEqual({ paid_cents: 3000, due_cents: 0 });
+      return o;
+    });
+    expect(id).toBeTruthy();
+
+    const w = (await q("insert into orders (workspace_id,user_id,business_id,order_date,channel) values ($1,$2,$3,'2026-09-10','Web') returning id", [ids.aWs, ids.alice, ids.biz])).rows[0].id;
+    await q("insert into order_items (workspace_id,user_id,order_id,product_name,quantity,unit_price_cents) values ($1,$2,$3,'Sudadera',1,4000)", [ids.aWs, ids.alice, w]);
+    expect(await autos(w)).toEqual([{ a: 4000, d: "2026-09-10", method: "tarjeta" }]);
+    expect(await row(w)).toMatchObject({ paid_cents: 4000, due_cents: 0 });
+    // Cambia el total: el cobro automático se ajusta.
+    await q("update order_items set quantity=2 where order_id=$1", [w]);
+    expect(await row(w)).toMatchObject({ paid_cents: 8000, due_cents: 0 });
+    // Un cobro a mano: el automático cubre solo el resto (no se pasa del total).
+    await q("insert into order_payments (workspace_id,user_id,order_id,paid_on,amount_cents,method) values ($1,$2,$3,'2026-09-11',3000,'bizum')", [ids.aWs, ids.alice, w]);
+    expect((await autos(w))[0].a).toBe(5000);
+    expect(await row(w)).toMatchObject({ paid_cents: 8000, due_cents: 0 });
+    // Cancelado: se quita el automático; vuelve a la web activa: vuelve.
+    await q("update orders set status='cancelado' where id=$1", [w]);
+    expect(await autos(w)).toEqual([]);
+    await q("update orders set status='sin_hacer' where id=$1", [w]);
+    expect((await autos(w))[0].a).toBe(5000);
+    // «No pagado» a mano (auto_paid_off): se respeta aunque se edite el pedido.
+    await q("delete from order_payments where order_id=$1", [w]);
+    await q("update orders set auto_paid_off=true where id=$1", [w]);
+    await q("update order_items set quantity=3 where order_id=$1", [w]);
+    expect(await row(w)).toMatchObject({ paid_cents: 0, due_cents: 12000 });
+    await q("update orders set auto_paid_off=false where id=$1", [w]);
+    expect(await row(w)).toMatchObject({ paid_cents: 12000, due_cents: 0 });
+    // Otros canales no; «website»/«webinar» tampoco cuentan como la palabra «web».
+    for (const ch of ["Instagram", "Webinar", null]) {
+      const o = (await q("insert into orders (workspace_id,user_id,business_id,order_date,channel) values ($1,$2,$3,'2026-09-10',$4) returning id", [ids.aWs, ids.alice, ids.biz, ch])).rows[0].id;
+      await q("insert into order_items (workspace_id,user_id,order_id,product_name,quantity,unit_price_cents) values ($1,$2,$3,'X',1,1000)", [ids.aWs, ids.alice, o]);
+      expect(await row(o)).toMatchObject({ paid_cents: 0, due_cents: 1000 });
+      await q("delete from orders where id=$1", [o]);
+    }
+    // Dejar de ser de la web quita el cobro automático.
+    await q("update orders set channel='Instagram' where id=$1", [w]);
+    expect(await autos(w)).toEqual([]);
+    await expect(as(ids.bob, (c) => c.query("select public.sync_web_payment($1)", [w]))).rejects.toThrow(/permission/);
+    await q("delete from orders where id in ($1,$2)", [w, id]);
+  });
+
   it("importe positivo y método válido", async () => {
     await expect(q("insert into order_payments (workspace_id,user_id,order_id,paid_on,amount_cents) values ($1,$2,$3,'2026-09-03',0)", [ids.aWs, ids.alice, ids.order])).rejects.toThrow();
     await expect(q("insert into order_payments (workspace_id,user_id,order_id,paid_on,amount_cents,method) values ($1,$2,$3,'2026-09-03',100,'paypal')", [ids.aWs, ids.alice, ids.order])).rejects.toThrow();

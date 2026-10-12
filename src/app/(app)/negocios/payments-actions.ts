@@ -67,19 +67,23 @@ export async function markOrderUnpaid(orderId: string): Promise<ActionResult & {
   const { supabase, workspaceId } = await getContext();
   const { data: removed, error } = await supabase.from("order_payments").delete().eq("order_id", orderId).eq("workspace_id", workspaceId).select("paid_on, amount_cents, method, note");
   if (error) return { ok: false, error: "No se pudo marcar como no pagado" };
-  await supabase.from("orders").update({ payment_reviewed: true }).eq("id", orderId).eq("workspace_id", workspaceId);
+  // auto_paid_off: si es de la web, no se vuelve a marcar como pagado solo.
+  await supabase.from("orders").update({ payment_reviewed: true, auto_paid_off: true }).eq("id", orderId).eq("workspace_id", workspaceId);
   refresh();
-  return { ok: true, removed: removed ?? [] };
+  return { ok: true, removed: (removed ?? []).filter((r) => r.note !== "Pagado en la web") };
 }
 
 /** «Deshacer» de `markOrderUnpaid`: vuelve a poner los cobros borrados. */
 export async function restorePayments(orderId: string, payments: SavedPayment[]): Promise<ActionResult> {
   const p = z.object({ orderId: z.uuid(), payments: z.array(z.object({ paid_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), amount_cents: z.number().int().positive().max(100_000_000), method: z.enum(PAYMENT_METHODS), note: z.string().max(300).nullable() })).max(200) }).safeParse({ orderId, payments });
   if (!p.success) return { ok: false, error: "Datos no válidos" };
-  if (!p.data.payments.length) return { ok: true };
   const { supabase, workspaceId, userId } = await getContext();
-  const { error } = await supabase.from("order_payments").insert(p.data.payments.map((x) => ({ ...x, workspace_id: workspaceId, user_id: userId, order_id: p.data.orderId })));
-  if (error) return { ok: false, error: "No se pudo deshacer" };
+  if (p.data.payments.length) {
+    const { error } = await supabase.from("order_payments").insert(p.data.payments.map((x) => ({ ...x, workspace_id: workspaceId, user_id: userId, order_id: p.data.orderId })));
+    if (error) return { ok: false, error: "No se pudo deshacer" };
+  }
+  // Si era de la web, vuelve a contar como pagado solo.
+  await supabase.from("orders").update({ auto_paid_off: false }).eq("id", p.data.orderId).eq("workspace_id", workspaceId);
   refresh();
   return { ok: true };
 }

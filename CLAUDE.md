@@ -194,6 +194,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `syncStockTasks(businessId)`: tarea «Pedir …» para hoy y prioridad alta por artículo (`tasks.stock_key`); una tachada que sigue faltando no se repite;
   con stock se suelta la clave (y la pendiente se completa sola). Se llama tras tocar pedidos o stock y al abrir Stock, Producción y Tareas
   (`syncAllStockTasks`). Nunca lanza.
+- Pedidos de la web (canal con la palabra «web») salen pagados solos: triggers → `sync_web_payment` (cobro `auto_web` por lo que falte; `orders.auto_paid_off` si se marca «No pagado» a mano).
 - Pago: `markOrderUnpaid` / `restorePayments` (selector de estado de pago en la lista, con «Deshacer»).
 
 ## Correo (Outlook)

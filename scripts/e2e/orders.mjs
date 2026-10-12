@@ -59,6 +59,28 @@ await pay.selectOption("paid");
 await page.waitForTimeout(1500);
 ok(await pay.inputValue() === "paid", "y de Pendiente a Pagado con el mismo selector");
 
+// Pedido de la web: sale pagado solo; «No pagado» se respeta y «Deshacer» lo deja pagado.
+await page.goto(url, { waitUntil: "networkidle" });
+await page.getByRole("button", { name: "Nuevo pedido" }).last().click();
+await page.locator("#o-customer").fill("Cliente web");
+await page.locator("#o-channel").fill("Tienda web");
+ok(await page.getByText("Si el canal es «web», el pedido sale como pagado solo.").isVisible(), "el formulario lo avisa");
+await page.getByLabel("Producto de la línea 1").fill("Camiseta");
+await page.locator('input[inputmode="decimal"]').first().fill("19,90");
+await page.getByRole("button", { name: "Guardar pedido" }).click();
+await page.waitForURL(/nuevo=/);
+await page.waitForLoadState("networkidle");
+const webRow = page.locator(`#pedido-${new URL(page.url()).searchParams.get("nuevo")}`);
+const webPay = webRow.getByLabel("Estado de pago");
+ok(await webPay.inputValue() === "paid", "el pedido de la web nace pagado");
+await webPay.selectOption("pending");
+await page.waitForTimeout(1500);
+await page.reload({ waitUntil: "networkidle" });
+ok(await webPay.inputValue() === "pending", "si lo marcas «no pagado», se queda así");
+await webPay.selectOption("paid");
+await page.waitForTimeout(1500);
+ok(await webPay.inputValue() === "paid", "y se puede volver a marcar pagado");
+
 // Quién me debe.
 await page.goto(`${url}?vista=deudas`, { waitUntil: "networkidle" });
 ok(await page.getByText("Quién me debe", { exact: true }).isVisible(), "vista «Quién me debe»");

@@ -239,3 +239,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Clave personal en `share_tokens` (una por persona y espacio, RLS por `user_id` como `push_subscriptions`). Se guarda solo el sha256; la clave
   (`bb_` + 192 bits aleatorios) se ve una vez. Crear otra invalida la anterior; «Borrar clave» corta el atajo al momento. `/api/compartir` es
   público para el proxy de sesión pero exige la clave. Se cuentan los usos y la última vez.
+
+## Pedidos de la web: pagados solos
+- «De la web» = el canal contiene la palabra «web» (`is_web_channel`: Web, Tienda web, Página web; no «Webinar»). Se hace en la BD (triggers), así
+  vale para el formulario, la IA y cualquier otra entrada, y para los pedidos que ya había (la migración los marca).
+- Un cobro automático (`order_payments.auto_web`, tarjeta, fecha del pedido, nota «Pagado en la web») por lo que falte hasta el total. Se ajusta si
+  cambia el total o se apunta un cobro a mano; se quita si se cancela o cambia el canal.
+- «No pagado» a mano pone `orders.auto_paid_off` y se respeta aunque se edite el pedido; «Deshacer» lo quita.
+- `sync_web_payment` es security definer y nadie puede llamarla directamente; solo los triggers.
