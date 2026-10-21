@@ -15,10 +15,10 @@ export type StockEffect = {
 export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "color" | "size">, catalog: Catalog, rules: Rules): StockEffect {
   const effect: StockEffect = {};
   const size = resolveSize(item.size);
-  const design = resolveDesign(item.product_name, catalog);
+  const design = resolveDesign(item.product_name, catalog, item.color);
 
   if (design) {
-    const model = resolveShirtModel(item.color, catalog);
+    const model = design.garment && catalog.models.includes(design.garment) ? design.garment : garmentModel(item, design.name, catalog);
     if (model && size) effect.tshirt = { model, size };
     if (design.kind === "standalone") {
       effect.dtf = { name: design.name, variant: "UNICO" };
@@ -33,6 +33,20 @@ export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "col
   const model = resolveShirtModel(item.product_name, catalog) ?? resolveShirtModel(item.color, catalog);
   if (model && size) effect.tshirt = { model, size };
   return effect;
+}
+
+/**
+ * Prenda de una línea con diseño: si el producto o el diseño dicen «sudadera», la sudadera (aunque el color diga solo
+ * «Negra»); si no, el color de la línea; y si falta, el color escrito en el propio producto («Camiseta Flysch blanca»).
+ */
+function garmentModel(item: Pick<PendingItem, "product_name" | "color">, designName: string, catalog: Catalog): string | null {
+  const text = normalizeText(`${item.product_name} ${designName}`);
+  if (text.includes("sudadera") && !normalizeText(item.color ?? "").includes("sudadera")) {
+    return resolveShirtModel(`sudadera ${item.color ?? ""}`, catalog) ?? resolveShirtModel(item.color, catalog);
+  }
+  if (item.color?.trim()) return resolveShirtModel(item.color, catalog);
+  const rest = new Set(normalizeText(item.product_name).replace(normalizeText(designName), " ").split(/[^a-z0-9ñ]+/).filter(Boolean).map(colorKey));
+  return catalog.models.find((m) => colorKey(m).split(" ").every((t) => rest.has(t))) ?? null;
 }
 
 function variantOf(dtfColor: string): DtfVariant | null {

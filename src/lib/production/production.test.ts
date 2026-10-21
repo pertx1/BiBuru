@@ -129,3 +129,66 @@ describe("bolsa para la imprenta", () => {
     expect(printBagToText(bag)).toContain("DTF (");
   });
 });
+
+describe("reglas con el catálogo de Akerra (nombres escritos de muchas formas)", () => {
+  const akerra: Catalog = {
+    models: ["Blanca", "Negra", "Fútbol", "Sudadera negra"],
+    designs: [
+      ...["BA Azul", "BA amarillo", "BA blanco", "BA negro", "Eguzkilore", "Gatazka Camiseta", "Gatazka Sudadera"].map((name) => ({ name, kind: "standalone" as const })),
+      ...["Flysch", "Gaztelugatxe", "Haizearen orrazia", "Omako basoa", "Ujue"].map((name) => ({ name, kind: "paired" as const })),
+    ],
+  };
+  const noRules: Rules = { shirt: [], design: [] };
+  const fx = (product_name: string, color: string | null, size: string | null, rules = noRules) => resolveStockEffect({ product_name, color, size }, akerra, rules);
+
+  it("el diseño dentro del nombre del producto", () => {
+    expect(fx("Camiseta Flysch", "Negra", "M")).toEqual({ tshirt: { model: "Negra", size: "M" }, dtf: { name: "Flysch", variant: "BLANCO" } });
+    expect(fx("Haizearen Orrazia camiseta", "blanco", "L")).toEqual({ tshirt: { model: "Blanca", size: "L" }, dtf: { name: "Haizearen orrazia", variant: "NEGRO" } });
+    expect(fx("Camiseta BA azul", "Blanca", "S")).toEqual({ tshirt: { model: "Blanca", size: "S" }, dtf: { name: "BA Azul", variant: "UNICO" } });
+  });
+
+  it("sudadera aunque el color diga solo «Negra»", () => {
+    expect(fx("Sudadera Ujue", "Negra", "XL")).toEqual({ tshirt: { model: "Sudadera negra", size: "XL" }, dtf: { name: "Ujue", variant: "BLANCO" } });
+  });
+
+  it("versiones por prenda: Gatazka camiseta / sudadera según lo pedido", () => {
+    expect(fx("Sudadera Gatazka", "Negra", "M")).toEqual({ tshirt: { model: "Sudadera negra", size: "M" }, dtf: { name: "Gatazka Sudadera", variant: "UNICO" } });
+    expect(fx("Gatazka", "Blanca", "M")).toEqual({ tshirt: { model: "Blanca", size: "M" }, dtf: { name: "Gatazka Camiseta", variant: "UNICO" } });
+    expect(fx("Camiseta Gatazka", "Negra", "S").dtf).toEqual({ name: "Gatazka Camiseta", variant: "UNICO" });
+  });
+
+  it("color escrito en el producto si falta el campo color", () => {
+    expect(fx("Camiseta Flysch negra", null, "M")).toEqual({ tshirt: { model: "Negra", size: "M" }, dtf: { name: "Flysch", variant: "BLANCO" } });
+    expect(fx("Camiseta de fútbol Eguzkilore", null, "L")).toEqual({ tshirt: { model: "Fútbol", size: "L" }, dtf: { name: "Eguzkilore", variant: "UNICO" } });
+  });
+
+  it("tus reglas mandan sobre el blanco/negro por defecto", () => {
+    const rules: Rules = { shirt: [{ shirtColorKey: colorKey("fútbol"), dtfColor: "Negro" }], design: [{ design: "Omako basoa", dtfColor: "Blanco" }] };
+    expect(fx("Camiseta Flysch", "Fútbol", "M", rules).dtf).toEqual({ name: "Flysch", variant: "NEGRO" });
+    expect(fx("Omako basoa", "Blanca", "M", rules).dtf).toEqual({ name: "Omako basoa", variant: "BLANCO" });
+  });
+
+  it("no confunde diseños parecidos ni inventa", () => {
+    expect(fx("BA", "Blanca", "M").dtf).toBeUndefined();
+    expect(fx("Taza Flyschh", null, null)).toEqual({});
+  });
+});
+
+describe("prenda fija de un diseño (Gatazka Sudadera y Eguzkilore → Sudadera negra)", () => {
+  const cat: Catalog = {
+    models: ["Blanca", "Negra", "Fútbol", "Sudadera negra"],
+    designs: [
+      { name: "Eguzkilore", kind: "standalone", garment: "Sudadera negra" },
+      { name: "Gatazka Sudadera", kind: "standalone", garment: "Sudadera negra" },
+      { name: "Flysch", kind: "paired" },
+    ],
+  };
+  const none: Rules = { shirt: [], design: [] };
+  it("resta la sudadera negra de la talla aunque el color diga otra cosa", () => {
+    expect(resolveStockEffect({ product_name: "Eguzkilore", color: "Blanca", size: "M" }, cat, none)).toEqual({ tshirt: { model: "Sudadera negra", size: "M" }, dtf: { name: "Eguzkilore", variant: "UNICO" } });
+    expect(resolveStockEffect({ product_name: "DTF Sudadera Gatazka", color: null, size: "L" }, cat, none)).toEqual({ tshirt: { model: "Sudadera negra", size: "L" }, dtf: { name: "Gatazka Sudadera", variant: "UNICO" } });
+  });
+  it("los demás diseños siguen según el color", () => {
+    expect(resolveStockEffect({ product_name: "Flysch", color: "Blanca", size: "M" }, cat, none).tshirt).toEqual({ model: "Blanca", size: "M" });
+  });
+});

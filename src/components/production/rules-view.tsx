@@ -3,7 +3,8 @@
 import { Check, KeyRound, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createAntolaToken, deleteRule, revokeAntolaToken, saveDesignRule, saveShirtRule } from "@/app/(app)/negocios/actions-production";
+import { createAntolaToken, deleteRule, revokeAntolaToken, saveDesignGarment, saveDesignRule, saveShirtRule } from "@/app/(app)/negocios/actions-production";
+import { garmentLabel } from "@/lib/production/stock";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -15,11 +16,14 @@ type Props = {
   designs: string[];
   shirtRules: { id: string; shirt_color: string; dtf_color: string }[];
   designRules: { id: string; design: string; dtf_color: string }[];
+  /** Diseños con su prenda fija (null = según el color del pedido) y los modelos de prenda que hay. */
+  garments: { design: string; garment: string | null }[];
+  models: string[];
   antolaCreatedAt: string | null;
   origin: string;
 };
 
-export function RulesView({ businessId, designs, shirtRules, designRules, antolaCreatedAt, origin }: Props) {
+export function RulesView({ businessId, designs, shirtRules, designRules, garments, models, antolaCreatedAt, origin }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [, start] = useTransition();
@@ -49,6 +53,23 @@ export function RulesView({ businessId, designs, shirtRules, designRules, antola
         <form className="grid grid-cols-[1fr_1fr_auto] gap-2" action={(fd) => run(() => saveShirtRule({ businessId, shirtColor: String(fd.get("s") ?? ""), dtfColor: String(fd.get("d") ?? "") }))}>
           <Input name="s" placeholder="Color de prenda" aria-label="Color de prenda" maxLength={40} required /><Input name="d" placeholder="Color del DTF" aria-label="Color del DTF" maxLength={40} required /><Button type="submit">Añadir</Button>
         </form>
+      </section>
+
+      <section className="rounded-xl border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold">Prenda fija de un diseño</h2>
+        <p className="mb-3 text-xs text-muted">Si un diseño va siempre en la misma prenda (p. ej. Eguzkilore en sudadera negra), al pedirlo —o al elegir su DTF en el pedido— resta también esa prenda de la talla del pedido, diga lo que diga el color.</p>
+        <ul className="divide-y divide-border">
+          {garments.map((g) => (
+            <li key={g.design} className="flex items-center justify-between gap-2 py-1.5 text-sm">
+              <span className="min-w-0 truncate">{g.design}</span>
+              <Select aria-label={`Prenda fija de ${g.design}`} className="w-48" value={g.garment ?? ""} onChange={(e) => run(() => saveDesignGarment({ businessId, design: g.design, garment: e.target.value || null }))}>
+                <option value="">Según el color del pedido</option>
+                {models.map((m) => <option key={m} value={m}>{garmentLabel(m)}</option>)}
+              </Select>
+            </li>
+          ))}
+          {garments.length === 0 && <li className="py-1.5 text-sm text-muted">Aún no hay diseños.</li>}
+        </ul>
       </section>
 
       <section className="rounded-xl border border-border bg-surface p-4">

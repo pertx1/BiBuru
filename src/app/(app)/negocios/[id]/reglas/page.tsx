@@ -15,6 +15,7 @@ export default async function ReglasPage({ params }: { params: Promise<{ id: str
         businessId={id} designs={data.catalog.designs.map((d) => d.name)} origin={origin} antolaCreatedAt={data.antolaCreatedAt}
         shirtRules={data.shirtRules.map((r) => ({ id: r.id, shirt_color: r.shirt_color, dtf_color: r.dtf_color }))}
         designRules={data.designRules.map((r) => ({ id: r.id, design: r.design, dtf_color: r.dtf_color }))}
+        garments={data.catalog.designs.map((d) => ({ design: d.name, garment: d.garment ?? null }))} models={data.catalog.models}
       />
     </ProductionGate>
   );

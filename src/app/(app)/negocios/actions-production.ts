@@ -140,6 +140,17 @@ export async function saveDesignRule(input: { businessId: string; design: string
   return { ok: true };
 }
 
+/** Prenda fija de un diseño (o ninguna): al pedirlo resta siempre esa prenda de la talla del pedido. */
+export async function saveDesignGarment(input: { businessId: string; design: string; garment: string | null }): Promise<ActionResult> {
+  const p = z.object({ businessId: uuid, design: name(), garment: name(40).nullable() }).safeParse(input);
+  if (!p.success) return bad(p.error);
+  const { supabase, workspaceId } = await getContext();
+  const { error } = await supabase.from("dtf_designs").update({ garment_model: p.data.garment }).eq("workspace_id", workspaceId).eq("business_id", p.data.businessId).eq("name", p.data.design);
+  if (error) return err("designGarment.save", error);
+  refresh();
+  return { ok: true };
+}
+
 export async function deleteRule(kind: "shirt" | "design", id: string): Promise<ActionResult> {
   if (!uuid.safeParse(id).success) return { ok: false, error: "Regla no válida" };
   const { supabase, workspaceId } = await getContext();

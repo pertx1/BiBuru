@@ -42,3 +42,20 @@ describe("qué descuenta cada línea de pedido", () => {
     expect(t.get("tshirt|Negra|M")?.qty).toBe(3);
   });
 });
+
+describe("DTF elegido a mano de un diseño con prenda fija", () => {
+  const prod = {
+    catalog: { models: ["Negra", "Sudadera negra"], designs: [{ name: "Eguzkilore", kind: "standalone" as const, garment: "Sudadera negra" }, { name: "Ola", kind: "paired" as const }] },
+    rules: { shirt: [], design: [] },
+    rows: { tshirts: [{ model: "Negra", size: "M" }, { model: "Sudadera negra", size: "M" }], dtfs: [{ name: "Eguzkilore", variant: "UNICO" as const }, { name: "Ola", variant: "BLANCO" as const }, { name: "Ola", variant: "NEGRO" as const }] },
+  };
+  const c: StockLinkContext = { production: { catalog: prod.catalog, rules: prod.rules }, items: [], options: stockOptions(prod, []) };
+  it("«DTF Eguzkilore» con talla resta también la sudadera negra", () => {
+    expect(resolveLineStock({ stock_key: "dtf|Eguzkilore|UNICO", product_name: "Eguzkilore", size: "M", quantity: 2 }, c).map((e) => [e.key, e.qty]))
+      .toEqual([["dtf|Eguzkilore|UNICO", 2], ["tshirt|Sudadera negra|M", 2]]);
+  });
+  it("sin talla solo el DTF; otros diseños solo su DTF", () => {
+    expect(resolveLineStock({ stock_key: "dtf|Eguzkilore|UNICO", product_name: "x", quantity: 1 }, c).map((e) => e.key)).toEqual(["dtf|Eguzkilore|UNICO"]);
+    expect(resolveLineStock({ stock_key: "dtf|Ola|BLANCO", product_name: "x", size: "M", quantity: 1 }, c).map((e) => e.key)).toEqual(["dtf|Ola|BLANCO"]);
+  });
+});

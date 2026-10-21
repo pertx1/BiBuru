@@ -152,13 +152,13 @@ isOneToOne: false
                   ]
                 },"dtf_designs": {
                   Row: {
-                    "business_id": string,"created_at": string,"id": string,"kind": string,"name": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string,"created_at": string,"garment_model": string | null,"id": string,"kind": string,"name": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id": string,"created_at"?: string,"id"?: string,"kind"?: string,"name": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id": string,"created_at"?: string,"garment_model"?: string | null,"id"?: string,"kind"?: string,"name": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"name"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string,"created_at"?: string,"garment_model"?: string | null,"id"?: string,"kind"?: string,"name"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

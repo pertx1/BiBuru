@@ -234,6 +234,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   Ajuste: `profiles.social_alerts_enabled`.
 
 ## Pedidos que descuentan stock
+- Prenda fija por diseño (`dtf_designs.garment_model`): manda sobre el color del pedido; también al elegir el DTF a mano (`resolveLineStock` añade la prenda de esa talla).
 - `order_items.stock_key` (artículo elegido) y `stock_effects` ([{key,label,qty}], null = sin vincular). Lógica pura en `src/lib/stock/link.ts` (`resolveLineStock`, mismo código en formulario y servidor).
 - `apply_order_stock(order, clear)` (security invoker, `for update`): aplica la diferencia entre lo que debe descontar y sus movimientos (`stock_movements.order_id`, `source`). Triggers: cambio de estado y borrado.
   `saveOrder` y la IA la llaman tras guardar. Nunca restar «a mano» en el código: siempre esta función.

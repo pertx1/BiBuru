@@ -30,7 +30,7 @@ export async function loadBase(businessId: string) {
   if (designRules.error) fail("reglas de diseño", designRules.error);
   const models: string[] = [];
   for (const t of tshirts.data) if (!models.includes(t.model)) models.push(t.model);
-  const catalog: Catalog = { models, designs: designs.data.map((d) => ({ name: d.name, kind: d.kind as DesignKind })).sort((a, b) => a.name.localeCompare(b.name, "es")) };
+  const catalog: Catalog = { models, designs: designs.data.map((d) => ({ name: d.name, kind: d.kind as DesignKind, garment: d.garment_model })).sort((a, b) => a.name.localeCompare(b.name, "es")) };
   const rules: Rules = {
     shirt: shirtRules.data.map((r) => ({ shirtColorKey: r.shirt_color_key, dtfColor: r.dtf_color })),
     design: designRules.data.map((r) => ({ design: r.design, dtfColor: r.dtf_color })),

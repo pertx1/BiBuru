@@ -247,3 +247,10 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   cambia el total o se apunta un cobro a mano; se quita si se cancela o cambia el canal.
 - «No pagado» a mano pone `orders.auto_paid_off` y se respeta aunque se edite el pedido; «Deshacer» lo quita.
 - `sync_web_payment` es security definer y nadie puede llamarla directamente; solo los triggers.
+
+## Reglas: diseños y prenda fija
+- Un diseño se reconoce aunque el producto lleve más palabras («Camiseta Flysch negra» → Flysch; «Sudadera Gatazka» → Gatazka Sudadera; con
+  versiones por prenda, la de la prenda del pedido). «Sudadera …» resta la sudadera aunque el color diga solo «Negra»; sin campo color se usa el
+  color escrito en el producto.
+- **Prenda fija de un diseño** (`dtf_designs.garment_model`, Reglas → «Prenda fija de un diseño»): al pedirlo, o al elegir su DTF a mano en el
+  pedido (con talla), resta también esa prenda de la talla del pedido. La migración la pone en Gatazka Sudadera y Eguzkilore → la sudadera del negocio.

@@ -5,7 +5,7 @@
  *   cuyo producto o nombre (y color/talla si los fija) coincide.
  * - Si no encaja con nada: «sin vincular al stock» (no descuenta).
  */
-import type { Catalog, DtfVariant, Rules } from "@/lib/production/catalog";
+import { resolveSize, type Catalog, type DtfVariant, type Rules } from "@/lib/production/catalog";
 import { garmentLabel, resolveStockEffect } from "@/lib/production/stock";
 import { itemLabel, lineMatches, type GenericItem } from "./shortage";
 
@@ -42,7 +42,15 @@ export function resolveLineStock(line: LineInput, ctx: StockLinkContext): StockE
   if (qty === 0) return [];
   if (line.stock_key) {
     const opt = ctx.options.find((o) => o.key === line.stock_key);
-    return opt ? [{ key: opt.key, label: opt.label, qty }] : [];
+    if (!opt) return [];
+    const out: StockEffect[] = [{ key: opt.key, label: opt.label, qty }];
+    // DTF elegido a mano de un diseño con prenda fija (p. ej. Eguzkilore → Sudadera negra): resta también la prenda de esa talla.
+    const dtfName = opt.group === "dtf" ? line.stock_key.split("|")[1] : null;
+    const garment = dtfName ? ctx.production?.catalog.designs.find((d) => d.name === dtfName)?.garment : null;
+    const size = resolveSize(line.size);
+    const g = garment && size ? ctx.options.find((o) => o.key === tshirtKey(garment, size)) : null;
+    if (g) out.push({ key: g.key, label: g.label, qty });
+    return out;
   }
   const effects: StockEffect[] = [];
   if (ctx.production) {
