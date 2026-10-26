@@ -249,5 +249,8 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - `src/lib/review/period.ts` (pura: periodos, `isDue`), `build.ts` (cifras con cualquier cliente: filtrar SIEMPRE por espacio/persona), `service.ts` (actual, histórico, IA, `runReviewCron` desde `/api/cron/reminders`).
 - Tabla `reviews` (única por espacio+persona+tipo+inicio). Ajustes en `profiles.review_*`. Widget `review-today`; `SEED_WIDGETS` añade widgets fijos una vez.
 
+## Widgets de iPhone
+- Con Scriptable (iOS no permite widgets de una PWA): `src/lib/widget/` (código generado, datos, simulador para tests), `GET /api/widget` con clave en `widget_tokens` (solo hash). Ajustes → «Widgets de iPhone».
+
 ## Páginas públicas
 - `/privacidad` y `/terminos` (las piden Meta y TikTok); están en `PUBLIC_PATHS` del proxy.

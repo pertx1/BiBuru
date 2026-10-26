@@ -18,6 +18,8 @@ import { googleConfig } from "@/lib/favorites/youtube";
 import { KeyGenerator } from "@/components/account/key-generator";
 import { ProfityImport } from "@/components/account/profity-import";
 import { DataSettings } from "@/components/account/data-settings";
+import { WidgetSetup } from "@/components/account/widget-setup";
+import { headers } from "next/headers";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { MailSettings } from "@/components/mail/mail-settings";
 import { SocialSettings } from "@/components/social/social-settings";
@@ -29,6 +31,13 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
 
 export const metadata = { title: "Ajustes" };
+
+async function widgetStatus() {
+  const [{ supabase, workspaceId }, h] = await Promise.all([getContext(), headers()]);
+  const { data } = await supabase.from("widget_tokens").select("created_at, last_used_at").eq("workspace_id", workspaceId).maybeSingle();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "localhost"}`;
+  return { origin, status: data ? { createdAt: data.created_at, lastUsedAt: data.last_used_at } : null };
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -129,6 +138,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         </Section>
         <Section title="Navegación"><NavSettings {...await getUiPrefs().then((u) => ({ tabs: u.tabs, showCapture: u.showCapture }))} /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
+        <div id="widgets" className="scroll-mt-20"><Section title="Widgets de iPhone"><WidgetSetup {...await widgetStatus()} /></Section></div>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>
         <Section title="Importar desde PROFITY"><ProfityImport /></Section>
         <Section title="Tus datos"><DataSettings email={auth.user?.email ?? ""} /></Section>

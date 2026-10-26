@@ -254,3 +254,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   color escrito en el producto.
 - **Prenda fija de un diseño** (`dtf_designs.garment_model`, Reglas → «Prenda fija de un diseño»): al pedirlo, o al elegir su DTF a mano en el
   pedido (con talla), resta también esa prenda de la talla del pedido. La migración la pone en Gatazka Sudadera y Eguzkilore → la sudadera del negocio.
+
+## Widgets de iPhone (Scriptable)
+- iOS no deja a una app web (PWA) poner widgets en la pantalla de inicio; solo apps nativas. Se usa la app gratuita **Scriptable**: BiBuru genera
+  el código (`src/lib/widget/script.ts`) con la dirección y una clave personal, y se pega una vez en Scriptable.
+- `GET /api/widget` (público en el proxy, exige `Authorization: Bearer <clave>`) devuelve solo un resumen: tareas de hoy y atrasadas, ventas de hoy
+  y del mes y beneficio del mes (`stats_totals`, las mismas cifras que Estadísticas), pedidos sin hacer, lo pendiente de cobro y las tareas «Pedir …».
+- Clave en `widget_tokens` (solo hash, RLS por `user_id`, una por persona y espacio); «Desactivar» la borra. Parámetro del widget: vacío, `tareas`, `dinero`.
+- Pruebas: el código se ejecuta en un Scriptable simulado (`scriptable-mock.ts`) en los tests y en `scripts/e2e/widget.mjs` contra la app real.

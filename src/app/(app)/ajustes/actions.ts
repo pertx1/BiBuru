@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getContext } from "@/lib/context";
 import { webPushSender } from "@/lib/notifications/push";
+import { newWidgetToken } from "@/lib/widget/data";
+import { buildWidgetScript } from "@/lib/widget/script";
 import type { ActionResult } from "@/lib/schemas";
 
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Hora no válida");
@@ -210,4 +212,27 @@ export async function runProfityImport(text: string, names: z.infer<typeof impor
     console.error("[profity] import:", e instanceof Error ? e.message : e);
     return { ok: false, error: `No se pudo completar la importación: ${e instanceof Error ? e.message.slice(0, 200) : "error desconocido"}. Puedes repetirla: no duplica.` };
   }
+}
+
+// ------------------------------------------------------------------ widgets de iPhone (Scriptable)
+/** Crea (o cambia) la clave del widget y devuelve el código listo para pegar en Scriptable. La anterior deja de valer. */
+export async function createWidgetToken(origin: string): Promise<{ ok: true; script: string } | { ok: false; error: string }> {
+  const o = z.url().max(200).safeParse(origin);
+  if (!o.success || !/^https?:\/\//.test(o.data)) return { ok: false, error: "Dirección no válida" };
+  const { supabase, workspaceId, userId } = await getContext();
+  const { token, hash } = newWidgetToken();
+  await supabase.from("widget_tokens").delete().eq("user_id", userId).eq("workspace_id", workspaceId);
+  const { error } = await supabase.from("widget_tokens").insert({ workspace_id: workspaceId, user_id: userId, token_hash: hash });
+  if (error) return { ok: false, error: "No se pudo crear la clave" };
+  revalidatePath("/ajustes");
+  return { ok: true, script: buildWidgetScript(o.data.replace(/\/$/, ""), token) };
+}
+
+/** Borra la clave: los widgets dejan de mostrar datos al momento. */
+export async function revokeWidgetToken(): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, workspaceId, userId } = await getContext();
+  const { error } = await supabase.from("widget_tokens").delete().eq("user_id", userId).eq("workspace_id", workspaceId);
+  if (error) return { ok: false, error: "No se pudo borrar la clave" };
+  revalidatePath("/ajustes");
+  return { ok: true };
 }

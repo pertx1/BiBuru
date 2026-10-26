@@ -1443,6 +1443,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"widget_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"last_used_at": string | null,"token_hash": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"last_used_at"?: string | null,"token_hash": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"last_used_at"?: string | null,"token_hash"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "widget_tokens_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"workspace_members": {
                   Row: {
                     "created_at": string,"role": string,"user_id": string,"workspace_id": string
