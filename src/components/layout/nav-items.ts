@@ -1,5 +1,5 @@
 import {
-  Briefcase, CalendarDays, CheckSquare, ClipboardCheck, Home, Inbox, Mail, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
+  Briefcase, CalendarDays, CheckSquare, ClipboardCheck, Home, Inbox, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -7,18 +7,15 @@ import { SECTION_BY_KEY, type SectionKey } from "@/lib/home/nav";
 
 export type NavItem = { href: string; label: string; icon: LucideIcon };
 
-/** Barra lateral de escritorio: todas las secciones. */
+/** Barra lateral de escritorio. Revisión y Objetivos no van aquí (a petición): siguen en «Más», en la barra inferior si se eligen y en sus widgets. */
 export const sidebarItems: NavItem[] = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/revision", label: "Revisión", icon: ClipboardCheck },
   { href: "/chat", label: "Asistente", icon: Sparkles },
   { href: "/bandeja", label: "Bandeja", icon: Inbox },
   { href: "/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/negocios", label: "Negocios", icon: Briefcase },
-  { href: "/objetivos", label: "Objetivos", icon: Target },
   { href: "/noticias", label: "Noticias", icon: Newspaper },
-  { href: "/correo", label: "Correo", icon: Mail },
   { href: "/redes", label: "Redes", icon: Megaphone },
   { href: "/notas", label: "Notas", icon: NotebookText },
   { href: "/favoritos", label: "Favoritos", icon: Video },
@@ -27,7 +24,7 @@ export const sidebarItems: NavItem[] = [
 
 /** Icono de cada sección (la barra inferior se elige en Ajustes → Navegación, ver `src/lib/home/nav.ts`). */
 export const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
-  inicio: Home, revision: ClipboardCheck, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, correo: Mail, redes: Megaphone,
+  inicio: Home, revision: ClipboardCheck, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, redes: Megaphone,
   notas: NotebookText, favoritos: Video, bandeja: Inbox, chat: Sparkles, ajustes: Settings,
 };
 

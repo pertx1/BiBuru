@@ -151,6 +151,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
 
 ## Inicio personalizable y navegación
+- Barra lateral (`nav-items.ts`) sin Revisión ni Objetivos (a petición): siguen en «Más», en la barra inferior si se eligen y en sus widgets.
 - Catálogo de widgets en `src/lib/home/layout.ts` (metadatos puros: grupo, tamaños, ajustes, vista previa, por defecto) y componentes en
   `src/components/home/registry.tsx`. **Añadir un widget** = crear su componente (async, carga sus datos) + darlo de alta en `WIDGETS` y en el registro.
 - Disposición y barra en `user_ui_prefs` (por usuario + espacio; RLS `user_id = auth.uid()`, como `push_subscriptions`: son preferencias personales).
@@ -197,11 +198,10 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Pedidos de la web (canal con la palabra «web») salen pagados solos: triggers → `sync_web_payment` (cobro `auto_web` por lo que falte; `orders.auto_paid_off` si se marca «No pagado» a mano).
 - Pago: `markOrderUnpaid` / `restorePayments` (selector de estado de pago en la lista, con «Deshacer»).
 
-## Correo (Outlook)
-- `src/lib/mail/graph.ts` (OAuth `common`, solo `offline_access User.Read Mail.Read`, delta de la bandeja), `service.ts` (token cifrado y rotado, sync),
-  `sanitize.ts` (HTML limpio + iframe `sandbox` con CSP que bloquea imágenes remotas). Solo cabeceras en BD; el cuerpo se pide al abrir.
-- `mail_accounts` es credencial personal (RLS por `user_id`, sin lectura de `refresh_token_enc`/`delta_link`). Cron `biburu-mail` cada 10 min.
-- La IA solo ve un correo con `profiles.mail_ai_allowed` y a petición («Resumir con IA», `feature = 'mail'`).
+## Correo (quitado)
+- El correo de Outlook se quitó entero (a petición): sin página, ajustes, widgets, avisos, pestaña «Mensajes» del negocio ni tarea programada
+  (`configure_cron` ya no la crea y la migración `…000007` la quita). `/correo` y `/negocios/[id]/mensajes` redirigen. Las tablas `mail_*` siguen
+  en la BD (migraciones solo aditivas) sin uso.
 
 ## Redes (Instagram y TikTok)
 - Tablas comunes: `social_accounts` (tokens cifrados, ilegibles desde la app; visibles para el espacio), `social_daily` (foto diaria), `social_media`,
@@ -243,7 +243,6 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 ## Negocios: pestañas y Resumen
 - Pestañas en `business-tabs.tsx`; Producción, Ingresos, Tareas y Objetivos son redirecciones. Bolsa/Facturas/Reglas en `/negocios/[id]/{bolsa,facturas,reglas}` con `ProductionGate`.
 - Resumen = `HomeGrid` con `businessId` (solo `BUSINESS_WIDGETS`, negocio fijo con `withBusiness`), disposición en `user_ui_prefs.business_widgets[bizId]`. `renderWidgetNodes` sirve a Inicio y Resumen.
-- Mensajes del negocio: `src/lib/messages/` (solo correo de `mail_accounts.business_id`), estado en `mail_messages.triage`.
 
 ## Revisión
 - `src/lib/review/period.ts` (pura: periodos, `isDue`), `build.ts` (cifras con cualquier cliente: filtrar SIEMPRE por espacio/persona), `service.ts` (actual, histórico, IA, `runReviewCron` desde `/api/cron/reminders`).

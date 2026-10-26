@@ -159,7 +159,7 @@ describe("Resumen de cada negocio con widgets", () => {
     const plain = normalizeBusinessLayout({}, BIZ, false).map((w) => w.type);
     expect(plain[0]).toBe("finance-summary");
     expect(plain).not.toContain("print-bag");
-    expect(normalizeBusinessLayout(null, BIZ, true).map((w) => w.type)).toEqual(expect.arrayContaining(["print-bag", "invoices-latest", "antola-rules", "orders-status", "social-inbox"]));
+    expect(normalizeBusinessLayout(null, BIZ, true).map((w) => w.type)).toEqual(expect.arrayContaining(["print-bag", "invoices-latest", "antola-rules", "orders-status"]));
     expect(defaultBusinessLayout(true).every((w) => BUSINESS_WIDGETS.has(w.type))).toBe(true);
   });
   it("cada negocio guarda la suya y solo admite widgets de negocio", () => {
@@ -172,9 +172,9 @@ describe("Resumen de cada negocio con widgets", () => {
     expect(withBusiness(w, BIZ).settings.business).toBe(BIZ);
     expect(withBusiness(newInstance("quick-capture", "x-2")!, BIZ).settings).toEqual({});
   });
-  it("los 15 widgets de negocio y los dos de acceso existen en el catálogo (también en Inicio, eligiendo negocio)", () => {
+  it("los 14 widgets de negocio y los dos de acceso existen en el catálogo (también en Inicio, eligiendo negocio)", () => {
     for (const t of ["finance-summary", "profit", "sales-monthly", "expenses-category", "orders", "orders-status", "pending-receivables", "top-products", "stock-missing",
-      "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "social-inbox", "tasks-business", "goals-active"]) {
+      "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "tasks-business", "goals-active"]) {
       const m = WIDGET_BY_TYPE.get(t);
       expect(m, t).toBeDefined();
       expect(m!.fields.some((f) => f.kind === "business"), t).toBe(true);

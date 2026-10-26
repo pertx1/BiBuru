@@ -2,22 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { setMailAccountBusiness } from "@/app/(app)/correo/actions";
 import { setSocialAccountBusiness } from "@/app/(app)/redes/actions";
 import { useToast } from "@/components/ui/toast";
 
-type Acc = { id: string; kind: "correo" | "instagram" | "tiktok"; label: string };
-const KIND: Record<Acc["kind"], string> = { correo: "Correo", instagram: "Instagram", tiktok: "TikTok" };
+type Acc = { id: string; kind: "instagram" | "tiktok"; label: string };
+const KIND: Record<Acc["kind"], string> = { instagram: "Instagram", tiktok: "TikTok" };
 
-/** Ajustes › Cuentas sin negocio: correo y redes que aún no están asignados (no salen en «Mensajes» de ningún negocio). */
+/** Ajustes › Cuentas sin negocio: cuentas de redes que aún no están asignadas a un negocio (no salen en su pestaña Redes). */
 export function UnassignedAccounts({ accounts, businesses }: { accounts: Acc[]; businesses: { id: string; name: string }[] }) {
   const router = useRouter();
   const toast = useToast();
   const [busy, start] = useTransition();
-  if (!accounts.length) return <p className="text-sm text-muted">Todas tus cuentas de correo y redes tienen negocio. 👌</p>;
+  if (!accounts.length) return <p className="text-sm text-muted">Todas tus cuentas de redes tienen negocio. 👌</p>;
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <p className="text-muted">Asigna cada cuenta a su negocio para que sus mensajes salgan en la pestaña «Mensajes» de ese negocio.</p>
+      <p className="text-muted">Asigna cada cuenta a su negocio para que salga en la pestaña «Redes» de ese negocio.</p>
       <ul className="flex flex-col divide-y divide-border">
         {accounts.map((a) => (
           <li key={`${a.kind}:${a.id}`} className="flex min-h-12 flex-wrap items-center justify-between gap-2 py-1.5">
@@ -27,7 +26,7 @@ export function UnassignedAccounts({ accounts, businesses }: { accounts: Acc[]; 
                 const biz = e.target.value || null;
                 if (!biz) return;
                 start(async () => {
-                  const r = a.kind === "correo" ? await setMailAccountBusiness(a.id, biz) : await setSocialAccountBusiness(a.id, biz);
+                  const r = await setSocialAccountBusiness(a.id, biz);
                   toast({ message: r.ok ? "Cuenta asignada" : r.error });
                   router.refresh();
                 });

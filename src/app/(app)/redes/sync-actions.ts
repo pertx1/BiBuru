@@ -9,14 +9,14 @@ const last = new Map<string, number>();
 
 /** «Actualizar todo». Como mucho una vez por minuto por espacio (para no gastar los límites de las redes). */
 export async function refreshAll(): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
-  const { workspaceId, userId } = await getContext();
+  const { workspaceId } = await getContext();
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { ok: false, error: "Falta SUPABASE_SERVICE_ROLE_KEY en el servidor." };
   if (Date.now() - (last.get(workspaceId) ?? 0) < 60_000) return { ok: true, message: "Ya estaba actualizado hace menos de un minuto" };
   last.set(workspaceId, Date.now());
   try {
-    const r = await syncWorkspaceNow(workspaceId, userId);
-    revalidatePath("/redes", "layout"); revalidatePath("/correo"); revalidatePath("/");
-    const bits = [`${r.accounts} ${r.accounts === 1 ? "cuenta" : "cuentas"}`, r.mail ? `${r.mail} correos` : "", r.limited ? `${r.limited} con límite (sigue luego)` : "", r.errors ? `${r.errors} con error` : ""].filter(Boolean);
+    const r = await syncWorkspaceNow(workspaceId);
+    revalidatePath("/redes", "layout"); revalidatePath("/");
+    const bits = [`${r.accounts} ${r.accounts === 1 ? "cuenta" : "cuentas"}`, r.limited ? `${r.limited} con límite (sigue luego)` : "", r.errors ? `${r.errors} con error` : ""].filter(Boolean);
     return { ok: true, message: `Actualizado: ${bits.join(" · ")}` };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "No se pudo actualizar" };

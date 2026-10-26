@@ -29,7 +29,6 @@ export async function ReviewTodayWidget({ w }: WidgetProps) {
           const bits = d?.v ? [
             `${d.money.curLabel}: ${formatEUR(d.money.cur.profit)}`,
             d.kind === "diaria" ? `${d.tasks.today.length + d.tasks.overdue.length} tareas` : `${d.tasks.done} hechas`,
-            d.inbox.mail + d.inbox.social ? `${d.inbox.mail + d.inbox.social} sin responder` : "",
             d.stock.length ? `${d.stock.length} por pedir` : "",
           ].filter(Boolean) : [];
           return (

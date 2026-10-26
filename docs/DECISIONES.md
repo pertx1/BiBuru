@@ -262,3 +262,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   y del mes y beneficio del mes (`stats_totals`, las mismas cifras que Estadísticas), pedidos sin hacer, lo pendiente de cobro y las tareas «Pedir …».
 - Clave en `widget_tokens` (solo hash, RLS por `user_id`, una por persona y espacio); «Desactivar» la borra. Parámetro del widget: vacío, `tareas`, `dinero`.
 - Pruebas: el código se ejecuta en un Scriptable simulado (`scriptable-mock.ts`) en los tests y en `scripts/e2e/widget.mjs` contra la app real.
+
+## Fuera el correo; Objetivos y Revisión fuera de la barra lateral
+- Correo de Outlook eliminado por completo: código, pantallas, ajustes, widgets («Correos sin leer», «Mensajes sin responder»), avisos de correo nuevo,
+  pestaña «Mensajes» de cada negocio (solo era correo), la parte de correo de la Revisión y la sincronización desde «Actualizar todo». Se deja de
+  programar el cron `biburu-mail`. Las direcciones antiguas redirigen (`/correo` → Inicio, `/negocios/[id]/mensajes` → Resumen).
+- Los datos del correo que ya estaban (tablas `mail_*`, con el acceso a Outlook cifrado) no se borran: las migraciones solo añaden. Si se quieren borrar
+  también, se hace aparte. El permiso se puede retirar desde la cuenta de Microsoft (Privacidad → Aplicaciones).
+- Revisión y Objetivos salen de la barra lateral de escritorio; siguen en «Más», en la barra inferior (si se eligen) y en sus widgets de Inicio.

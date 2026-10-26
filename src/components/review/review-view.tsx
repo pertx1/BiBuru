@@ -1,4 +1,4 @@
-import { AtSign, CalendarDays, Mail, Music2 } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Delta } from "@/components/home/widget-card";
 import { formatEUR, marginPct } from "@/lib/money";
@@ -37,11 +37,9 @@ function Money({ label, t, prev, prevLabel }: { label: string; t: Totals; prev?:
   );
 }
 
-const ICON = { correo: Mail, instagram: AtSign, tiktok: Music2 };
-
 /**
  * Una revisión: cifras reales (las mismas funciones que Estadísticas) y puntos que se pueden tocar sin salir:
- * completar o posponer tareas, marcar un pedido como cobrado, abrir un correo o un mensaje. Al final, «Revisado».
+ * completar o posponer tareas, marcar un pedido como cobrado. Al final, «Revisado».
  */
 export function ReviewView({ data: d, id, reviewedAt, aiSummary, aiConfigured, historic, businessName }: {
   data: ReviewData; id: string | null; reviewedAt: string | null; aiSummary: string | null; aiConfigured: boolean; historic: boolean; businessName: string | null;
@@ -104,28 +102,16 @@ export function ReviewView({ data: d, id, reviewedAt, aiSummary, aiConfigured, h
         </Card>
       )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <Card title={daily ? "Eventos de hoy y mañana" : weekly ? "La semana que viene" : "El mes que empieza"} action={<More href="/calendario" label="Calendario" />}>
-          {d.events.length === 0 ? <p className="text-sm text-muted">Nada en el calendario.</p> : (
-            <ul className="flex flex-col gap-1.5 text-sm">
-              {d.events.slice(0, 12).map((e, i) => (
-                <li key={`${e.id}-${e.date}-${i}`} className="flex gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-                  <span className="w-24 shrink-0 tabular-nums text-muted">{e.date.slice(8, 10)}/{e.date.slice(5, 7)}{e.time ? ` ${e.time}` : ""}</span><span className="min-w-0 truncate">{e.title}</span></li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <Card title={`Sin responder · ${d.inbox.mail + d.inbox.social}`}>
-          <p className="mb-2 text-xs text-muted">{d.inbox.mail} correos sin leer ni marcar</p>
-          {d.inbox.items.length > 0 && (
-            <ul className="flex flex-col divide-y divide-border text-sm">
-              {d.inbox.items.map((i) => { const Icon = ICON[i.channel]; return (
-                <li key={i.key}><Link href={i.href} className="flex min-h-11 items-center gap-2"><Icon className="size-4 shrink-0 text-muted" aria-hidden /><span className="truncate"><span className="font-medium">{i.person}</span> <span className="text-muted">{i.preview}</span></span></Link></li>
-              ); })}
-            </ul>
-          )}
-        </Card>
-      </div>
+      <Card title={daily ? "Eventos de hoy y mañana" : weekly ? "La semana que viene" : "El mes que empieza"} action={<More href="/calendario" label="Calendario" />}>
+        {d.events.length === 0 ? <p className="text-sm text-muted">Nada en el calendario.</p> : (
+          <ul className="flex flex-col gap-1.5 text-sm">
+            {d.events.slice(0, 12).map((e, i) => (
+              <li key={`${e.id}-${e.date}-${i}`} className="flex gap-2"><CalendarDays className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+                <span className="w-24 shrink-0 tabular-nums text-muted">{e.date.slice(8, 10)}/{e.date.slice(5, 7)}{e.time ? ` ${e.time}` : ""}</span><span className="min-w-0 truncate">{e.title}</span></li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Card title={`Stock que falta · ${d.stock.length}`}>
         {d.stock.length === 0 ? <p className="text-sm text-muted">No falta nada. 🎉</p> : (

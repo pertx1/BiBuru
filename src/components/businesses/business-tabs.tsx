@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-type Tab = { slug: string; label: string; production?: boolean; badge?: "messages" };
+type Tab = { slug: string; label: string; production?: boolean };
 
 /**
  * Pestañas del negocio, en este orden. Bolsa imprenta, Facturas y Reglas Antola (antes dentro de Producción) salen si el
  * negocio tiene el módulo de producción. Ingresos, Producción, Tareas y Objetivos ya no son pestañas: sus direcciones
  * antiguas redirigen a su sitio nuevo (Estadísticas, Stock y las secciones Tareas y Objetivos filtradas por el negocio).
+ * Mensajes (solo correo) se quitó con el correo: su dirección lleva al Resumen.
  */
 const TABS: Tab[] = [
   { slug: "", label: "Resumen" },
@@ -20,12 +21,11 @@ const TABS: Tab[] = [
   { slug: "facturas", label: "Facturas", production: true },
   { slug: "reglas", label: "Reglas Antola", production: true },
   { slug: "redes", label: "Redes" },
-  { slug: "mensajes", label: "Mensajes", badge: "messages" },
   { slug: "estadisticas", label: "Estadísticas" },
   { slug: "productos", label: "Productos" },
 ];
 
-export function BusinessTabs({ id, production, unanswered = 0 }: { id: string; production?: boolean; unanswered?: number }) {
+export function BusinessTabs({ id, production }: { id: string; production?: boolean }) {
   const pathname = usePathname();
   return (
     // En móvil: una fila con desplazamiento horizontal.
@@ -33,7 +33,6 @@ export function BusinessTabs({ id, production, unanswered = 0 }: { id: string; p
       {TABS.filter((t) => !t.production || production).map((t) => {
         const href = `/negocios/${id}${t.slug ? `/${t.slug}` : ""}`;
         const active = t.slug === "" ? pathname === href : pathname.startsWith(href);
-        const n = t.badge === "messages" ? unanswered : 0;
         return (
           <Link
             key={t.slug} href={href} aria-current={active ? "page" : undefined}
@@ -43,7 +42,6 @@ export function BusinessTabs({ id, production, unanswered = 0 }: { id: string; p
             )}
           >
             {t.label}
-            {n > 0 && <span className="rounded-full bg-danger px-1.5 text-[11px] font-bold text-white" aria-label={`${n} sin responder`}>{n}</span>}
           </Link>
         );
       })}

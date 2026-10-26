@@ -1,4 +1,4 @@
-// Negocios reorganizados, pedido que descuenta stock, Mensajes y Revisión (rama negocios-revision).
+// Negocios reorganizados, pedido que descuenta stock y Revisión (rama negocios-revision).
 // Uso: USER_ID=<uuid> BIZ=<uuid> node scripts/e2e/negocios-revision.mjs  (con scripts/e2e/up.sh levantado; BIZ con Producción y stock)
 // Con SHOTS=<carpeta> guarda capturas de móvil.
 import { mkdirSync } from "node:fs";
@@ -25,7 +25,7 @@ const qty = async (label) => Number((await cell(label).getAttribute("aria-label"
 // ------------------------------------------------------------ pestañas y redirecciones
 await go(`/negocios/${biz}`);
 const tabs = await page.getByRole("navigation", { name: "Secciones del negocio" }).getByRole("link").allTextContents();
-ok(JSON.stringify(tabs.map((t) => t.replace(/\d+$/, ""))) === JSON.stringify(["Resumen", "Pedidos", "Gastos", "Stock", "Bolsa imprenta", "Facturas", "Reglas Antola", "Redes", "Mensajes", "Estadísticas", "Productos"]), `pestañas en orden: ${tabs.join(", ")}`);
+ok(JSON.stringify(tabs.map((t) => t.replace(/\d+$/, ""))) === JSON.stringify(["Resumen", "Pedidos", "Gastos", "Stock", "Bolsa imprenta", "Facturas", "Reglas Antola", "Redes", "Estadísticas", "Productos"]), `pestañas en orden: ${tabs.join(", ")}`);
 ok(await page.getByRole("heading", { name: /Pedidos por estado/ }).count() > 0, "Resumen con widgets de negocio");
 await shot("01-resumen");
 for (const [from, to] of [["produccion", "/stock"], ["produccion/bolsa", "/bolsa"], ["ingresos", "/estadisticas"], ["tareas", "/tareas?f="], ["objetivos", "/objetivos?negocio="]]) {
@@ -99,9 +99,11 @@ await shot("05-recalcular");
 await page.keyboard.press("Escape");
 
 // ------------------------------------------------------------ Mensajes, Revisión e Inicio
-await go(`/negocios/${biz}/mensajes`);
-ok(await page.getByText(/Ninguna cuenta de correo asignada/).isVisible(), "Mensajes sin cuenta de correo: aviso");
-await shot("06-mensajes");
+// Mensajes (solo correo) se quitó con el correo: la dirección antigua lleva al Resumen.
+await page.goto(`${base}/negocios/${biz}/mensajes`, { waitUntil: "networkidle" });
+ok(page.url().endsWith(`/negocios/${biz}`), "/mensajes redirige al Resumen");
+await page.goto(`${base}/correo`, { waitUntil: "networkidle" });
+ok(new URL(page.url()).pathname === "/", "/correo redirige a Inicio");
 await go("/revision");
 ok(await page.getByRole("heading", { name: "Dinero" }).isVisible(), "revisión diaria");
 ok(await page.getByText("Pensar nueva colección").isVisible(), "sale la tarea sin fecha");

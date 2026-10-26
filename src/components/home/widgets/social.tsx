@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getContext } from "@/lib/context";
 import { addDays } from "@/lib/dates";
 import { bestOfWeek } from "@/lib/social/stats";
-import { countBusinessUnanswered, listBusinessMessages } from "@/lib/messages/data";
 import { WidgetCard } from "../widget-card";
 import { businessOf, type WidgetProps } from "../types";
 
@@ -74,45 +73,6 @@ export async function SocialUpcomingWidget({ w }: WidgetProps) {
               <span className="w-24 shrink-0 text-xs tabular-nums text-muted">{p.scheduled_at ? new Date(p.scheduled_at).toLocaleString("es-ES", { timeZone: "Europe/Madrid", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}</span>
               <span className="min-w-0 flex-1 truncate">{p.title || p.caption || "(sin texto)"}</span>
               {p.status === "error" && <span className="text-xs text-bad">error</span>}
-            </Link></li>
-          ))}
-        </ul>
-      )}
-    </WidgetCard>
-  );
-}
-
-/** «Mensajes sin responder»: correos sin leer ni marcar, de un negocio (como su pestaña Mensajes) o de todos (Correo). */
-export async function SocialInboxWidget({ w, ctx }: WidgetProps) {
-  const biz = businessOf(w, ctx);
-  if (biz) {
-    const [{ items }, total] = await Promise.all([listBusinessMessages(biz.id, { estado: "sin_responder" }), countBusinessUnanswered(biz.id)]);
-    return (
-      <WidgetCard title={`Mensajes · ${biz.name}`} href={`/negocios/${biz.id}/mensajes`}>
-        <p className="text-3xl font-semibold tabular-nums">{total}</p>
-        {w.size !== "s" && items.length > 0 && (
-          <ul className="mt-1 flex flex-col divide-y divide-border">
-            {items.slice(0, w.size === "l" ? 6 : 3).map((i) => (
-              <li key={i.key}><Link href={i.href} className="flex min-h-11 items-center gap-2 text-sm">
-                <span className="min-w-0 flex-1 truncate"><span className="font-medium">{i.person}</span> <span className="text-muted">{i.preview}</span></span>
-              </Link></li>
-            ))}
-          </ul>
-        )}
-      </WidgetCard>
-    );
-  }
-  const { supabase, userId } = await getContext();
-  const { data, count } = await supabase.from("mail_messages").select("id, from_name, from_address, subject", { count: "exact" })
-    .eq("user_id", userId).is("triage", null).eq("is_read", false).order("received_at", { ascending: false }).limit(w.size === "l" ? 6 : 3);
-  return (
-    <WidgetCard title="Mensajes sin responder" href="/correo">
-      <p className="text-3xl font-semibold tabular-nums">{count ?? 0}</p>
-      {w.size !== "s" && !!data?.length && (
-        <ul className="mt-1 flex flex-col divide-y divide-border">
-          {data.map((m) => (
-            <li key={m.id}><Link href={`/correo?abrir=${m.id}`} className="flex min-h-11 items-center gap-2 text-sm">
-              <span className="min-w-0 flex-1 truncate"><span className="font-medium">{m.from_name || m.from_address}</span> <span className="text-muted">{m.subject}</span></span>
             </Link></li>
           ))}
         </ul>

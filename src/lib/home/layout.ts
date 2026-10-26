@@ -6,7 +6,7 @@
 import { z } from "zod";
 
 export type WidgetSize = "s" | "m" | "l";
-export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "noticias" | "correo" | "redes" | "ia";
+export type WidgetGroup = "negocios" | "tareas" | "calendario" | "objetivos" | "captura" | "favoritos" | "noticias" | "redes" | "ia";
 export type PreviewKind = "finance" | "line" | "number" | "list" | "ring" | "bars" | "input" | "agenda" | "calendar" | "text";
 
 /** Ajustes editables de un widget (el formulario de ajustes se genera a partir de esto). */
@@ -30,7 +30,7 @@ export type WidgetMeta = {
 
 export const GROUP_LABELS: Record<WidgetGroup, string> = {
   negocios: "Negocios", tareas: "Tareas", calendario: "Calendario", objetivos: "Objetivos",
-  captura: "Captura y notas", favoritos: "Favoritos", noticias: "Noticias", correo: "Correo", redes: "Redes sociales", ia: "IA",
+  captura: "Captura y notas", favoritos: "Favoritos", noticias: "Noticias", redes: "Redes sociales", ia: "IA",
 };
 
 export const SIZE_LABELS: Record<WidgetSize, string> = { s: "Pequeño", m: "Mediano", l: "Grande" };
@@ -125,11 +125,9 @@ export const WIDGETS: WidgetMeta[] = [
   w("news-today", "noticias", "Noticias de hoy", "El resumen de noticias útiles de hoy, con la foto de la principal.", "finance", ["m", "l"]),
   w("news-idea", "noticias", "Idea del día", "Una acción para ganar más o escalar, sacada de las noticias de hoy.", "text", ["m", "l", "s"]),
   w("news-business", "noticias", "Noticias de un negocio", "Las noticias de hoy que aplican a un negocio concreto.", "list", ["m", "l"], [business(false)]),
-  w("mail-unread", "correo", "Correos sin leer", "Cuántos correos de Outlook tienes sin leer y de quién.", "list", ["m", "s", "l"]),
   w("social-followers", "redes", "Seguidores", "Seguidores de tus cuentas de Instagram y TikTok y su cambio en 7 días (de todas o de un negocio).", "list", ["m", "s", "l"], [business()]),
   w("social-best", "redes", "Mejor publicación de la semana", "La publicación con más interacciones de los últimos 7 días.", "text", ["m", "l"]),
   w("social-upcoming", "redes", "Próximas publicaciones", "Lo que tienes programado en Instagram y TikTok.", "list", ["m", "l", "s"]),
-  w("social-inbox", "correo", "Mensajes sin responder", "Correos sin leer ni marcar (de todos o de un negocio).", "list", ["m", "s", "l"], [business()]),
   w("ai-ask", "ia", "Preguntar al asistente", "Escribe una pregunta y se abre el chat con la respuesta.", "input", ["m", "l"]),
   w("ai-brief", "ia", "Resumen del día", "La IA resume tu día una vez por la mañana (se guarda para no gastar de más).", "text", ["m", "l"]),
   w("ai-usage", "ia", "Consumo de IA", "Gasto de IA del mes frente a tu presupuesto.", "ring", ["s", "m"]),
@@ -227,7 +225,7 @@ export function newInstance(type: string, id: string): WidgetInstance | null {
 /** Widgets que se pueden poner en el Resumen de un negocio (allí el negocio va fijo: no se elige en los ajustes). */
 export const BUSINESS_WIDGETS: ReadonlySet<string> = new Set([
   "finance-summary", "profit", "sales", "sales-monthly", "expenses-category", "orders", "orders-status", "pending-receivables", "top-products",
-  "stock-missing", "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "social-inbox", "tasks-business", "goals-active",
+  "stock-missing", "stock-summary", "print-bag", "invoices-latest", "antola-rules", "social-followers", "tasks-business", "goals-active",
 ]);
 
 /** Disposición por defecto del Resumen de un negocio (Bolsa imprenta y Reglas Antola solo con el módulo de producción). */
@@ -236,7 +234,7 @@ export function defaultBusinessLayout(production: boolean): WidgetInstance[] {
     ["finance-summary", "l"], ["profit", "m"], ["orders-status", "m"], ["orders", "m", { show: "latest" }], ["pending-receivables", "m"],
     ["sales-monthly", "l"], ["expenses-category", "m"], ["top-products", "m"], ["stock-missing", "m"], ["stock-summary", "m"],
     ...(production ? [["print-bag", "m"], ["invoices-latest", "m"], ["antola-rules", "m"]] as [string, WidgetSize][] : []),
-    ["social-followers", "m"], ["social-inbox", "m"], ["tasks-business", "m"], ["goals-active", "m"],
+    ["social-followers", "m"], ["tasks-business", "m"], ["goals-active", "m"],
   ];
   return types.map(([type, size, extra], i) => {
     const m = WIDGET_BY_TYPE.get(type)!;

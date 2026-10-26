@@ -86,7 +86,7 @@ export async function summarizeReview(id: string): Promise<{ ok: true; text: str
     `Pedidos: ${d.orders.count}. Pendiente de cobro: ${formatEUR(d.receivable.totalCents)} en ${d.receivable.count} pedidos.`,
     d.orders.topProducts.length ? `Más vendidos: ${d.orders.topProducts.map((p) => `${p.label} (${p.units})`).join(", ")}.` : "",
     `Tareas: ${d.tasks.today.length} hoy, ${d.tasks.overdue.length} atrasadas, ${d.tasks.noDateTotal} sin fecha, ${d.tasks.done} hechas, ${d.tasks.open} pendientes.`,
-    `Sin responder: ${d.inbox.mail} correos y ${d.inbox.social} mensajes. Stock por pedir: ${d.stock.length}.`,
+    `Stock por pedir: ${d.stock.length}.`,
     d.social ? `Redes: ${d.social.gained >= 0 ? "+" : ""}${d.social.gained} seguidores.` : "",
     d.goals?.length ? `Objetivos: ${d.goals.map((g) => `${g.title} ${g.pct} %`).join("; ")}.` : "",
   ].filter(Boolean).join("\n");

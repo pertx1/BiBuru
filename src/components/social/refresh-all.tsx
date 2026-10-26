@@ -7,7 +7,7 @@ import { refreshAll } from "@/app/(app)/redes/sync-actions";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
-/** «Actualizar todo»: seguidores, publicaciones, mensajes, comentarios y correos de todas las cuentas, ya. */
+/** «Actualizar todo»: seguidores y publicaciones de todas las cuentas, ya. */
 export function RefreshAll() {
   const router = useRouter();
   const toast = useToast();

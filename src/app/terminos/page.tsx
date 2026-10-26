@@ -13,7 +13,6 @@ export default function TerminosPage() {
         <ul className="list-disc pl-5">
           <li>Solo pueden usarla las personas con cuenta. Cada persona es responsable de lo que apunta y de lo que publica desde ella.</li>
           <li>Las publicaciones en Instagram y TikTok se hacen en tus propias cuentas y siguiendo las normas de esas plataformas.</li>
-          <li>BiBuru solo lee tu correo de Outlook: no envía, borra ni cambia correos.</li>
           <li>El servicio se ofrece tal cual, sin garantías. Puede cambiar o dejar de estar disponible.</li>
           <li>Puedes dejar de usarlo y borrar tu cuenta cuando quieras.</li>
         </ul>

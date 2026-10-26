@@ -23,7 +23,6 @@ export type ReviewData = {
   expensesByCategory: { label: string; amount: number; color: string | null }[];
   tasks: { today: TaskRef[]; overdue: TaskRef[]; noDate: TaskRef[]; noDateTotal: number; done: number; open: number; oldest: TaskRef[] };
   events: { id: string; title: string; date: string; time: string | null }[];
-  inbox: { mail: number; social: number; items: { key: string; channel: "correo" | "instagram" | "tiktok"; person: string; preview: string; href: string }[] };
   stock: { title: string; businessId: string | null; taskId: string }[];
   social: { gained: number; accounts: { username: string; platform: string; now: number | null; gained: number | null }[]; best: { caption: string; permalink: string | null; interactions: number } | null } | null;
   goals: GoalRef[] | null;
@@ -42,7 +41,7 @@ async function totals(db: Db, from: string, to: string, business: string | null)
 const orderLabel = (o: { customer: string | null; order_number: string | null }) => o.customer ?? (o.order_number ? `Pedido ${o.order_number}` : "Sin cliente");
 
 export async function buildReviewData(db: Db, p: ReviewPeriod, today: string, business: string | null, extras: { goals?: () => Promise<GoalRef[]> } = {}): Promise<ReviewData> {
-  const { supabase, workspaceId, userId } = db;
+  const { supabase, workspaceId } = db;
   const k = p.kind;
   const biz = <Q extends { eq: (c: string, v: string) => Q }>(q: Q, col = "business_id") => (business ? q.eq(col, business) : q);
   const monthStart = `${today.slice(0, 8)}01`;
@@ -90,18 +89,7 @@ export async function buildReviewData(db: Db, p: ReviewPeriod, today: string, bu
   const events = eventOccurrences(evRows ?? [], p.ahead.from, p.ahead.to).sort((a, b) => (a.date + (a.startTime ?? "")).localeCompare(b.date + (b.startTime ?? "")))
     .slice(0, 30).map((e) => ({ id: e.id, title: e.title, date: e.date, time: e.startTime }));
 
-  // --------------------------------------------------------------- correo y mensajes sin responder
-  const [{ data: mailAccs }, { data: socAccs }] = await Promise.all([
-    biz(supabase.from("mail_accounts").select("id, email").eq("user_id", userId)),
-    biz(supabase.from("social_accounts").select("id, username, platform").eq("workspace_id", workspaceId)),
-  ]);
-  // Correo sin responder (los mensajes de Instagram y TikTok se quitaron: `social` queda a 0 para las fotos antiguas).
-  const mailUnread = mailAccs?.length ? await supabase.from("mail_messages").select("id, from_name, from_address, subject", { count: "exact" }).eq("user_id", userId).in("account_id", mailAccs.map((a) => a.id))
-    .is("triage", null).eq("is_read", false).order("received_at", { ascending: false }).limit(8) : { data: [], count: 0 };
-  const inbox = {
-    mail: mailUnread.count ?? 0, social: 0,
-    items: (mailUnread.data ?? []).map((m) => ({ key: `correo:${m.id}`, channel: "correo" as const, person: m.from_name || m.from_address || "Desconocido", preview: m.subject ?? "", href: `/correo?abrir=${m.id}` })),
-  };
+  const { data: socAccs } = await biz(supabase.from("social_accounts").select("id, username, platform").eq("workspace_id", workspaceId));
 
   // --------------------------------------------------------------- stock que falta (las tareas «Pedir …» abiertas lo reflejan)
   const { data: stockTasks } = await biz(supabase.from("tasks").select("id, title, business_id").eq("workspace_id", workspaceId).eq("status", "open").not("stock_key", "is", null)).limit(30);
@@ -144,7 +132,7 @@ export async function buildReviewData(db: Db, p: ReviewPeriod, today: string, bu
       today: (tToday.data ?? []).map(toRef), overdue: (tOver.data ?? []).map(toRef), noDate: (tNoDate.data ?? []).map(toRef), noDateTotal: tNoDate.count ?? 0,
       done: tDone.count ?? 0, open: tOpen.count ?? 0, oldest: (tOldest.data ?? []).map(toRef),
     },
-    events, inbox,
+    events,
     stock: (stockTasks ?? []).map((t) => ({ title: t.title, businessId: t.business_id, taskId: t.id })),
     social, goals, priorities: [],
   };
@@ -161,8 +149,6 @@ export function reviewPushText(d: ReviewData, fmt: (cents: number) => string): {
     parts.push(`${d.kind === "semanal" ? "Semana" : "Mes"}: ${fmt(d.money.cur.profit)} de beneficio`);
     parts.push(`${d.tasks.done} tareas hechas`);
   }
-  const msgs = d.inbox.mail + d.inbox.social;
-  if (msgs) parts.push(`${msgs} sin responder`);
   if (d.stock.length) parts.push(`${d.stock.length} por pedir`);
   return { title: `Revisión ${d.kind} lista`, body: parts.join(" · ") };
 }

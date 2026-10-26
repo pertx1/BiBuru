@@ -11,10 +11,9 @@ import { AiAskWidget, AiBriefWidget, AiSuggestWidget, AiUsageWidget } from "./wi
 import { NewsBusinessWidget, NewsIdeaWidget, NewsTodayWidget } from "./widgets/news";
 import { PendingReceivablesWidget } from "./widgets/receivables";
 import { StockMissingWidget } from "./widgets/stock";
-import { MailUnreadWidget } from "./widgets/mail";
 import { AntolaRulesWidget, InvoicesLatestWidget, OrdersStatusWidget, PrintBagWidget, SalesMonthlyWidget, StockSummaryWidget, TopProductsWidget } from "./widgets/business3";
 import { ReviewTodayWidget } from "./widgets/review";
-import { SocialBestPostWidget, SocialFollowersWidget, SocialInboxWidget, SocialUpcomingWidget } from "./widgets/social";
+import { SocialBestPostWidget, SocialFollowersWidget, SocialUpcomingWidget } from "./widgets/social";
 import type { WidgetProps } from "./types";
 
 /**
@@ -58,11 +57,9 @@ export const WIDGET_COMPONENTS: Record<string, ComponentType<WidgetProps>> = {
   "news-today": NewsTodayWidget,
   "news-idea": NewsIdeaWidget,
   "news-business": NewsBusinessWidget,
-  "mail-unread": MailUnreadWidget,
   "social-followers": SocialFollowersWidget,
   "social-best": SocialBestPostWidget,
   "social-upcoming": SocialUpcomingWidget,
-  "social-inbox": SocialInboxWidget,
   "sales-monthly": SalesMonthlyWidget,
   "orders-status": OrdersStatusWidget,
   "top-products": TopProductsWidget,

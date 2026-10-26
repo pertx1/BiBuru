@@ -1,7 +1,6 @@
 import "server-only";
 import { after } from "next/server";
 import { addDays, nowLocal } from "@/lib/dates";
-import { syncDueMailAccounts } from "@/lib/mail/service";
 import { inQuietHours } from "@/lib/notifications/planning";
 import { webPushSender, type PushSub } from "@/lib/notifications/push";
 import { igProfile, IgError } from "@/lib/social/instagram";
@@ -12,13 +11,13 @@ import "@/lib/social/tiktok-service"; // registra el token de TikTok en el servi
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
 
 /**
- * Actualización automática, todo de una: por cada cuenta, seguidores y datos de sus publicaciones; y el correo. La lanza el cron cada hora (dentro del de Redes), «Actualizar todo» y abrir Redes si los datos
+ * Actualización automática, todo de una: por cada cuenta, seguidores y datos de sus publicaciones. La lanza el cron cada hora (dentro del de Redes), «Actualizar todo» y abrir Redes si los datos
  * tienen más de 15 min. Idempotente y ligera: si una red pone un límite, esa cuenta se salta hasta la próxima pasada.
  */
 const ACC = "id, workspace_id, user_id, platform, external_id, username, access_token_enc, refresh_token_enc, token_expires_at, refresh_expires_at, status, last_snapshot_on, created_at, updated_at, followers_count, last_sync_at, rate_limited_until";
 type Row = SocialAccount & { username: string | null; followers_count: number | null; last_sync_at: string | null; rate_limited_until: string | null };
 
-export type SyncResult = { accounts: number; limited: number; errors: number; mail: number };
+export type SyncResult = { accounts: number; limited: number; errors: number };
 
 /** Actualiza una cuenta. Nunca lanza: los fallos quedan en `sync_error` (y en pantalla). */
 export async function syncAccount(admin: AdminClient, acc: Row, now = new Date()): Promise<{ limited?: boolean; error?: string }> {
@@ -80,7 +79,7 @@ async function alertsFor(admin: AdminClient, acc: Row, followers: number | null,
 /** Cuentas que tocan (más de `staleMinutes` sin actualizar), de la más atrasada a la más reciente. */
 export async function syncDue(admin: AdminClient, o: { limit?: number; staleMinutes?: number; ids?: string[]; now?: Date } = {}): Promise<SyncResult> {
   const now = o.now ?? new Date();
-  const out: SyncResult = { accounts: 0, limited: 0, errors: 0, mail: 0 };
+  const out: SyncResult = { accounts: 0, limited: 0, errors: 0 };
   let q = admin.from("social_accounts").select(ACC).neq("status", "expired");
   if (o.ids) q = q.in("id", o.ids);
   else q = q.or(`last_sync_at.is.null,last_sync_at.lt.${new Date(now.getTime() - (o.staleMinutes ?? 60) * 60_000).toISOString()}`);
@@ -93,13 +92,11 @@ export async function syncDue(admin: AdminClient, o: { limit?: number; staleMinu
   return out;
 }
 
-/** «Actualizar todo»: todas las cuentas del espacio y los correos de la persona, ya. */
-export async function syncWorkspaceNow(workspaceId: string, userId: string): Promise<SyncResult> {
+/** «Actualizar todo»: todas las cuentas del espacio, ya. */
+export async function syncWorkspaceNow(workspaceId: string): Promise<SyncResult> {
   const admin = createAdminClient();
   const { data } = await admin.from("social_accounts").select("id").eq("workspace_id", workspaceId).limit(20);
-  const r = await syncDue(admin, { ids: (data ?? []).map((a) => a.id), limit: 20 });
-  const mail = await syncDueMailAccounts(admin, { userId, staleMinutes: 0, limit: 10 }).catch(() => null);
-  return { ...r, mail: mail?.ok ?? 0 };
+  return syncDue(admin, { ids: (data ?? []).map((a) => a.id), limit: 20 });
 }
 
 /** Al abrir Redes o la Bandeja: si alguna cuenta lleva más de 15 min sin actualizarse, se refresca en segundo plano. */

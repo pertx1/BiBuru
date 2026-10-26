@@ -21,11 +21,9 @@ import { DataSettings } from "@/components/account/data-settings";
 import { WidgetSetup } from "@/components/account/widget-setup";
 import { headers } from "next/headers";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { MailSettings } from "@/components/mail/mail-settings";
 import { SocialSettings } from "@/components/social/social-settings";
 import { UnassignedAccounts } from "@/components/account/unassigned-accounts";
 import { ReviewSettings } from "@/components/review/review-settings";
-import { listMailAccounts, mailConfigured } from "@/lib/mail/data";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/login/actions";
@@ -48,7 +46,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export default async function AjustesPage({ searchParams }: { searchParams: Promise<{ google?: string; outlook?: string }> }) {
+export default async function AjustesPage({ searchParams }: { searchParams: Promise<{ google?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -69,14 +67,12 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
   const { data: feeds } = await supabase.from("youtube_feeds").select("id, title, last_checked_at, last_error, last_added").eq("workspace_id", ctx.workspaceId).order("created_at");
   const budgetCents = p?.ai_monthly_budget_cents ?? 1000;
   const budget = await getBudget({ supabase: ctx.supabase, workspaceId: ctx.workspaceId, timezone: ctx.timezone, budgetCents });
-  const [mailAccounts, { data: mailBiz }] = await Promise.all([listMailAccounts().catch(() => []), supabase.from("businesses").select("id, name").eq("workspace_id", ctx.workspaceId).eq("archived", false).order("name")]);
-  const mailBusinesses = mailBiz ?? [];
+  const { data: bizRows } = await supabase.from("businesses").select("id, name").eq("workspace_id", ctx.workspaceId).eq("archived", false).order("name");
+  const businesses = bizRows ?? [];
   const { data: socialAccs } = await supabase.from("social_accounts").select("id, platform, username, business_id").eq("workspace_id", ctx.workspaceId);
   const unassigned = [
-    ...mailAccounts.filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: "correo" as const, label: a.email })),
     ...(socialAccs ?? []).filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: (a.platform === "tiktok" ? "tiktok" : "instagram") as "tiktok" | "instagram", label: a.username ? `@${a.username}` : "Cuenta" })),
   ];
-  const mailAi = (p as { mail_ai_allowed?: boolean } | null)?.mail_ai_allowed;
   const models = getModelNames();
   const { data: saved } = await supabase.from("ai_prices").select("model, input_eur_per_mtok, output_eur_per_mtok");
   const price = (model: string, d: { input: number; output: number }) => { const r = saved?.find((x) => x.model === model); return { model, input: r ? Number(r.input_eur_per_mtok) : d.input, output: r ? Number(r.output_eur_per_mtok) : d.output }; };
@@ -95,7 +91,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
             <dd>{((profile?.ai_monthly_budget_cents ?? 1000) / 100).toLocaleString("es-ES", { style: "currency", currency: "EUR" })} / mes</dd>
           </dl>
         </Section>
-        {unassigned.length > 0 && <div id="sin-negocio" className="scroll-mt-20"><Section title="Cuentas sin negocio"><UnassignedAccounts accounts={unassigned} businesses={mailBusinesses} /></Section></div>}
+        {unassigned.length > 0 && <div id="sin-negocio" className="scroll-mt-20"><Section title="Cuentas sin negocio"><UnassignedAccounts accounts={unassigned} businesses={businesses} /></Section></div>}
         <Section title="Avisos en este dispositivo"><PushSetup vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} devices={devices ?? []} /></Section>
         {p && (
           <Section title="Qué avisos quieres">
@@ -126,9 +122,6 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
           <YoutubeSettings configured={!!googleConfig() && !!process.env.TOKEN_ENCRYPTION_KEY} longMinutes={p?.video_long_minutes ?? 20} flash={sp.google}
             status={integ ? { email: integ.account_email, lastSyncAt: integ.last_sync_at, lastError: integ.last_sync_error, lastAdded: integ.last_sync_added, likes: integ.sync_likes, playlists: Array.isArray(integ.sync_playlists) ? (integ.sync_playlists as { id: string; title: string }[]) : [] } : null} />
         </Section>
-        <div id="correo" className="scroll-mt-20"><Section title="Correo de Outlook">
-          <MailSettings configured={mailConfigured()} accounts={mailAccounts} businesses={mailBusinesses} aiAllowed={!!mailAi} result={sp.outlook} />
-        </Section></div>
         <div id="redes" className="scroll-mt-20"><Section title="Redes">
           <SocialSettings initial={{ social_alerts_enabled: p?.social_alerts_enabled ?? false }} />
         </Section></div>
