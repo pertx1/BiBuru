@@ -18,16 +18,17 @@ const ago = (iso: string | null | undefined, nowMs: number) => {
   return m < 1 ? "Actualizado ahora" : m < 60 ? `Actualizado hace ${m} min` : m < 1440 ? `Actualizado hace ${Math.round(m / 60)} h` : `Actualizado hace ${Math.round(m / 1440)} días`;
 };
 const signed = (n: number) => `${n >= 0 ? "+" : "−"}${Math.abs(n).toLocaleString("es-ES")}`;
-const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadísticas tardan unos minutos.", cancelado: "Has cancelado la conexión.", estado: "La conexión caducó: vuelve a intentarlo.", error: "No se pudo conectar. Vuelve a intentarlo.", "sin-configurar": "Falta conectar: la app aún no está registrada (mira la guía).", "sin-pagina": "Tu Instagram profesional no está vinculado a una página de Facebook (o no la marcaste al dar permiso). Vincúlalo y vuelve a conectar." };
-const PLAT = { instagram: "Instagram", tiktok: "TikTok" } as const;
+const RESULT: Record<string, string> = { ok: "Cuenta conectada ✔ Las estadísticas tardan unos minutos.", cancelado: "Has cancelado la conexión.", estado: "La conexión caducó: vuelve a intentarlo.", error: "No se pudo conectar. Vuelve a intentarlo.", "sin-configurar": "Falta conectar: la app aún no está registrada (mira la guía).", "sin-pagina": "Tu Instagram profesional no está vinculado a una página de Facebook (o no la marcaste al dar permiso). Vincúlalo y vuelve a conectar.",
+  "sin-canal": "Esa cuenta de Google no tiene canal de YouTube. Crea uno en youtube.com y vuelve a conectar.", permisos: "Falta el permiso para subir vídeos: vuelve a conectar y marca todas las casillas." };
+const PLAT = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube" } as const;
 
 /** Cuentas conectadas: estado del token (aviso si caduca), negocio, actualizar y desconectar; botones para conectar. */
-export function SocialAccounts({ accounts, businesses, configured, result, nowMs, audited = false }: { audited?: boolean; nowMs: number; accounts: Acc[]; businesses: { id: string; name: string }[]; configured: { instagram: boolean; tiktok: boolean }; result: { instagram?: string; tiktok?: string } }) {
+export function SocialAccounts({ accounts, businesses, configured, result, nowMs, audited = false }: { audited?: boolean; nowMs: number; accounts: Acc[]; businesses: { id: string; name: string }[]; configured: { instagram: boolean; tiktok: boolean; youtube: boolean }; result: { instagram?: string; tiktok?: string; youtube?: string } }) {
   const router = useRouter();
   const toast = useToast();
   const [pending, start] = useTransition();
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, ok?: string) => start(async () => { const r = await fn(); toast({ message: r.ok ? ok ?? "Hecho" : r.error ?? "No se pudo" }); router.refresh(); });
-  const msg = result.instagram ? `Instagram: ${RESULT[result.instagram] ?? ""}` : result.tiktok ? `TikTok: ${RESULT[result.tiktok] ?? ""}` : null;
+  const msg = result.instagram ? `Instagram: ${RESULT[result.instagram] ?? ""}` : result.tiktok ? `TikTok: ${RESULT[result.tiktok] ?? ""}` : result.youtube ? `YouTube: ${result.youtube === "ok" ? "Canal conectado ✔ Ya puedes programar Shorts." : RESULT[result.youtube] ?? ""}` : null;
   const days = (iso: string | null) => (iso ? Math.ceil((new Date(iso).getTime() - nowMs) / 86400_000) : null);
   return (
     <section className="flex flex-col gap-3">
@@ -35,7 +36,8 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
       {accounts.length > 0 && (
         <ul className="grid gap-2 md:grid-cols-2">
           {accounts.map((a) => {
-            const left = days(a.token_expires_at);
+            const yt = a.platform === "youtube"; // solo para publicar Shorts: su token de 1 h se renueva solo y no tiene estadísticas
+            const left = yt ? null : days(a.token_expires_at);
             const warn = a.status === "expired" || a.status === "error" || (left != null && left < 7);
             return (
               <li key={a.id} className={cn("flex flex-col gap-2 rounded-xl border bg-surface p-3", warn ? "border-amber-500/50" : "border-border")}>
@@ -43,14 +45,16 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
                   {/* eslint-disable-next-line @next/next/no-img-element -- avatar externo */}
                   {a.avatar_url ? <img src={a.avatar_url} alt="" className="size-9 rounded-full object-cover" referrerPolicy="no-referrer" /> : <span className="size-9 rounded-full bg-surface-2" />}
                   <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">@{a.username ?? a.display_name ?? "cuenta"}</p><p className="text-xs text-muted">{PLAT[a.platform as keyof typeof PLAT]}{a.account_type ? ` · ${a.account_type === "BUSINESS" ? "empresa" : a.account_type === "MEDIA_CREATOR" ? "creador" : a.account_type.toLowerCase()}` : ""}</p></div>
-                  <button type="button" aria-label="Actualizar estadísticas" disabled={pending} onClick={() => run(() => refreshSocialStats(a.id), "Estadísticas actualizadas")} className="flex size-11 items-center justify-center rounded-lg hover:bg-surface-2 md:size-9"><RefreshCw className={cn("size-4", pending && "animate-spin")} aria-hidden /></button>
+                  {!yt && <button type="button" aria-label="Actualizar estadísticas" disabled={pending} onClick={() => run(() => refreshSocialStats(a.id), "Estadísticas actualizadas")} className="flex size-11 items-center justify-center rounded-lg hover:bg-surface-2 md:size-9"><RefreshCw className={cn("size-4", pending && "animate-spin")} aria-hidden /></button>}
                 </div>
+                {yt ? <p className="text-xs text-muted">Para publicar Shorts. Mientras Google no verifique el proyecto de la app, lo que se suba queda privado.</p> : <>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="text-xl font-semibold tabular-nums">{a.followers_count != null ? a.followers_count.toLocaleString("es-ES") : "—"}<span className="ml-1 text-xs font-normal text-muted">seguidores</span></span>
                   {a.deltaToday != null && <span className={cn("text-xs font-semibold", a.deltaToday >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaToday)} hoy</span>}
                   {a.deltaWeek != null && <span className={cn("text-xs font-semibold", a.deltaWeek >= 0 ? "text-good" : "text-bad")}>{signed(a.deltaWeek)} esta semana</span>}
                 </div>
                 <p className="text-xs text-muted">{ago(a.last_sync_at, nowMs)}{a.rate_limited_until && new Date(a.rate_limited_until).getTime() > nowMs ? ` · ${a.platform === "tiktok" ? "TikTok" : "Instagram"} ha puesto un límite: sigo en la próxima pasada` : a.sync_error ? ` · ${a.sync_error}` : ""}</p>
+                </>}
                 {warn && (
                   <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                     {a.status === "expired" ? "La conexión ha caducado." : a.status === "error" ? a.last_error ?? "Error de conexión." : `La conexión caduca en ${left} días; se renueva sola si la app sigue en uso.`}
@@ -75,6 +79,8 @@ export function SocialAccounts({ accounts, businesses, configured, result, nowMs
           : <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted"><strong>Instagram: falta conectar.</strong> Registra la app en Meta (guía) y pon INSTAGRAM_APP_ID e INSTAGRAM_APP_SECRET en Vercel.</p>}
         {configured.tiktok ? <a href="/api/tiktok/connect" className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm font-medium md:min-h-9">+ Conectar TikTok</a>
           : <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted"><strong>TikTok: falta conectar.</strong> Registra la app en TikTok for Developers (guía) y pon TIKTOK_CLIENT_KEY y TIKTOK_CLIENT_SECRET en Vercel.</p>}
+        {configured.youtube ? <a href="/api/youtube/connect" className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface px-4 text-sm font-medium md:min-h-9">+ Conectar YouTube (Shorts)</a>
+          : <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted"><strong>YouTube: falta conectar.</strong> Usa el mismo cliente de Google que Favoritos (GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en Vercel).</p>}
       </div>
     </section>
   );

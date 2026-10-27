@@ -2,6 +2,7 @@ import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Delta } from "@/components/home/widget-card";
 import { formatEUR, marginPct } from "@/lib/money";
+import { platformLabel } from "@/lib/social/platforms";
 import type { ReviewData, Totals } from "@/lib/review/build";
 import { periodLabel } from "@/lib/review/period";
 import { More, PrioritiesForm, ReviewAi, ReviewedButton, ReviewReceivables, ReviewTasks } from "./review-client";
@@ -124,7 +125,7 @@ export function ReviewView({ data: d, id, reviewedAt, aiSummary, aiConfigured, h
       {!daily && d.social && (
         <Card title={`Redes · ${d.social.gained >= 0 ? "+" : ""}${d.social.gained} seguidores`}>
           <ul className="flex flex-col divide-y divide-border text-sm">
-            {d.social.accounts.map((a) => <li key={a.username + a.platform} className="flex min-h-10 items-center justify-between gap-2"><span className="truncate">{a.platform === "tiktok" ? "TikTok" : "Instagram"} · @{a.username}</span><span className="tabular-nums">{a.now ?? "—"}{a.gained != null && <span className={a.gained >= 0 ? "ml-2 text-good" : "ml-2 text-bad"}>{a.gained >= 0 ? "+" : ""}{a.gained}</span>}</span></li>)}
+            {d.social.accounts.map((a) => <li key={a.username + a.platform} className="flex min-h-10 items-center justify-between gap-2"><span className="truncate">{platformLabel(a.platform)} · @{a.username}</span><span className="tabular-nums">{a.now ?? "—"}{a.gained != null && <span className={a.gained >= 0 ? "ml-2 text-good" : "ml-2 text-bad"}>{a.gained >= 0 ? "+" : ""}{a.gained}</span>}</span></li>)}
           </ul>
           {d.social.best && <p className="mt-2 text-sm"><span className="text-muted">Mejor publicación: </span>{d.social.best.permalink ? <a href={d.social.best.permalink} target="_blank" rel="noopener noreferrer" className="text-accent underline">{d.social.best.caption || "(sin texto)"}</a> : d.social.best.caption} · {d.social.best.interactions} interacciones</p>}
         </Card>

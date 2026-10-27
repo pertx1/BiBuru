@@ -143,11 +143,12 @@ export async function igMediaInsights(token: string, mediaId: string, f: Fetch =
 }
 
 // ---------------------------------------------------------------- publicación (contenedor → estado → publicar)
-export type IgPublishInput = { kind: "image" | "carousel" | "reel"; urls: { url: string; video: boolean }[]; caption: string };
+export type IgPublishInput = { kind: "image" | "carousel" | "reel" | "story"; urls: { url: string; video: boolean }[]; caption: string };
 
-/** Paso 1: crea el contenedor (para carrusel, primero uno por elemento). Devuelve su id. */
+/** Paso 1: crea el contenedor (para carrusel, primero uno por elemento). Devuelve su id. Las historias no llevan texto. */
 export async function igCreateContainer(token: string, igUserId: string, p: IgPublishInput, f: Fetch = fetch): Promise<string> {
   const url = igApi(`/${igUserId}/media`);
+  if (p.kind === "story") return String((await post(url, token, p.urls[0].video ? { media_type: "STORIES", video_url: p.urls[0].url } : { media_type: "STORIES", image_url: p.urls[0].url }, f)).id);
   if (p.kind === "image") return String((await post(url, token, { image_url: p.urls[0].url, caption: p.caption }, f)).id);
   if (p.kind === "reel") return String((await post(url, token, { media_type: "REELS", video_url: p.urls[0].url, caption: p.caption, share_to_feed: "true" }, f)).id);
   const children: string[] = [];

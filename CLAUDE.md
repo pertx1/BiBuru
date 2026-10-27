@@ -212,6 +212,12 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Instagram tiene dos variantes según la app de Meta: inicio de sesión de Instagram (por defecto, graph.instagram.com) o con Facebook (`INSTAGRAM_LOGIN=facebook`, graph.facebook.com, token de la página vinculada que no caduca, `INSTAGRAM_FB_CONFIG_ID` opcional). Todo en `instagram.ts` con `igMode()`.
 - TikTok sin auditoría = privado: por defecto no se pide `video.publish`; modo con `tiktokModeFor` (directa solo con `TIKTOK_DIRECT_POST_AUDITED=1`).
 - Las publicaciones salen en el Calendario (`postsToItems`) y se arrastran con `@dnd-kit` (asa `touch-none`, pulsación larga en táctil).
+- **Formatos por destino** (migración `20261029000001_social_formats.sql`): `social_post_targets.format` (`post`/`reel`/`story` en Instagram, `video`/`story` en TikTok,
+  `short` en YouTube), único por (publicación, cuenta, formato). Reglas puras en `src/lib/social/platforms.ts` (`checkTargets`, `filesFor`), mismas en editor y servidor.
+  `media_kind` de la publicación se deduce de sus archivos. Historia de TikTok = siempre `assisted` (la API no la admite).
+- **YouTube** (`platform = 'youtube'`): solo para publicar Shorts, sin estadísticas (`STATS_PLATFORMS` deja fuera foto diaria, sincronización y renovación del cron).
+  `youtube.ts` (subida reanudable) + `youtube-service.ts` (hook `youtubeTarget`, token de 1 h renovado al publicar). Reutiliza el cliente OAuth de Favoritos con otra vuelta
+  (`/api/youtube/callback`). Una subida cortada deja `container_id = 'subiendo'` y no se repite sola (se marca error para no duplicar el vídeo).
 
 ## Diseño (estilo Apple)
 - Tokens en `globals.css`:

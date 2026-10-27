@@ -1084,13 +1084,13 @@ isOneToOne: false
                   ]
                 },"social_post_targets": {
                   Row: {
-                    "account_id": string,"attempts": number,"container_id": string | null,"created_at": string,"error": string | null,"external_id": string | null,"id": string,"mode": string,"next_try_at": string | null,"permalink": string | null,"post_id": string,"privacy": string | null,"published_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "account_id": string,"attempts": number,"container_id": string | null,"created_at": string,"error": string | null,"external_id": string | null,"format": string,"id": string,"made_for_kids": boolean,"mode": string,"next_try_at": string | null,"permalink": string | null,"post_id": string,"privacy": string | null,"published_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "account_id": string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id": string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "account_id": string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"format"?: string,"id"?: string,"made_for_kids"?: boolean,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id": string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "account_id"?: string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id"?: string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "account_id"?: string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"format"?: string,"id"?: string,"made_for_kids"?: boolean,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id"?: string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

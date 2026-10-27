@@ -9,13 +9,13 @@ import { useToast } from "@/components/ui/toast";
 
 type F = { mime: string; view: string | null; download: string | null; name: string };
 
-/** Pasos para publicarlo tú: copiar el texto, guardar o compartir el vídeo con TikTok y marcarlo como hecho. */
-export function AssistedPublish({ postId, targetId, done, caption, files }: { postId: string; targetId: string | null; done: boolean; caption: string; files: F[] }) {
+/** Pasos para publicarlo tú: copiar el texto, guardar o compartir el vídeo con TikTok y marcarlo como hecho. Historia: el primer archivo. */
+export function AssistedPublish({ postId, targetId, done, caption, files, story = false }: { postId: string; targetId: string | null; done: boolean; caption: string; files: F[]; story?: boolean }) {
   const toast = useToast();
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
-  const video = files.find((f) => f.mime.startsWith("video/")) ?? files[0];
+  const video = story ? files[0] : files.find((f) => f.mime.startsWith("video/")) ?? files[0];
 
   async function share() {
     if (!video?.view) return;
@@ -33,7 +33,9 @@ export function AssistedPublish({ postId, targetId, done, caption, files }: { po
       <ol className="flex list-decimal flex-col gap-1 pl-5 text-sm">
         <li>Pulsa <strong>Copiar texto</strong>.</li>
         <li>Pulsa <strong>Compartir</strong> y elige <strong>TikTok</strong> (o <strong>Guardar vídeo</strong> y súbelo desde TikTok con el botón <strong>+</strong>).</li>
-        <li>En TikTok, pega el texto, revisa y pulsa <strong>Publicar</strong>.</li>
+        {story
+          ? <li>En TikTok, elige <strong>Historia</strong> (abajo), revisa y pulsa <strong>Compartir</strong>.</li>
+          : <li>En TikTok, pega el texto, revisa y pulsa <strong>Publicar</strong>.</li>}
         <li>Vuelve aquí y pulsa <strong>Ya lo he publicado</strong>.</li>
       </ol>
       {video.view && (video.mime.startsWith("video/") ? <video src={video.view} controls playsInline className="max-h-[55dvh] w-full rounded-xl bg-black" /> : // eslint-disable-next-line @next/next/no-img-element -- archivo propio con URL firmada

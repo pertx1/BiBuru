@@ -7,7 +7,9 @@ import { zonedToUtc } from "@/lib/dates";
 import { SOCIAL_BUCKET, STORAGE_LIMIT_BYTES } from "@/lib/social/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ActionResult } from "@/lib/schemas";
+import { checkTargets, formatsFor, mediaKindFor } from "@/lib/social/platforms";
 import { tiktokModeFor } from "@/lib/social/tiktok-mode";
+import { YT_PRIVACY } from "@/lib/social/youtube";
 
 const uuid = z.uuid();
 const refresh = () => { revalidatePath("/redes"); revalidatePath("/calendario"); revalidatePath("/"); };
@@ -36,11 +38,13 @@ export async function createDraft(o: { videoId?: string } = {}): Promise<{ ok: t
 
 const postSchema = z.object({
   id: uuid, title: z.string().trim().max(120).optional(), caption: z.string().max(2200), hashtags: z.string().max(1000),
-  mediaKind: z.enum(["image", "carousel", "reel", "video"]), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
-  time: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal("")), accountIds: z.array(uuid).max(10), schedule: z.boolean(), businessId: uuid.nullable().optional(), notes: z.string().max(5000).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")), time: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal("")),
+  targets: z.array(z.object({ accountId: uuid, format: z.enum(["post", "reel", "story", "video", "short"]) })).max(30),
+  ytPrivacy: z.enum(YT_PRIVACY).optional(), ytKids: z.boolean().optional(),
+  schedule: z.boolean(), businessId: uuid.nullable().optional(), notes: z.string().max(5000).optional(),
 });
 
-/** Guarda la publicación. «Programar» exige fecha, al menos una red y algún archivo; «Borrador» no exige nada. */
+/** Guarda la publicación. «Programar» exige fecha, al menos una red y lo que pida cada formato; «Borrador» no exige nada. */
 export async function savePost(input: z.input<typeof postSchema>): Promise<ActionResult> {
   const p = postSchema.safeParse(input);
   if (!p.success) return { ok: false, error: "Revisa los datos de la publicación" };
@@ -50,27 +54,38 @@ export async function savePost(input: z.input<typeof postSchema>): Promise<Actio
   if (!post) return { ok: false, error: "Publicación no encontrada" };
   if (post.status === "publicando" || post.status === "publicada") return { ok: false, error: "Ya se está publicando o está publicada: no se puede cambiar." };
   const scheduled = d.date ? zonedToUtc(d.date, d.time || "10:00", timezone).toISOString() : null;
+  const ids = [...new Set(d.targets.map((t) => t.accountId))];
+  const { data: accounts } = await supabase.from("social_accounts").select("id, platform, scopes").eq("workspace_id", workspaceId).in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+  const accById = new Map((accounts ?? []).map((a) => [a.id, a]));
+  // Solo cuentas del espacio y formatos que admite su red; sin repetir.
+  const wanted = [...new Map(d.targets.filter((t) => accById.has(t.accountId) && formatsFor(accById.get(t.accountId)!.platform).includes(t.format)).map((t) => [`${t.accountId}|${t.format}`, t])).values()];
+  const { data: files } = await supabase.from("social_post_files").select("mime").eq("post_id", d.id).is("deleted_at", null);
   if (d.schedule) {
     if (!scheduled) return { ok: false, error: "Elige fecha y hora" };
-    if (!d.accountIds.length) return { ok: false, error: "Elige al menos una cuenta" };
-    const { count } = await supabase.from("social_post_files").select("id", { count: "exact", head: true }).eq("post_id", d.id).is("deleted_at", null);
-    if (!count) return { ok: false, error: "Añade al menos una foto o un vídeo" };
-    if (d.mediaKind === "carousel" && count < 2) return { ok: false, error: "Un carrusel necesita al menos 2 archivos" };
+    const problem = checkTargets(wanted.map((t) => ({ platform: accById.get(t.accountId)!.platform, format: t.format })), files ?? []);
+    if (problem) return { ok: false, error: problem };
   }
   const { error } = await supabase.from("social_posts").update({
-    title: d.title || null, caption: d.caption, hashtags: d.hashtags, media_kind: d.mediaKind, scheduled_at: scheduled, status: d.schedule ? "programada" : "borrador",
+    title: d.title || null, caption: d.caption, hashtags: d.hashtags, media_kind: mediaKindFor(files ?? []), scheduled_at: scheduled, status: d.schedule ? "programada" : "borrador",
     business_id: d.businessId ?? null, ...(d.notes !== undefined ? { notes: d.notes || null } : {}),
   }).eq("id", d.id).eq("workspace_id", workspaceId);
   if (error) return { ok: false, error: "No se pudo guardar" };
-  // Redes de destino: se quitan las que ya no están y se añaden las nuevas (con el mejor modo disponible en TikTok).
-  const { data: accounts } = await supabase.from("social_accounts").select("id, platform, scopes").eq("workspace_id", workspaceId).in("id", d.accountIds.length ? d.accountIds : ["00000000-0000-0000-0000-000000000000"]);
-  const { data: existing } = await supabase.from("social_post_targets").select("id, account_id").eq("post_id", d.id);
-  const keep = new Set((accounts ?? []).map((a) => a.id));
-  const drop = (existing ?? []).filter((t) => !keep.has(t.account_id)).map((t) => t.id);
+  // Destinos (cuenta + formato): se quitan los que ya no están y se añaden los nuevos (con el mejor modo disponible en TikTok).
+  const { data: existing } = await supabase.from("social_post_targets").select("id, account_id, format").eq("post_id", d.id);
+  const key = (a: string, f: string) => `${a}|${f}`;
+  const keep = new Set(wanted.map((t) => key(t.accountId, t.format)));
+  const drop = (existing ?? []).filter((t) => !keep.has(key(t.account_id, t.format))).map((t) => t.id);
   if (drop.length) await supabase.from("social_post_targets").delete().in("id", drop);
-  const have = new Set((existing ?? []).map((t) => t.account_id));
-  const add = (accounts ?? []).filter((a) => !have.has(a.id)).map((a) => ({ workspace_id: workspaceId, user_id: userId, post_id: d.id, account_id: a.id, mode: a.platform === "tiktok" ? tiktokModeFor(a.scopes) : "direct" }));
+  const have = new Set((existing ?? []).map((t) => key(t.account_id, t.format)));
+  const yt = { privacy: d.ytPrivacy ?? "public", made_for_kids: d.ytKids ?? false };
+  const modeFor = (platform: string, format: string, scopes: string | null) => (platform === "tiktok" ? (format === "story" ? "assisted" : tiktokModeFor(scopes)) : "direct");
+  const add = wanted.filter((t) => !have.has(key(t.accountId, t.format))).map((t) => {
+    const a = accById.get(t.accountId)!;
+    return { workspace_id: workspaceId, user_id: userId, post_id: d.id, account_id: a.id, format: t.format, mode: modeFor(a.platform, t.format, a.scopes), ...(a.platform === "youtube" ? yt : {}) };
+  });
   if (add.length) await supabase.from("social_post_targets").insert(add);
+  const ytIds = (accounts ?? []).filter((a) => a.platform === "youtube").map((a) => a.id);
+  if (ytIds.length) await supabase.from("social_post_targets").update(yt).eq("post_id", d.id).in("account_id", ytIds);
   // Reprogramar reinicia los intentos.
   if (d.schedule) await supabase.from("social_post_targets").update({ status: "pendiente", attempts: 0, next_try_at: null, error: null, container_id: null }).eq("post_id", d.id).in("status", ["pendiente", "error"]);
   refresh();

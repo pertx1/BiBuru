@@ -44,6 +44,17 @@ Si Supabase Cron no estuviera disponible: cron-job.org → URL `https://TU-APP.v
 3. En Vercel: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` y `TOKEN_ENCRYPTION_KEY` (comando en `.env.example`). Redespliega.
 4. Ajustes → *YouTube y vídeos* → **Conectar con Google**. Es gratis (sin tarjeta); en modo «pruebas» Google pide reconectar cada 7 días: publica la app (*Pasar a producción*) para evitarlo.
 
+## Publicar sin Metricool: historias, reels y Shorts
+En **Redes → Contenido**, cada cuenta elige sus formatos: Instagram **Post**, **Reel** e **Historia**; TikTok **Vídeo** e **Historia**; YouTube **Short**.
+Una misma publicación puede salir, por ejemplo, como post e historia de Instagram, vídeo de TikTok y Short de YouTube a la vez.
+- **Instagram**: post, reel e historia se publican solos a la hora (cuenta profesional; ya conectada como antes).
+- **TikTok**: el vídeo, como hasta ahora (borrador en tu TikTok o directo si la app está auditada). Las **historias no se pueden publicar por la API de TikTok**: a la hora te llega un aviso con el archivo y el texto listos para subirla tú.
+- **YouTube Shorts**: vídeo vertical o cuadrado de 3 min como mucho. Configuración, con el mismo proyecto de Google de Favoritos:
+  1. Google Cloud → *Credenciales* → tu ID de cliente OAuth → añade la URI `https://TU-APP.vercel.app/api/youtube/callback`.
+  2. *Pantalla de consentimiento OAuth* → *Permisos* → añade `.../auth/youtube.upload`.
+  3. Redes → **+ Conectar YouTube (Shorts)**.
+  Mientras Google no verifique el proyecto (*Auditoría de la API de YouTube*), lo que se sube por la API queda **privado**. Subir cuesta 1.600 de las 10.000 unidades de cuota diaria (unos 6 Shorts al día).
+
 ## Tus datos, sin conexión y borrado (Fase 8)
 - **Ajustes → Tus datos**: exportación completa en JSON y CSV por tema (Excel); **borrar cuenta** elimina todo en cascada (migración `20261013000001_account_delete.sql`).
 - **Sin conexión**: el service worker guarda la última versión de cada sección (máx. 30 páginas) para leerla; se borran al abrir `/login`. Escribir sin red solo está soportado en la captura rápida (cola local).

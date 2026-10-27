@@ -3,6 +3,7 @@ import { addDays, nowLocal, zonedToUtc } from "@/lib/dates";
 import { decryptSecret, encryptSecret } from "@/lib/favorites/crypto";
 import type { AdminClient } from "@/lib/supabase/admin";
 import { IgError, igContainerStatus, igCreateContainer, igDayInsights, igMediaInsights, igProfile, igPublish, igRecentMedia, igRefresh } from "./instagram";
+import { filesFor, type PostFormat } from "./platforms";
 import { composeCaption, nextRetry, tokenState } from "./stats";
 
 export type SocialAccount = {
@@ -16,14 +17,22 @@ export const KEEP_FILES_DAYS = 3;
 /** Espacio que se permite usar en total (el plan gratuito de Supabase da 1 GB para todo Storage). */
 export const STORAGE_LIMIT_BYTES = 500 * 1024 * 1024;
 
-type Hooks = { tiktokToken?: (admin: AdminClient, acc: SocialAccount) => Promise<string | null>; tiktokTarget?: (admin: AdminClient, t: TargetRow, acc: SocialAccount, post: PostRow, files: FileRow[]) => Promise<void>; tiktokSnapshot?: (admin: AdminClient, acc: SocialAccount, day: string) => Promise<void> };
+type TargetHook = (admin: AdminClient, t: TargetRow, acc: SocialAccount, post: PostRow, files: FileRow[]) => Promise<void>;
+type Hooks = {
+  tiktokToken?: (admin: AdminClient, acc: SocialAccount) => Promise<string | null>; tiktokTarget?: TargetHook; tiktokSnapshot?: (admin: AdminClient, acc: SocialAccount, day: string) => Promise<void>;
+  youtubeToken?: (admin: AdminClient, acc: SocialAccount) => Promise<string | null>; youtubeTarget?: TargetHook;
+};
 const hooks: Hooks = {};
-/** TikTok se registra aquí (src/lib/social/tiktok-service.ts) para no mezclar los dos clientes. */
+/** TikTok y YouTube se registran aquí (src/lib/social/tiktok-service.ts y youtube-service.ts) para no mezclar los clientes. */
 export function registerSocialHooks(h: Hooks) { Object.assign(hooks, h); }
+
+/** Redes con estadísticas propias (foto diaria y sincronización). YouTube solo se usa para publicar Shorts. */
+export const STATS_PLATFORMS = ["instagram", "tiktok"];
 
 /** Token de una cuenta, renovándolo si caduca en menos de 10 días (Instagram: 60 días renovables). */
 export async function socialToken(admin: AdminClient, acc: SocialAccount, now = new Date()): Promise<string | null> {
   if (acc.platform === "tiktok") return hooks.tiktokToken ? hooks.tiktokToken(admin, acc) : null;
+  if (acc.platform === "youtube") return hooks.youtubeToken ? hooks.youtubeToken(admin, acc) : null;
   const token = decryptSecret(acc.access_token_enc);
   const expires = acc.token_expires_at ? new Date(acc.token_expires_at).getTime() : Infinity;
   const ageOk = now.getTime() - new Date(acc.updated_at).getTime() > 24 * 3600_000 || now.getTime() - new Date(acc.created_at).getTime() > 24 * 3600_000;
@@ -48,6 +57,7 @@ const markError = (admin: AdminClient, acc: SocialAccount, e: unknown) =>
 export async function snapshotAccount(admin: AdminClient, acc: SocialAccount, now = new Date(), tz = "Europe/Madrid") {
   const yesterday = addDays(nowLocal(now, tz).date, -1);
   if (acc.platform === "tiktok") { if (hooks.tiktokSnapshot) await hooks.tiktokSnapshot(admin, acc, yesterday); return; }
+  if (acc.platform !== "instagram") return;
   const token = await socialToken(admin, acc, now);
   if (!token) return;
   try {
@@ -78,7 +88,11 @@ export async function upsertIgMedia(admin: AdminClient, acc: SocialAccount, toke
 }
 
 export type PostRow = { id: string; workspace_id: string; user_id: string; caption: string; hashtags: string; media_kind: string; scheduled_at: string | null; status: string; title: string | null };
-export type TargetRow = { id: string; post_id: string; account_id: string; mode: string; status: string; attempts: number; container_id: string | null; next_try_at: string | null };
+export type TargetRow = {
+  id: string; post_id: string; account_id: string; mode: string; status: string; attempts: number; container_id: string | null; next_try_at: string | null;
+  format: PostFormat; privacy: string | null; made_for_kids: boolean;
+};
+const TARGET_FIELDS = "id, post_id, account_id, mode, status, attempts, container_id, next_try_at, format, privacy, made_for_kids";
 export type FileRow = { path: string; mime: string; position: number };
 
 async function signedUrls(admin: AdminClient, files: FileRow[]) {
@@ -98,10 +112,13 @@ async function stepInstagram(admin: AdminClient, t: TargetRow, acc: SocialAccoun
   if (!token) { await save({ status: "error", error: "La conexión con Instagram caducó: vuelve a conectarla en Redes." }); return; }
   try {
     if (!t.container_id) {
-      if (!files.length) throw new IgError("La publicación no tiene ninguna foto o vídeo", undefined, false, false);
-      const kind = post.media_kind === "carousel" && files.length > 1 ? "carousel" : post.media_kind === "reel" || post.media_kind === "video" ? "reel" : "image";
-      const id = await igCreateContainer(token, acc.external_id, { kind, urls: await signedUrls(admin, files), caption: composeCaption(post.caption, post.hashtags) });
-      await save({ container_id: id, status: "publicando", next_try_at: new Date(now.getTime() + (kind === "image" ? 30_000 : 60_000)).toISOString(), error: null });
+      const use = filesFor(t.format, files);
+      if (!use.length) throw new IgError(t.format === "reel" ? "Un reel necesita un vídeo (MP4 o MOV)" : "La publicación no tiene ninguna foto o vídeo", undefined, false, false);
+      // Post: foto, carrusel o (un solo vídeo) reel en el feed. Reel e historia: su archivo.
+      const kind = t.format === "story" ? "story" : t.format === "reel" ? "reel" : use.length > 1 ? "carousel" : use[0].mime.startsWith("video/") ? "reel" : "image";
+      const id = await igCreateContainer(token, acc.external_id, { kind, urls: await signedUrls(admin, use), caption: composeCaption(post.caption, post.hashtags) });
+      const quick = kind === "image" || (kind === "story" && !use[0].mime.startsWith("video/"));
+      await save({ container_id: id, status: "publicando", next_try_at: new Date(now.getTime() + (quick ? 30_000 : 60_000)).toISOString(), error: null });
       return;
     }
     const st = await igContainerStatus(token, t.container_id);
@@ -134,7 +151,7 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
     .in("status", ["programada", "publicando"]).lte("scheduled_at", now.toISOString()).order("scheduled_at").limit(10);
   for (const post of due ?? []) {
     const [{ data: targets }, { data: files }] = await Promise.all([
-      admin.from("social_post_targets").select("id, post_id, account_id, mode, status, attempts, container_id, next_try_at").eq("post_id", post.id),
+      admin.from("social_post_targets").select(TARGET_FIELDS).eq("post_id", post.id),
       admin.from("social_post_files").select("path, mime, position").eq("post_id", post.id).is("deleted_at", null),
     ]);
     for (const t of targets ?? []) {
@@ -143,8 +160,10 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
       if (!acc) continue;
       out.steps++;
       try {
-        if (acc.platform === "instagram") await stepInstagram(admin, t, acc, post, files ?? [], now);
-        else if (hooks.tiktokTarget) await hooks.tiktokTarget(admin, t, acc, post, files ?? []);
+        const tr = t as TargetRow;
+        if (acc.platform === "instagram") await stepInstagram(admin, tr, acc, post, files ?? [], now);
+        else if (acc.platform === "tiktok" && hooks.tiktokTarget) await hooks.tiktokTarget(admin, tr, acc, post, files ?? []);
+        else if (acc.platform === "youtube" && hooks.youtubeTarget) await hooks.youtubeTarget(admin, tr, acc, post, files ?? []);
       } catch (e) { // un fallo inesperado (p. ej. token ilegible) no para las demás
         await admin.from("social_post_targets").update({ status: "error", error: (e instanceof Error ? e.message : "Error").slice(0, 500) }).eq("id", t.id);
       }
@@ -156,7 +175,7 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
   }
   // 2) Foto diaria (una cuenta por pasada para no pasar del tiempo máximo).
   const yesterday = addDays(nowLocal(now, "Europe/Madrid").date, -1);
-  const { data: snap } = await admin.from("social_accounts").select(ACC_FIELDS).neq("status", "expired").or(`last_snapshot_on.is.null,last_snapshot_on.lt.${yesterday}`).limit(2);
+  const { data: snap } = await admin.from("social_accounts").select(ACC_FIELDS).in("platform", STATS_PLATFORMS).neq("status", "expired").or(`last_snapshot_on.is.null,last_snapshot_on.lt.${yesterday}`).limit(2);
   for (const acc of snap ?? []) {
     try { await snapshotAccount(admin, acc, now); out.snapshots++; }
     catch (e) { await markError(admin, acc, e); await admin.from("social_accounts").update({ last_snapshot_on: yesterday }).eq("id", acc.id); }
@@ -167,9 +186,9 @@ export async function runSocialCron(admin: AdminClient, now = new Date()) {
     const r = await syncDue(admin, { limit: 3, staleMinutes: 60, now });
     Object.assign(out, { synced: r.accounts, limited: r.limited });
   } catch (e) { console.error("[cron] sync:", e instanceof Error ? e.message : e); }
-  // 3) Renovar tokens que caducan pronto aunque no toque foto.
+  // 3) Renovar tokens que caducan pronto aunque no toque foto. (El de YouTube dura 1 h y se renueva al publicar.)
   const soon = new Date(now.getTime() + 10 * 86400_000).toISOString();
-  const { data: expiring } = await admin.from("social_accounts").select(ACC_FIELDS).neq("status", "expired").lt("token_expires_at", soon).limit(3);
+  const { data: expiring } = await admin.from("social_accounts").select(ACC_FIELDS).in("platform", STATS_PLATFORMS).neq("status", "expired").lt("token_expires_at", soon).limit(3);
   for (const acc of expiring ?? []) await socialToken(admin, acc, now).catch((e) => markError(admin, acc, e));
   // 4) Borrar archivos de publicaciones ya publicadas hace más de KEEP_FILES_DAYS días.
   const cutoff = new Date(now.getTime() - KEEP_FILES_DAYS * 86400_000).toISOString();
