@@ -1,11 +1,13 @@
 import "server-only";
 import { getContext } from "@/lib/context";
+import { googleConfig } from "@/lib/favorites/youtube";
 import { instagramConfig } from "./instagram";
 import { aggregateDaily } from "./stats";
 
 export const socialConfigured = () => ({
   instagram: !!instagramConfig() && !!process.env.TOKEN_ENCRYPTION_KEY,
   tiktok: !!process.env.TIKTOK_CLIENT_KEY?.trim() && !!process.env.TIKTOK_CLIENT_SECRET?.trim() && !!process.env.TOKEN_ENCRYPTION_KEY,
+  youtube: !!googleConfig() && !!process.env.TOKEN_ENCRYPTION_KEY,
 });
 
 const ACC_COLS = "id, platform, username, display_name, avatar_url, business_id, status, last_error, token_expires_at, last_snapshot_on, account_type, scopes, followers_count, last_sync_at, sync_error, rate_limited_until, inbox_synced_at";
@@ -46,7 +48,7 @@ export async function accountStats(accountIds: string | string[], from: string, 
 export async function listPosts(limit = 100) {
   const { supabase, workspaceId } = await getContext();
   const { data } = await supabase.from("social_posts")
-    .select("id, title, caption, hashtags, media_kind, scheduled_at, status, business_id, notes, source_video_id, created_at, social_post_targets(id, account_id, mode, status, error, permalink, privacy, published_at), social_post_files(id, path, mime, size_bytes, position, deleted_at)")
+    .select("id, title, caption, hashtags, media_kind, scheduled_at, status, business_id, notes, source_video_id, created_at, social_post_targets(id, account_id, mode, status, error, permalink, privacy, published_at, format, made_for_kids), social_post_files(id, path, mime, size_bytes, position, deleted_at)")
     .eq("workspace_id", workspaceId).order("scheduled_at", { ascending: false, nullsFirst: true }).limit(limit);
   return data ?? [];
 }

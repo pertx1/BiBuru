@@ -60,17 +60,18 @@ async function sendAssistedPush(admin: AdminClient, userId: string, t: TargetRow
   if (!subs?.length) return true; // sin móvil suscrito: se queda visible en Redes como «Aviso enviado» igualmente
   let send;
   try { send = webPushSender(); } catch { return true; }
-  const payload = { title: "Hora de publicar en TikTok", body: post.title || post.caption.slice(0, 80) || "Tu vídeo está listo", url: `/redes/publicar/${post.id}`, kind: "social", tag: `social:${t.id}` };
+  const story = t.format === "story";
+  const payload = { title: story ? "Hora de subir tu historia a TikTok" : "Hora de publicar en TikTok", body: post.title || post.caption.slice(0, 80) || (story ? "Tu historia está lista" : "Tu vídeo está listo"), url: `/redes/publicar/${post.id}?destino=${t.id}`, kind: "social", tag: `social:${t.id}` };
   const results = await Promise.all(subs.map((s) => send(s, payload)));
   const gone = subs.filter((_, i) => !results[i].ok && (results[i] as { gone: boolean }).gone).map((s) => s.id);
   if (gone.length) await admin.from("push_subscriptions").delete().in("id", gone);
   return results.some((r) => r.ok) || results.every((r) => !r.ok && (r as { gone: boolean }).gone);
 }
 
-/** Un paso de publicación en TikTok según el modo: borrador en su bandeja, directa (auditada) o asistida. */
+/** Un paso de publicación en TikTok según el modo: borrador en su bandeja, directa (auditada) o asistida. Las historias, siempre asistidas (la API no las admite). */
 export async function tiktokTarget(admin: AdminClient, t: TargetRow, acc: SocialAccount, post: PostRow, files: FileRow[], now = new Date()) {
   const save = (patch: Record<string, unknown>) => admin.from("social_post_targets").update(patch as never).eq("id", t.id);
-  if (t.mode === "assisted") {
+  if (t.mode === "assisted" || t.format === "story") {
     const ok = await sendAssistedPush(admin, post.user_id, t, post);
     await save(ok ? { status: "avisada", published_at: now.toISOString(), error: null } : { attempts: t.attempts + 1, next_try_at: nextRetry(t.attempts, now)?.toISOString() ?? null, status: nextRetry(t.attempts, now) ? "pendiente" : "error", error: "No se pudo enviar el aviso al móvil" });
     return;

@@ -102,6 +102,16 @@ describe("Instagram: publicar", () => {
     expect(await igCreateContainer("t", "99", { kind: "reel", urls: [{ url: "https://s/v.mp4", video: true }], caption: "x" }, f as never)).toBe("c");
     expect(await igPublish("t", "99", "c", f as never)).toEqual({ id: "m1", permalink: "https://www.instagram.com/p/x/" });
   });
+  it("historia: contenedor STORIES con la foto o el vídeo y sin texto", async () => {
+    const bodies: URLSearchParams[] = [];
+    const f = vi.fn(async (_: string, init?: RequestInit) => { bodies.push(new URLSearchParams(String(init?.body))); return json({ id: "s1" }); });
+    expect(await igCreateContainer("t", "99", { kind: "story", urls: [{ url: "https://s/1.jpg", video: false }], caption: "no va" }, f as never)).toBe("s1");
+    await igCreateContainer("t", "99", { kind: "story", urls: [{ url: "https://s/v.mp4", video: true }], caption: "no va" }, f as never);
+    expect(bodies[0].get("media_type")).toBe("STORIES");
+    expect(bodies[0].get("image_url")).toBe("https://s/1.jpg");
+    expect(bodies[0].get("caption")).toBeNull();
+    expect(bodies[1].get("video_url")).toBe("https://s/v.mp4");
+  });
   it("IgError conserva si se puede reintentar", () => { expect(new IgError("x", 500).retryable).toBe(true); });
 });
 

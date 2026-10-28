@@ -71,7 +71,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
   const businesses = bizRows ?? [];
   const { data: socialAccs } = await supabase.from("social_accounts").select("id, platform, username, business_id").eq("workspace_id", ctx.workspaceId);
   const unassigned = [
-    ...(socialAccs ?? []).filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: (a.platform === "tiktok" ? "tiktok" : "instagram") as "tiktok" | "instagram", label: a.username ? `@${a.username}` : "Cuenta" })),
+    ...(socialAccs ?? []).filter((a) => !a.business_id).map((a) => ({ id: a.id, kind: (a.platform === "tiktok" || a.platform === "youtube" ? a.platform : "instagram") as "tiktok" | "instagram" | "youtube", label: a.username ? `@${a.username}` : "Cuenta" })),
   ];
   const models = getModelNames();
   const { data: saved } = await supabase.from("ai_prices").select("model, input_eur_per_mtok, output_eur_per_mtok");

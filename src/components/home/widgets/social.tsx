@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getContext } from "@/lib/context";
 import { addDays } from "@/lib/dates";
+import { platformLabel } from "@/lib/social/platforms";
 import { bestOfWeek } from "@/lib/social/stats";
 import { WidgetCard } from "../widget-card";
 import { businessOf, type WidgetProps } from "../types";
@@ -28,7 +29,7 @@ export async function SocialFollowersWidget({ w, ctx }: WidgetProps) {
           const d = last != null && first != null ? last - first : null;
           return (
             <li key={a.id} className="flex min-h-11 items-center gap-2 text-sm">
-              <span className="min-w-0 flex-1 truncate">{a.platform === "tiktok" ? "TikTok" : "Instagram"} · @{a.username}</span>
+              <span className="min-w-0 flex-1 truncate">{platformLabel(a.platform)} · @{a.username}</span>
               <span className="font-semibold tabular-nums">{n(last)}</span>
               {d != null && <span className={`w-14 text-right text-xs tabular-nums ${d >= 0 ? "text-good" : "text-bad"}`}>{d >= 0 ? "+" : ""}{d}</span>}
             </li>

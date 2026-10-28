@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
+import { checkTargets, FORMAT_LABEL, formatsFor, platformLabel, targetNotes, type PostFormat } from "@/lib/social/platforms";
 import { tiktokModeFor } from "@/lib/social/tiktok-mode";
 import { cn } from "@/lib/utils";
 
-type Target = { id: string; account_id: string; mode: string; status: string; error: string | null; permalink: string | null; privacy: string | null; published_at: string | null };
+type Target = { id: string; account_id: string; mode: string; status: string; error: string | null; permalink: string | null; privacy: string | null; published_at: string | null; format: string; made_for_kids: boolean };
 type FileR = { id: string; path: string; mime: string; size_bytes: number; position: number; deleted_at: string | null };
 type Post = { id: string; title: string | null; caption: string; hashtags: string; media_kind: string; scheduled_at: string | null; status: string; business_id: string | null; notes: string | null; source_video_id: string | null; social_post_targets: Target[]; social_post_files: FileR[] };
 type Acc = { id: string; platform: string; username: string | null; status: string; scopes: string | null };
@@ -24,6 +25,8 @@ export const POST_STATUS: Record<string, { label: string; cls: string }> = {
 };
 const TARGET: Record<string, string> = { pendiente: "Pendiente", publicando: "Publicando…", publicada: "Publicada", enviada: "Enviada a TikTok (borrador)", avisada: "Aviso enviado", error: "Error" };
 const MODE: Record<string, string> = { direct: "publicación directa", draft: "se envía a TikTok como borrador para terminarlo allí", assisted: "te aviso a la hora con el vídeo y el texto listos" };
+const YT_PRIVACY_LABEL: Record<string, string> = { public: "Público", unlisted: "Oculto (solo con el enlace)", private: "Privado" };
+const targetName = (platform: string | undefined, format: string) => `${platformLabel(platform ?? "")} · ${FORMAT_LABEL[format as PostFormat] ?? format}`;
 const mb = (b: number) => `${(b / 1024 / 1024).toFixed(b > 100 * 1024 * 1024 ? 0 : 1)} MB`;
 const local = (iso: string | null) => {
   if (!iso) return { date: "", time: "" };
@@ -50,7 +53,7 @@ export function PostsView({ posts, accounts, businesses, today, openId, used, li
           <CalendarClock className="size-4 shrink-0 text-muted" aria-hidden />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{p.title || p.caption.slice(0, 60) || "(sin texto)"}</span>
-            <span className="block truncate text-xs text-muted">{when.date ? `${when.date.split("-").reverse().join("/")} ${when.time}` : "Sin fecha"} · {p.social_post_targets.map((t) => `${accById.get(t.account_id)?.platform === "tiktok" ? "TikTok" : "IG"}: ${TARGET[t.status] ?? t.status}`).join(" · ") || "sin cuentas"}</span>
+            <span className="block truncate text-xs text-muted">{when.date ? `${when.date.split("-").reverse().join("/")} ${when.time}` : "Sin fecha"} · {p.social_post_targets.map((t) => `${targetName(accById.get(t.account_id)?.platform, t.format)}: ${TARGET[t.status] ?? t.status}`).join(" · ") || "sin cuentas"}</span>
           </span>
           <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold", POST_STATUS[p.status]?.cls)}>{POST_STATUS[p.status]?.label ?? p.status}</span>
         </button>
@@ -68,6 +71,7 @@ export function PostsView({ posts, accounts, businesses, today, openId, used, li
         </div>
       </div>
       {accounts.some((a) => a.platform === "tiktok") && <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">TikTok: mientras TikTok no audite la app, lo que se publique por la API queda <strong>privado (solo tú lo ves)</strong>. Por eso BiBuru lo envía como borrador a tu TikTok o te avisa para publicarlo tú: así sale público.</p>}
+      {accounts.some((a) => a.platform === "youtube") && <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs">YouTube: mientras Google no verifique el proyecto de la app, los Shorts subidos por la API quedan <strong>privados</strong>. Cuando lo verifique, salen con la visibilidad que elijas.</p>}
       <section><h2 className="mb-2 text-sm font-semibold">Próximas y borradores</h2>
         {upcoming.length ? <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{upcoming.map((p) => <Row key={p.id} p={p} />)}</ul> : <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">Nada programado. Pulsa «Nueva publicación» o «Usar como idea» en un vídeo de Favoritos.</p>}
       </section>
@@ -85,11 +89,17 @@ function PostEditor({ post, accounts, businesses, today, onClose }: { post: Post
   const fileInput = useRef<HTMLInputElement>(null);
   const locked = post.status === "publicando" || post.status === "publicada";
   const when = local(post.scheduled_at);
-  const [f, setF] = useState({ title: post.title ?? "", caption: post.caption, hashtags: post.hashtags, kind: post.media_kind, date: when.date || today, time: when.time || "19:00", business: post.business_id ?? "", notes: post.notes ?? "" });
-  const [targets, setTargets] = useState<string[]>(post.social_post_targets.map((t) => t.account_id));
+  const ytTarget = post.social_post_targets.find((t) => accounts.find((a) => a.id === t.account_id)?.platform === "youtube");
+  const [f, setF] = useState({ title: post.title ?? "", caption: post.caption, hashtags: post.hashtags, date: when.date || today, time: when.time || "19:00", business: post.business_id ?? "", notes: post.notes ?? "", ytPrivacy: ytTarget?.privacy ?? "public", ytKids: ytTarget?.made_for_kids ?? false });
+  // Destinos elegidos como «cuenta|formato» (una cuenta puede llevar varios formatos: post + historia).
+  const [targets, setTargets] = useState<string[]>(post.social_post_targets.map((t) => `${t.account_id}|${t.format}`));
+  const toggle = (k: string, on: boolean) => setTargets((t) => (on ? [...t, k] : t.filter((x) => x !== k)));
   const files = post.social_post_files.filter((x) => !x.deleted_at).sort((a, b) => a.position - b.position);
   const [previews, setPreviews] = useState<Record<string, string>>({});
-  const tiktokSel = accounts.filter((a) => a.platform === "tiktok" && targets.includes(a.id));
+  const chosen = targets.map((k) => { const [accountId, format] = k.split("|"); return { accountId, format: format as PostFormat, platform: accounts.find((a) => a.id === accountId)?.platform ?? "" }; }).filter((t) => t.platform);
+  const problem = chosen.length ? checkTargets(chosen, files) : null;
+  const notes = targetNotes(chosen, files);
+  const hasYoutube = chosen.some((t) => t.platform === "youtube");
 
   useEffect(() => {
     let alive = true;
@@ -117,7 +127,8 @@ function PostEditor({ post, accounts, businesses, today, onClose }: { post: Post
   }
 
   const save = (schedule: boolean) => start(async () => {
-    const r = await savePost({ id: post.id, title: f.title, caption: f.caption, hashtags: f.hashtags, mediaKind: f.kind as "image", date: f.date, time: f.time, accountIds: targets, schedule, businessId: f.business || null, notes: f.notes });
+    const r = await savePost({ id: post.id, title: f.title, caption: f.caption, hashtags: f.hashtags, date: f.date, time: f.time, targets: chosen.map(({ accountId, format }) => ({ accountId, format })),
+      ytPrivacy: f.ytPrivacy as "public", ytKids: f.ytKids, schedule, businessId: f.business || null, notes: f.notes });
     if (!r.ok) { toast({ message: r.error }); return; }
     toast({ message: schedule ? "Programada ✔" : "Borrador guardado" });
     onClose();
@@ -133,7 +144,7 @@ function PostEditor({ post, accounts, businesses, today, onClose }: { post: Post
               return (
                 <li key={t.id} className={cn("flex flex-wrap items-center gap-2 rounded-lg border p-2 text-xs", t.status === "error" ? "border-bad/40 bg-bad/5" : "border-border")}>
                   {t.status === "publicada" || t.status === "enviada" || t.status === "avisada" ? <CheckCircle2 className="size-4 text-good" aria-hidden /> : t.status === "error" ? <AlertTriangle className="size-4 text-bad" aria-hidden /> : <Loader2 className={cn("size-4 text-muted", t.status === "publicando" && "animate-spin")} aria-hidden />}
-                  <span className="font-medium">{a?.platform === "tiktok" ? "TikTok" : "Instagram"} @{a?.username}</span>
+                  <span className="font-medium">{targetName(a?.platform, t.format)} @{a?.username}</span>
                   <span className="text-muted">{TARGET[t.status] ?? t.status}{t.privacy === "SELF_ONLY" ? " · privado (solo tú)" : ""}</span>
                   {t.permalink && <a href={t.permalink} target="_blank" rel="noopener noreferrer" className="text-accent underline">Ver</a>}
                   {t.error && <span className="w-full text-bad">{t.error}</span>}
@@ -162,24 +173,40 @@ function PostEditor({ post, accounts, businesses, today, onClose }: { post: Post
             </div>
             <input ref={fileInput} type="file" multiple accept="image/jpeg,image/png,video/mp4,video/quicktime" className="sr-only" aria-label="Archivos" onChange={(e) => void upload(e.target.files)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Tipo" htmlFor="sp-kind"><Select id="sp-kind" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}><option value="image">Foto</option><option value="carousel">Carrusel (2–10)</option><option value="reel">Reel / vídeo</option></Select></Field>
-            <Field label="Negocio" htmlFor="sp-biz"><Select id="sp-biz" value={f.business} onChange={(e) => setF({ ...f, business: e.target.value })}><option value="">Ninguno</option>{businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>
-          </div>
-          <Field label="Título interno (opcional)" htmlFor="sp-title"><Input id="sp-title" value={f.title} maxLength={120} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
+          <Field label="Negocio" htmlFor="sp-biz"><Select id="sp-biz" value={f.business} onChange={(e) => setF({ ...f, business: e.target.value })}><option value="">Ninguno</option>{businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>
+          <Field label={hasYoutube ? "Título (también el del Short de YouTube, máx. 100)" : "Título interno (opcional)"} htmlFor="sp-title"><Input id="sp-title" value={f.title} maxLength={hasYoutube ? 100 : 120} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
           <Field label={`Texto (${f.caption.length}/2200)`} htmlFor="sp-cap"><Textarea id="sp-cap" value={f.caption} maxLength={2200} rows={5} onChange={(e) => setF({ ...f, caption: e.target.value })} /></Field>
           <Field label="Hashtags" htmlFor="sp-tags"><Input id="sp-tags" value={f.hashtags} maxLength={1000} placeholder="#moda #hechoamano" onChange={(e) => setF({ ...f, hashtags: e.target.value })} /></Field>
           <div>
             <p className="mb-1.5 text-xs text-muted">Publicar en</p>
-            {accounts.length === 0 ? <p className="text-xs text-muted">Conecta Instagram o TikTok arriba.</p> : (
-              <ul className="flex flex-col gap-1">
+            {accounts.length === 0 ? <p className="text-xs text-muted">Conecta Instagram, TikTok o YouTube arriba.</p> : (
+              <ul className="flex flex-col gap-2">
                 {accounts.map((a) => (
-                  <li key={a.id}><label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="size-5" checked={targets.includes(a.id)} onChange={(e) => setTargets((t) => (e.target.checked ? [...t, a.id] : t.filter((x) => x !== a.id)))} />
-                    {a.platform === "tiktok" ? "TikTok" : "Instagram"} @{a.username}{a.platform === "tiktok" && <span className="text-xs text-muted">({MODE[tiktokModeFor(a.scopes)]})</span>}</label></li>
+                  <li key={a.id} className="flex flex-col gap-1">
+                    <span className="text-sm font-medium">{platformLabel(a.platform)} @{a.username}</span>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Formatos en ${platformLabel(a.platform)} @${a.username}`}>
+                      {formatsFor(a.platform).map((fmt) => {
+                        const k = `${a.id}|${fmt}`, on = targets.includes(k);
+                        return (
+                          <label key={fmt} className={cn("relative flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-sm md:min-h-9", on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface")}>
+                            <input type="checkbox" className="sr-only" checked={on} onChange={(e) => toggle(k, e.target.checked)} />{FORMAT_LABEL[fmt]}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {a.platform === "tiktok" && targets.includes(`${a.id}|video`) && <span className="text-xs text-muted">Vídeo: {MODE[tiktokModeFor(a.scopes)]}</span>}
+                  </li>
                 ))}
               </ul>
             )}
-            {tiktokSel.length > 0 && f.kind !== "reel" && <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">TikTok necesita un vídeo: elige «Reel / vídeo».</p>}
+            {hasYoutube && (
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="Visibilidad en YouTube" htmlFor="sp-ytp"><Select id="sp-ytp" value={f.ytPrivacy} onChange={(e) => setF({ ...f, ytPrivacy: e.target.value })}>{Object.entries(YT_PRIVACY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
+                <label className="flex min-h-11 items-center gap-2 self-end text-sm"><input type="checkbox" className="size-5" checked={f.ytKids} onChange={(e) => setF({ ...f, ytKids: e.target.checked })} /> Hecho para niños</label>
+              </div>
+            )}
+            {problem && <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">Para programar: {problem}.</p>}
+            {notes.map((n) => <p key={n} className="mt-1 text-xs text-muted">{n}</p>)}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Fecha" htmlFor="sp-date"><Input id="sp-date" type="date" value={f.date} min={today} onChange={(e) => setF({ ...f, date: e.target.value })} /></Field>

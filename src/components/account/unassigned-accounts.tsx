@@ -5,8 +5,8 @@ import { useTransition } from "react";
 import { setSocialAccountBusiness } from "@/app/(app)/redes/actions";
 import { useToast } from "@/components/ui/toast";
 
-type Acc = { id: string; kind: "instagram" | "tiktok"; label: string };
-const KIND: Record<Acc["kind"], string> = { instagram: "Instagram", tiktok: "TikTok" };
+type Acc = { id: string; kind: "instagram" | "tiktok" | "youtube"; label: string };
+const KIND: Record<Acc["kind"], string> = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube" };
 
 /** Ajustes › Cuentas sin negocio: cuentas de redes que aún no están asignadas a un negocio (no salen en su pestaña Redes). */
 export function UnassignedAccounts({ accounts, businesses }: { accounts: Acc[]; businesses: { id: string; name: string }[] }) {

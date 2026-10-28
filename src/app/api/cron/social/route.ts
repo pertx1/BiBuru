@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { checkCron } from "@/lib/cron-auth";
 import "@/lib/social/tiktok-service"; // registra TikTok en el servicio común
+import "@/lib/social/youtube-service"; // y YouTube (Shorts)
 import { runSocialCron } from "@/lib/social/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 

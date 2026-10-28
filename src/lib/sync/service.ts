@@ -4,7 +4,7 @@ import { addDays, nowLocal } from "@/lib/dates";
 import { inQuietHours } from "@/lib/notifications/planning";
 import { webPushSender, type PushSub } from "@/lib/notifications/push";
 import { igProfile, IgError } from "@/lib/social/instagram";
-import { socialToken, upsertIgMedia, type SocialAccount } from "@/lib/social/service";
+import { socialToken, STATS_PLATFORMS, upsertIgMedia, type SocialAccount } from "@/lib/social/service";
 import { isStale, socialAlerts } from "@/lib/social/stats";
 import { ttProfile, ttVideos, TtError } from "@/lib/social/tiktok";
 import "@/lib/social/tiktok-service"; // registra el token de TikTok en el servicio común
@@ -80,7 +80,7 @@ async function alertsFor(admin: AdminClient, acc: Row, followers: number | null,
 export async function syncDue(admin: AdminClient, o: { limit?: number; staleMinutes?: number; ids?: string[]; now?: Date } = {}): Promise<SyncResult> {
   const now = o.now ?? new Date();
   const out: SyncResult = { accounts: 0, limited: 0, errors: 0 };
-  let q = admin.from("social_accounts").select(ACC).neq("status", "expired");
+  let q = admin.from("social_accounts").select(ACC).in("platform", STATS_PLATFORMS).neq("status", "expired");
   if (o.ids) q = q.in("id", o.ids);
   else q = q.or(`last_sync_at.is.null,last_sync_at.lt.${new Date(now.getTime() - (o.staleMinutes ?? 60) * 60_000).toISOString()}`);
   const { data } = await q.order("last_sync_at", { ascending: true, nullsFirst: true }).limit(o.limit ?? 3);

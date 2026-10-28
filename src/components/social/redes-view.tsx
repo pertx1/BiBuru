@@ -7,7 +7,7 @@ import { listBusinesses } from "@/lib/data";
 import { addDays, requestNowMs, todayISO } from "@/lib/dates";
 import { accountsExtras, accountStats, listPosts, listSocialAccounts, socialConfigured, storageUsed } from "@/lib/social/data";
 import { refreshIfStale } from "@/lib/sync/service";
-import { STORAGE_LIMIT_BYTES } from "@/lib/social/service";
+import { STATS_PLATFORMS, STORAGE_LIMIT_BYTES } from "@/lib/social/service";
 import { followerDelta } from "@/lib/social/stats";
 import { cn } from "@/lib/utils";
 
@@ -48,8 +48,9 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
 
   const days = [7, 30, 90].includes(Number(sp.dias)) ? Number(sp.dias) : 30;
   const to = addDays(today, -1), from = addDays(to, -(days - 1)), prevFrom = addDays(from, -days);
-  const single = accounts.find((a) => a.id === sp.cuenta);
-  const statsIds = single ? [single.id] : accounts.map((a) => a.id);
+  const statAccounts = accounts.filter((a) => STATS_PLATFORMS.includes(a.platform)); // YouTube solo publica: sin estadísticas
+  const single = statAccounts.find((a) => a.id === sp.cuenta);
+  const statsIds = single ? [single.id] : statAccounts.map((a) => a.id);
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,7 +67,7 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
         {accounts.length > 0 && <RefreshAll />}
       </div>
       <SocialAccounts accounts={cards} businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} configured={socialConfigured()} audited={process.env.TIKTOK_DIRECT_POST_AUDITED === "1"}
-        nowMs={requestNowMs()} result={{ instagram: sp.instagram, tiktok: sp.tiktok }} />
+        nowMs={requestNowMs()} result={{ instagram: sp.instagram, tiktok: sp.tiktok, youtube: sp.youtube }} />
       <nav className="flex gap-1 border-b border-border" aria-label="Secciones de Redes">{tab("contenido", "Contenido")}{tab("estadisticas", "Estadísticas")}</nav>
 
       {view === "contenido" && (
@@ -74,8 +75,8 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
           businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} today={today} openId={sp.abrir ?? null} used={await storageUsed()} limit={STORAGE_LIMIT_BYTES} />
       )}
       {view === "estadisticas" && (
-        accounts.length
-          ? <SocialStats accounts={accounts} current={single?.id ?? null} days={days} {...await accountStats(statsIds, from, to, prevFrom)} to={to} prevFrom={prevFrom} href={(o) => keep({ vista: "estadisticas", dias: String(days), cuenta: single?.id, ...o })} />
+        statAccounts.length
+          ? <SocialStats accounts={statAccounts} current={single?.id ?? null} days={days} {...await accountStats(statsIds, from, to, prevFrom)} to={to} prevFrom={prevFrom} href={(o) => keep({ vista: "estadisticas", dias: String(days), cuenta: single?.id, ...o })} />
           : <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">Conecta una cuenta para ver sus estadísticas. Se guarda una foto de los datos cada día para tener tu propio histórico.</p>
       )}
     </div>

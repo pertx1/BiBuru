@@ -58,6 +58,19 @@ d("Redes: cuentas con token ilegible, estadísticas y programación por espacio"
     await expect(q("insert into social_post_files (workspace_id,user_id,post_id,path,mime,size_bytes) values ($1,$2,$3,'a/b.exe','application/x-msdownload',10)", [ids.aWs, ids.alice, ids.post])).rejects.toThrow();
   });
 
+  it("formatos: la misma cuenta puede llevar post e historia, pero cada formato una vez; YouTube es una red válida", async () => {
+    const t = (format: string, acc = ids.acc) => q("insert into social_post_targets (workspace_id,user_id,post_id,account_id,format) values ($1,$2,$3,$4,$5)", [ids.aWs, ids.alice, ids.post, acc, format]);
+    expect((await q("select format from social_post_targets where post_id=$1", [ids.post])).rows).toEqual([{ format: "post" }]);
+    expect((await t("story")).rowCount).toBe(1);
+    await expect(t("story")).rejects.toThrow();
+    await expect(t("carrusel")).rejects.toThrow();
+    const yt = (await q("insert into social_accounts (workspace_id,user_id,platform,external_id,access_token_enc) values ($1,$2,'youtube','UC1','cifrado') returning id", [ids.aWs, ids.alice])).rows[0].id;
+    expect((await t("short", yt)).rowCount).toBe(1);
+    expect((await q("select made_for_kids from social_post_targets where account_id=$1", [yt])).rows).toEqual([{ made_for_kids: false }]);
+    await expect(q("insert into social_accounts (workspace_id,user_id,platform,external_id,access_token_enc) values ($1,$2,'facebook','1','cifrado')", [ids.aWs, ids.alice])).rejects.toThrow();
+    await q("delete from social_accounts where id=$1", [yt]);
+  });
+
   it("archivos en Storage solo dentro de la carpeta del propio espacio", async () => {
     expect((await as(ids.alice, (c) => c.query("insert into storage.objects (bucket_id,name) values ('social-media',$1) returning id", [`${ids.aWs}/${ids.post}/1.jpg`]))).rowCount).toBe(1);
     await expect(as(ids.bob, (c) => c.query("insert into storage.objects (bucket_id,name) values ('social-media',$1)", [`${ids.aWs}/${ids.post}/2.jpg`]))).rejects.toThrow();
