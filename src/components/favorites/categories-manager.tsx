@@ -4,7 +4,7 @@ import { FolderKanban, Pin, PinOff, Settings2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createCategory, mergeCategories, moveCategory, recategorizeAll, renameCategory, togglePinCategory } from "@/app/(app)/favoritos/actions";
+import { createCategory, mergeCategories, moveCategory, recategorizeAll, removeEmptyCategories, renameCategory, togglePinCategory } from "@/app/(app)/favoritos/actions";
 import { CategoryOptions } from "@/components/categories/category-options";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -63,6 +63,10 @@ export function CategoriesManager({ categories, counts }: { categories: VideoCat
             <Button type="button" variant="secondary" className="mt-2" disabled={pending} onClick={() => start(async () => { const r = await recategorizeAll(); toast({ message: r.ok ? `Reordenando ${r.pending ?? 0} vídeos: tarda un minuto, se ve al recargar.` : r.error }); if (r.ok) router.refresh(); })}>
               <Sparkles className="size-4" aria-hidden /> Reordenar vídeos con IA
             </Button>
+            <Button type="button" variant="secondary" className="ml-2 mt-2" disabled={pending} onClick={() => start(async () => { const r = await removeEmptyCategories(); toast({ message: r.ok ? (r.removed?.length ? `Borradas: ${r.removed.join(", ")}` : "No hay categorías vacías") : r.error }); router.refresh(); })}>
+              Borrar vacías
+            </Button>
+            <p className="mt-1 text-xs text-muted">Al terminar de reordenar se borran solas las que quedan vacías. No se borran las fijadas (📌), las que tienen descripción ni las creadas hoy.</p>
           </div>
           <p className="text-xs text-muted">Las fijadas (📌) salen primero y la IA las prefiere al clasificar. Cada categoría es también un proyecto en «Proyectos», con sus vídeos, notas y tareas.</p>
         </div>

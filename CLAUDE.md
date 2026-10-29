@@ -261,3 +261,13 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 
 ## Páginas públicas
 - `/privacidad` y `/terminos` (las piden Meta y TikTok); están en `PUBLIC_PATHS` del proxy.
+
+## Conector de Claude (MCP)
+- `POST /api/mcp/<clave>` (claude.ai → Conectores → personalizado; vale en web, móvil y escritorio) o `POST /api/mcp` con `Authorization: Bearer` (Claude Code).
+  JSON-RPC «Streamable HTTP» sin estado ni SDK (`src/lib/mcp/protocol.ts`, puro con tests); GET/DELETE → 405. `/api/mcp` y `/.well-known` son públicos en el proxy.
+- Clave personal en `mcp_tokens` (solo hash, RLS por `user_id`, una por persona+espacio), Ajustes → «Conectar Claude». Las herramientas (`src/lib/mcp/tools.ts`)
+  usan la clave de servicio: **toda consulta filtra por el espacio de la clave**. Ninguna borra datos (como mucho completa una tarea). Gastos y pedidos no se exponen.
+- `apuntar_pendiente`: lo que se queda a medias en Claude/Claude Code va como tarea sin fecha al proyecto fijado «Pendiente de Claude» (o al indicado);
+  mismo título abierto = se actualiza. Las `instructions` de `initialize` le piden a Claude usarla; en Ajustes hay texto para preferencias / `~/.claude/CLAUDE.md`.
+- Proyectos por ruta («IA › Claude»): `ensureCategory` crea lo que falte. Añadir una herramienta = `tool({...})` con esquema Zod en `MCP_TOOLS`.
+- Categorías vacías: `deleteEmptyCategories` (sin fijar, sin descripción, >24 h, sin vídeos/notas/tareas/hijas) tras reordenar y con «Borrar vacías».

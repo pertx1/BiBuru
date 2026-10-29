@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getContext } from "@/lib/context";
 import { webPushSender } from "@/lib/notifications/push";
 import { newWidgetToken } from "@/lib/widget/data";
+import { newMcpToken } from "@/lib/mcp/token";
 import { buildWidgetScript } from "@/lib/widget/script";
 import type { ActionResult } from "@/lib/schemas";
 
@@ -233,6 +234,29 @@ export async function revokeWidgetToken(): Promise<{ ok: boolean; error?: string
   const { supabase, workspaceId, userId } = await getContext();
   const { error } = await supabase.from("widget_tokens").delete().eq("user_id", userId).eq("workspace_id", workspaceId);
   if (error) return { ok: false, error: "No se pudo borrar la clave" };
+  revalidatePath("/ajustes");
+  return { ok: true };
+}
+
+// ------------------------------------------------------------------ conector de Claude (MCP)
+/** Crea (o cambia) la clave del conector y devuelve la dirección para pegar en Claude. La anterior deja de valer. */
+export async function createMcpToken(origin: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const o = z.url().max(200).safeParse(origin);
+  if (!o.success || !/^https?:\/\//.test(o.data)) return { ok: false, error: "Dirección no válida" };
+  const { supabase, workspaceId, userId } = await getContext();
+  const { token, hash } = newMcpToken();
+  await supabase.from("mcp_tokens").delete().eq("user_id", userId).eq("workspace_id", workspaceId);
+  const { error } = await supabase.from("mcp_tokens").insert({ workspace_id: workspaceId, user_id: userId, token_hash: hash });
+  if (error) return { ok: false, error: "No se pudo crear la clave" };
+  revalidatePath("/ajustes");
+  return { ok: true, url: `${o.data.replace(/\/$/, "")}/api/mcp/${token}` };
+}
+
+/** Desconecta Claude: la dirección deja de funcionar al momento. */
+export async function revokeMcpToken(): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, workspaceId, userId } = await getContext();
+  const { error } = await supabase.from("mcp_tokens").delete().eq("user_id", userId).eq("workspace_id", workspaceId);
+  if (error) return { ok: false, error: "No se pudo desconectar" };
   revalidatePath("/ajustes");
   return { ok: true };
 }

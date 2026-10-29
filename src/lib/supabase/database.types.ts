@@ -519,6 +519,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"mcp_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"last_client": string | null,"last_used_at": string | null,"token_hash": string,"updated_at": string,"user_id": string,"workspace_id": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"last_client"?: string | null,"last_used_at"?: string | null,"token_hash": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"last_client"?: string | null,"last_used_at"?: string | null,"token_hash"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "mcp_tokens_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"news_digests": {
                   Row: {
                     "content": NonNullable<Json>,"cost_micros": number,"created_at": string,"day": string,"id": string,"manual_runs": number,"notified_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string

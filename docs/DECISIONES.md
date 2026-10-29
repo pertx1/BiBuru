@@ -289,3 +289,13 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Lo que eliges a mano en la ficha de un vídeo queda fijado (`category_manual`) y no lo cambia la IA.
 - Pasa solo una vez con los que ya había (al abrir Favoritos y en la tarea programada). «Reordenar vídeos con IA» (en Categorías) lo repite cuando cambies el árbol.
 - Las categorías que se queden vacías (p. ej. «E-commerce» si todo era de IA) no se borran: se pueden fusionar o dejar.
+
+## Conector de Claude (MCP) y «Pendiente de Claude»
+- Petición: añadir tareas «o lo que sea» desde cualquier chat de Claude y que lo que se queda a medias en Claude o Claude Code aparezca en BiBuru.
+- Servidor MCP remoto propio en `/api/mcp` (sin SDK: JSON-RPC pequeño y probado; sin estado, respuestas JSON, apto para Vercel Hobby). Sin OAuth: la clave va
+  en la dirección (los conectores personalizados de claude.ai la admiten así) o en `Authorization: Bearer`. Se puede cambiar o desconectar en Ajustes.
+- Herramientas: resumen de hoy, ver/crear/editar/completar tareas, notas, proyectos, eventos, búsqueda, guardar vídeos y `apuntar_pendiente`.
+  No borra nada y no crea gastos ni pedidos (siguen necesitando confirmación en la app).
+- «A medias» no se puede detectar desde fuera de Claude: se le pide a Claude que llame a `apuntar_pendiente` (instrucciones del servidor + texto para
+  las preferencias). Va a «Pendiente de Claude» (proyecto fijado), sin fecha → sale en Proyectos y en Tareas → Bandeja.
+- «Borra lo que se quede vacío»: categorías sin nada, sin fijar ni descripción y con más de 24 h se borran al terminar de reordenar y con «Borrar vacías».

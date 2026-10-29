@@ -6,7 +6,7 @@ import { createNote, createTask, type Actor } from "@/lib/ai/actors";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { getContext } from "@/lib/context";
 import { after } from "next/server";
-import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, importTiktokIds, recategorizePending, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, importTiktokIds, deleteEmptyCategories, recategorizePending, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
 import { allUrls } from "@/lib/favorites/url";
 import { getBudget } from "@/lib/ai/run";
 import { microsToEuros } from "@/lib/ai/pricing";
@@ -425,4 +425,12 @@ export async function revokeShareToken(): Promise<ActionResult> {
   if (error) return { ok: false, error: "No se pudo borrar la clave" };
   revalidatePath("/favoritos");
   return { ok: true };
+}
+
+/** «Borrar categorías vacías» (sin vídeos, notas, tareas ni subcategorías; las fijadas 📌 se quedan). */
+export async function removeEmptyCategories(): Promise<ActionResult & { removed?: string[] }> {
+  const a = await actorOf();
+  const removed = await deleteEmptyCategories(a.supabase, a.workspaceId);
+  refresh();
+  return { ok: true, removed };
 }

@@ -136,7 +136,7 @@ export async function rescheduleTasks(ctx: TaskCtx, ids: string[], dueDate: stri
 
 export type SimpleTask = {
   title: string; notes?: string | null; date?: string | null; time?: string | null; priority?: number;
-  recurrence?: { freq: string; interval: number; byweekday?: number[] } | null; businessId?: string | null; goalId?: string | null; folderId?: string | null;
+  recurrence?: { freq: string; interval: number; byweekday?: number[] } | null; businessId?: string | null; goalId?: string | null; folderId?: string | null; categoryId?: string | null;
 };
 
 /**
@@ -151,7 +151,7 @@ export async function insertSimpleTask(ctx: TaskCtx, t: SimpleTask, now = new Da
   const { data, error } = await ctx.supabase.from("tasks").insert({
     workspace_id: ctx.workspaceId, user_id: ctx.userId, title: t.title.slice(0, 300), notes: t.notes ?? null, due_date: dueDate, due_time: time,
     priority: t.priority && t.priority >= 1 && t.priority <= 3 ? t.priority : 2, repeat, repeat_days: days,
-    business_id: t.businessId ?? null, goal_id: t.goalId ?? null, folder_id: t.folderId ?? null, ...timing,
+    business_id: t.businessId ?? null, goal_id: t.goalId ?? null, folder_id: t.folderId ?? null, category_id: t.categoryId ?? null, ...timing,
   }).select("id").single();
   if (error) { console.error("[tasks] insert:", error.message); return { error: "No se pudo crear la tarea" }; }
   if (repeat !== "none") await ctx.supabase.from("tasks").update({ series_id: data.id }).eq("id", data.id).eq("workspace_id", ctx.workspaceId);

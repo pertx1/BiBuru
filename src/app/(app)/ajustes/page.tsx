@@ -19,6 +19,7 @@ import { KeyGenerator } from "@/components/account/key-generator";
 import { ProfityImport } from "@/components/account/profity-import";
 import { DataSettings } from "@/components/account/data-settings";
 import { WidgetSetup } from "@/components/account/widget-setup";
+import { ClaudeConnector } from "@/components/account/claude-connector";
 import { headers } from "next/headers";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SocialSettings } from "@/components/social/social-settings";
@@ -35,6 +36,12 @@ async function widgetStatus() {
   const { data } = await supabase.from("widget_tokens").select("created_at, last_used_at").eq("workspace_id", workspaceId).maybeSingle();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "localhost"}`;
   return { origin, status: data ? { createdAt: data.created_at, lastUsedAt: data.last_used_at } : null };
+}
+
+async function mcpStatus() {
+  const { supabase, workspaceId } = await getContext();
+  const { data } = await supabase.from("mcp_tokens").select("created_at, last_used_at, last_client").eq("workspace_id", workspaceId).maybeSingle();
+  return data ? { createdAt: data.created_at, lastUsedAt: data.last_used_at, lastClient: data.last_client } : null;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -131,6 +138,7 @@ export default async function AjustesPage({ searchParams }: { searchParams: Prom
         </Section>
         <Section title="Navegación"><NavSettings {...await getUiPrefs().then((u) => ({ tabs: u.tabs, showCapture: u.showCapture }))} /></Section>
         <Section title="Instalar la app"><InstallGuide /></Section>
+        <div id="claude" className="scroll-mt-20"><Section title="Conectar Claude"><ClaudeConnector status={await mcpStatus()} /></Section></div>
         <div id="widgets" className="scroll-mt-20"><Section title="Widgets de iPhone"><WidgetSetup {...await widgetStatus()} /></Section></div>
         <Section title="Asistente de configuración"><KeyGenerator /></Section>
         <Section title="Importar desde PROFITY"><ProfityImport /></Section>

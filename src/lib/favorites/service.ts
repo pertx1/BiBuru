@@ -514,12 +514,17 @@ export async function importTiktokIds(a: Actor, items: { id: string; date: strin
 export async function recategorizePending(admin: AdminClient, o: { workspaceId?: string; budgetMs?: number } = {}): Promise<{ batches: number; changed: number }> {
   const started = Date.now();
   const out = { batches: 0, changed: 0 };
+  const touched = new Set<string>();
   while (Date.now() - started < (o.budgetMs ?? 25_000)) {
     let q = admin.from("saved_videos").select("id, title, channel, summary, category_id, workspace_id, user_id")
       .is("recategorized_at", null).eq("analysis_status", "ready").eq("category_manual", false);
     if (o.workspaceId) q = q.eq("workspace_id", o.workspaceId);
     const { data: first } = await q.order("created_at").limit(1).maybeSingle();
-    if (!first) break;
+    if (!first) {
+      // Todo reordenado: fuera las categorías que se han quedado vacías.
+      for (const ws of touched) await deleteEmptyCategories(admin, ws).catch(() => []);
+      break;
+    }
     const { data: cand } = await admin.from("saved_videos").select("id")
       .eq("workspace_id", first.workspace_id).is("recategorized_at", null).eq("analysis_status", "ready").eq("category_manual", false).order("created_at").limit(RECAT_BATCH);
     // Se reclama la tanda (solo las filas que sigan sin marcar): si hay otra pasada a la vez (p. ej. precargas de la página), no se repite.
@@ -532,6 +537,7 @@ export async function recategorizePending(admin: AdminClient, o: { workspaceId?:
     try {
       const r = await recategorizeBatch(ctx, rows);
       out.batches++; out.changed += r.changed;
+      touched.add(first.workspace_id);
     } catch (e) {
       // Sin presupuesto o Gemini al límite: se sueltan para la próxima pasada.
       await admin.from("saved_videos").update({ recategorized_at: null }).in("id", rows.map((r) => r.id));
@@ -540,4 +546,30 @@ export async function recategorizePending(admin: AdminClient, o: { workspaceId?:
     }
   }
   return out;
+}
+
+/**
+ * Borra las categorías vacías: sin vídeos, notas, tareas ni subcategorías. Se quedan las fijadas (📌), las que tienen
+ * descripción y las creadas hace menos de un día. Repite hasta que no queda ninguna (al borrar una hija, el padre puede quedar vacío).
+ */
+export async function deleteEmptyCategories(db: AdminClient | Actor["supabase"], workspaceId: string): Promise<string[]> {
+  const removed: string[] = [];
+  for (let round = 0; round < 6; round++) {
+    const [cats, v, n, t] = await Promise.all([
+      db.from("video_categories").select("id, name, parent_id, pinned, description, created_at").eq("workspace_id", workspaceId),
+      db.from("saved_videos").select("category_id").eq("workspace_id", workspaceId).not("category_id", "is", null).limit(20000),
+      db.from("notes").select("category_id").eq("workspace_id", workspaceId).not("category_id", "is", null).limit(20000),
+      db.from("tasks").select("category_id").eq("workspace_id", workspaceId).not("category_id", "is", null).limit(20000),
+    ]);
+    if (cats.error || v.error || n.error || t.error) break;
+    const used = new Set([...v.data, ...n.data, ...t.data].map((r) => r.category_id));
+    const parents = new Set(cats.data.map((c) => c.parent_id).filter(Boolean));
+    // Tampoco las que tienen descripción o se crearon hace menos de un día (un proyecto recién empezado aún no tiene nada).
+    const fresh = Date.now() - 24 * 3600_000;
+    const empty = cats.data.filter((c) => !c.pinned && !c.description?.trim() && new Date(c.created_at).getTime() < fresh && !used.has(c.id) && !parents.has(c.id));
+    if (!empty.length) break;
+    await db.from("video_categories").delete().eq("workspace_id", workspaceId).in("id", empty.map((c) => c.id));
+    removed.push(...empty.map((c) => c.name));
+  }
+  return removed;
 }
