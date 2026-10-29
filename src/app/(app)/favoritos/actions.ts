@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createNote, createTask, type Actor } from "@/lib/ai/actors";
 import { hasGeminiKey } from "@/lib/ai/gemini";
 import { getContext } from "@/lib/context";
-import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, importTiktokIds, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
+import { after } from "next/server";
+import { addVideoByUrl, adminVideoContext, analyzeSoon, analyzeVideo, estimateVideoCost, importTiktokIds, recategorizePending, syncPlaylistFeed, syncYoutube, type FeedRow } from "@/lib/favorites/service";
 import { allUrls } from "@/lib/favorites/url";
 import { getBudget } from "@/lib/ai/run";
 import { microsToEuros } from "@/lib/ai/pricing";
@@ -120,10 +121,23 @@ export async function updateVideo(id: string, patch: { category_id?: string | nu
   const a = await actorOf();
   const { id: _id, ...rest } = p.data;
   void _id;
-  const { error } = await a.supabase.from("saved_videos").update(rest).eq("id", id).eq("workspace_id", a.workspaceId);
+  // Elegir la categoría a mano la fija: la IA ya no la cambia al reordenar.
+  const { error } = await a.supabase.from("saved_videos").update({ ...rest, ...(rest.category_id !== undefined ? { category_manual: true } : {}) }).eq("id", id).eq("workspace_id", a.workspaceId);
   if (error) return { ok: false, error: "No se pudo guardar" };
   refresh();
   return { ok: true };
+}
+
+/** «Reordenar con IA»: vuelve a poner la categoría de todos los vídeos analizados con el árbol actual (no los elegidos a mano). */
+export async function recategorizeAll(): Promise<ActionResult & { pending?: number }> {
+  if (!hasGeminiKey()) return { ok: false, error: "La IA no está configurada (falta GEMINI_API_KEY)." };
+  const a = await actorOf();
+  const { error, count } = await a.supabase.from("saved_videos").update({ recategorized_at: null }, { count: "exact" })
+    .eq("workspace_id", a.workspaceId).eq("analysis_status", "ready").eq("category_manual", false);
+  if (error) return { ok: false, error: "No se pudo empezar" };
+  after(async () => { try { await recategorizePending(createAdminClient(), { workspaceId: a.workspaceId, budgetMs: 50_000 }); } catch (e) { console.error("[videos] reordenar:", e instanceof Error ? e.message : e); } });
+  refresh();
+  return { ok: true, pending: count ?? 0 };
 }
 
 export async function deleteVideo(id: string): Promise<ActionResult> {

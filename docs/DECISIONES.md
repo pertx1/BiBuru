@@ -281,3 +281,11 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - La IA que analiza vídeos ve las rutas y elige la más concreta; si propone «IA › Gemini» la crea dentro de IA.
 - Categorías de partida (migración): «Posibles negocios» e «IA» con «Claude» y «Otras IA», fijadas. Si ya había una «Claude» suelta, pasa dentro de IA.
 - Borrar una categoría deja sus vídeos, notas y tareas sin categoría y sube sus subcategorías (no se borra nada más).
+
+## Reordenar las categorías de los vídeos (sin volver a analizarlos)
+- Con el árbol nuevo, los vídeos ya analizados se recolocan solos: la IA (modelo rápido) ve título, canal y resumen de 40 vídeos por llamada y elige
+  la categoría más concreta. Lo que trata de IA va a «IA» (o «IA › Claude», «IA › Gemini»…) aunque se aplique a vender; «E-commerce» solo si el tema es ese.
+- Coste: céntimos (solo texto). Sale en Ajustes → IA como «Reordenar categorías de vídeos».
+- Lo que eliges a mano en la ficha de un vídeo queda fijado (`category_manual`) y no lo cambia la IA.
+- Pasa solo una vez con los que ya había (al abrir Favoritos y en la tarea programada). «Reordenar vídeos con IA» (en Categorías) lo repite cuando cambies el árbol.
+- Las categorías que se queden vacías (p. ej. «E-commerce» si todo era de IA) no se borran: se pueden fusionar o dejar.

@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getContext } from "@/lib/context";
 import { listFavorites } from "@/lib/favorites/data";
-import { syncStaleFeeds } from "@/lib/favorites/service";
+import { recategorizePending, syncStaleFeeds } from "@/lib/favorites/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { STATUS_LABELS } from "@/lib/favorites/labels";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,8 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
   const { supabase, workspaceId } = await getContext();
   // Respaldo del cron: las listas de YouTube con más de una hora sin revisar se miran tras enviar la página.
   after(async () => { try { await syncStaleFeeds(createAdminClient(), { workspaceId, staleMinutes: 60, limit: 3 }); } catch (e) { console.error("[videos] feeds:", e instanceof Error ? e.message : e); } });
+  // Vídeos ya analizados que aún no se han reordenado con las categorías nuevas: unas tandas tras enviar la página.
+  if (process.env.GEMINI_API_KEY) after(async () => { try { await recategorizePending(createAdminClient(), { workspaceId, budgetMs: 40_000 }); } catch (e) { console.error("[videos] reordenar:", e instanceof Error ? e.message : e); } });
   const [{ videos, tags, byStatus, byCat, ownCount, categories, costs }, biz, share] = await Promise.all([
     listFavorites(f),
     supabase.from("businesses").select("id, name").eq("workspace_id", workspaceId).eq("archived", false).order("name"),

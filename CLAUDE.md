@@ -156,6 +156,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   (`buildTree`, `flatten`, `descendantIds`, `resolveProposed` para la IA de vídeos, que ve las rutas «IA › Claude»).
 - `/proyectos` (árbol con recuentos) y `/proyectos/[id]` (descripción, subcategorías, tareas rápidas, notas y vídeos, incluidas las de sus subcategorías).
   Datos en `src/lib/projects/data.ts`; acciones en `proyectos/actions.ts`. Filtrar Favoritos por una categoría incluye sus subcategorías.
+- Reordenar categorías sin volver a analizar (`src/lib/favorites/recategorize.ts`, `feature = 'recategorize'`): título + resumen de 40 vídeos por llamada al modelo rápido. `saved_videos.recategorized_at` (null = pendiente; se reclama la tanda antes de llamar, porque las precargas de la página lanzan varias pasadas a la vez) y `category_manual` (elegida a mano: no se toca). Corre al abrir Favoritos, en el cron de vídeos y con «Reordenar vídeos con IA».
 
 ## Inicio personalizable y navegación
 - Barra lateral (`nav-items.ts`) sin Revisión ni Objetivos (a petición): siguen en «Más», en la barra inferior si se eligen y en sus widgets.

@@ -16,6 +16,7 @@ import { FeedError, fetchPlaylistFeed } from "./rss";
 import { classifyVideoUrl, firstUrl, hashtags, isTiktokImageHost } from "./url";
 import { deleteGeminiFile, uploadGeminiFile } from "@/lib/ai/gemini";
 import { fetchTiktokVideo, type TiktokVideo } from "./tiktok-video";
+import { RECAT_BATCH, recategorizeBatch } from "./recategorize";
 import { tiktokUrlFor } from "./tiktok-export";
 import { GoogleError, likedPage, playlistPage, refreshAccessToken, videoDetails, type YtVideo } from "./youtube";
 
@@ -223,7 +224,8 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
       analysis_basis: upload || !useText ? "video_completo" : cover ? "texto_portada" : "texto",
       analysis_cost_micros: v.analysis_cost_micros + res.costMicros, summary: an.summary, key_points: an.key_points as unknown as Json, actions: an.actions as unknown as Json,
       // Si ya tenía categoría o negocio (p. ej. elegidos a mano), se respetan al volver a analizar.
-      utility: an.utility, category_id: v.category_id ?? categoryId,
+      // La IA ya clasifica con el árbol: no hace falta reordenarlo después. Lo elegido a mano se respeta.
+      utility: an.utility, category_id: v.category_manual ? v.category_id : (v.category_id ?? categoryId), recategorized_at: new Date().toISOString(),
       ...(v.business_id ? {} : { business_id: b?.id ?? null, business_reason: b ? an.business_reason : null }),
       ...(tryTiktok ? { tiktok_fetch: tk ? "ok" : "failed" } : {}),
     });
@@ -503,6 +505,39 @@ export async function importTiktokIds(a: Actor, items: { id: string; date: strin
     if (error) throw new Error("No se pudieron guardar los vídeos");
     out.added += data?.length ?? 0;
     out.firstId ??= data?.[0]?.id;
+  }
+  return out;
+}
+
+// ------------------------------------------------------------------ reordenar categorías (sin volver a analizar)
+/** Tandas de vídeos analizados pendientes de reordenar, de un espacio o de cualquiera (cron), mientras quede tiempo. */
+export async function recategorizePending(admin: AdminClient, o: { workspaceId?: string; budgetMs?: number } = {}): Promise<{ batches: number; changed: number }> {
+  const started = Date.now();
+  const out = { batches: 0, changed: 0 };
+  while (Date.now() - started < (o.budgetMs ?? 25_000)) {
+    let q = admin.from("saved_videos").select("id, title, channel, summary, category_id, workspace_id, user_id")
+      .is("recategorized_at", null).eq("analysis_status", "ready").eq("category_manual", false);
+    if (o.workspaceId) q = q.eq("workspace_id", o.workspaceId);
+    const { data: first } = await q.order("created_at").limit(1).maybeSingle();
+    if (!first) break;
+    const { data: cand } = await admin.from("saved_videos").select("id")
+      .eq("workspace_id", first.workspace_id).is("recategorized_at", null).eq("analysis_status", "ready").eq("category_manual", false).order("created_at").limit(RECAT_BATCH);
+    // Se reclama la tanda (solo las filas que sigan sin marcar): si hay otra pasada a la vez (p. ej. precargas de la página), no se repite.
+    const { data: rows } = await admin.from("saved_videos").update({ recategorized_at: new Date().toISOString() })
+      .eq("workspace_id", first.workspace_id).in("id", (cand ?? []).map((r) => r.id)).is("recategorized_at", null)
+      .select("id, title, channel, summary, category_id");
+    if (!rows?.length) { if (cand?.length) continue; break; }
+    const ctx = await adminVideoContext(admin, first.user_id, first.workspace_id);
+    if (!ctx) break;
+    try {
+      const r = await recategorizeBatch(ctx, rows);
+      out.batches++; out.changed += r.changed;
+    } catch (e) {
+      // Sin presupuesto o Gemini al límite: se sueltan para la próxima pasada.
+      await admin.from("saved_videos").update({ recategorized_at: null }).in("id", rows.map((r) => r.id));
+      console.error("[videos] reordenar:", e instanceof Error ? e.message : e);
+      break;
+    }
   }
   return out;
 }

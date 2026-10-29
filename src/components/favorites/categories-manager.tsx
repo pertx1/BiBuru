@@ -1,10 +1,10 @@
 "use client";
 
-import { FolderKanban, Pin, PinOff, Settings2 } from "lucide-react";
+import { FolderKanban, Pin, PinOff, Settings2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createCategory, mergeCategories, moveCategory, renameCategory, togglePinCategory } from "@/app/(app)/favoritos/actions";
+import { createCategory, mergeCategories, moveCategory, recategorizeAll, renameCategory, togglePinCategory } from "@/app/(app)/favoritos/actions";
 import { CategoryOptions } from "@/components/categories/category-options";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -58,6 +58,12 @@ export function CategoriesManager({ categories, counts }: { categories: VideoCat
               </li>
             ))}
           </ul>
+          <div className="rounded-lg bg-fill p-3">
+            <p className="text-xs text-muted">¿Has creado o movido categorías? La IA vuelve a poner la categoría de todos tus vídeos según su tema (lo que es de IA, a «IA» o «IA › Claude»), sin volver a analizarlos: solo mira el título y el resumen. Los que elegiste a mano no se tocan.</p>
+            <Button type="button" variant="secondary" className="mt-2" disabled={pending} onClick={() => start(async () => { const r = await recategorizeAll(); toast({ message: r.ok ? `Reordenando ${r.pending ?? 0} vídeos: tarda un minuto, se ve al recargar.` : r.error }); if (r.ok) router.refresh(); })}>
+              <Sparkles className="size-4" aria-hidden /> Reordenar vídeos con IA
+            </Button>
+          </div>
           <p className="text-xs text-muted">Las fijadas (📌) salen primero y la IA las prefiere al clasificar. Cada categoría es también un proyecto en «Proyectos», con sus vídeos, notas y tareas.</p>
         </div>
       </Sheet>
