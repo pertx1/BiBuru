@@ -11,6 +11,7 @@ import { nowLocal } from "@/lib/dates";
 import { getNow, getTask, listGoals } from "@/lib/tasks/data";
 import { whenLabel } from "@/lib/tasks/format";
 import { PRIORITY_META, taskToFields } from "@/lib/tasks/input";
+import { listCategories } from "@/lib/projects/data";
 import { describeRepeat, type Repeat as RepeatKind } from "@/lib/tasks/repeat";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ export const metadata = { title: "Tarea" };
 export default async function TareaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const [task, now, businesses, goals] = await Promise.all([getTask(id), getNow(), listBusinesses(), listGoals({ status: "active" })]);
+  const [task, now, businesses, goals, categories] = await Promise.all([getTask(id), getNow(), listBusinesses(), listGoals({ status: "active" }), listCategories()]);
   if (!task) notFound(); // no existe o es de otro espacio
   const done = task.status === "done";
   const biz = businesses.find((b) => b.id === task.business_id);
@@ -49,7 +50,7 @@ export default async function TareaPage({ params }: { params: Promise<{ id: stri
         <SubtaskEditor taskId={task.id} subtasks={task.subtasks} />
         <section aria-label="Editar" className="rounded-2xl border border-border bg-surface p-4">
           <h2 className="mb-4 text-sm font-semibold">Editar</h2>
-          <TaskForm key={task.updated_at} taskId={task.id} initial={fields} businesses={businesses.map((b) => ({ id: b.id, name: b.name, color: b.color, icon: b.icon }))}
+          <TaskForm key={task.updated_at} taskId={task.id} initial={fields} categories={categories} businesses={businesses.map((b) => ({ id: b.id, name: b.name, color: b.color, icon: b.icon }))}
             goals={goals.map((g) => ({ id: g.id, title: g.title }))} today={now.date} returnTo={`/tareas/${task.id}`} />
         </section>
         <DeleteTaskButton id={task.id} />

@@ -1,6 +1,8 @@
 "use client";
 
 import { Plus, X } from "lucide-react";
+import { CategoryOptions } from "@/components/categories/category-options";
+import type { CatRow } from "@/lib/categories/tree";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createTask, updateTask } from "@/app/(app)/tareas/actions";
@@ -24,8 +26,8 @@ const seg = (on: boolean) => cn("min-h-11 flex-1 rounded-xl px-2 text-[15px] fon
  * Formulario de tarea (crear y editar), como el de Antola: título, notas, fecha (Hoy / Mañana / Sin fecha + calendario)
  * y hora opcional, prioridad, negocio (proyecto), objetivo, repetición, recordatorio y, al crear, subtareas.
  */
-export function TaskForm({ taskId, initial, businesses, goals, today, returnTo }: {
-  taskId?: string; initial?: Partial<TaskFieldsParsed>; businesses: BizOption[]; goals: GoalOption[]; today: string; returnTo: string;
+export function TaskForm({ taskId, initial, businesses, goals, categories = [], today, returnTo }: {
+  taskId?: string; initial?: Partial<TaskFieldsParsed>; businesses: BizOption[]; goals: GoalOption[]; categories?: CatRow[]; today: string; returnTo: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -39,6 +41,7 @@ export function TaskForm({ taskId, initial, businesses, goals, today, returnTo }
   const [time, setTime] = useState(initial?.time ?? "");
   const [businessId, setBusinessId] = useState(initial?.businessId ?? "");
   const [goalId, setGoalId] = useState(initial?.goalId ?? "");
+  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? "");
   const [repeat, setRepeat] = useState<Repeat>(initial?.repeat ?? "none");
   const [days, setDays] = useState<number[]>(initial?.repeatDays ?? []);
   const [mode, setMode] = useState<ReminderMode>(initial?.reminderMode ?? "none");
@@ -65,7 +68,7 @@ export function TaskForm({ taskId, initial, businesses, goals, today, returnTo }
     setError(null);
     const fields = {
       title: title.trim(), notes: notes.trim() || null, priority, dueDate: dueDate || null, time: dueDate && time ? time : null,
-      businessId: businessId || null, goalId: goalId || null, repeat, repeatDays: repeat === "weekdays" ? days : [],
+      businessId: businessId || null, goalId: goalId || null, categoryId: categoryId || null, repeat, repeatDays: repeat === "weekdays" ? days : [],
       reminderMode: mode, reminderDate: mode === "at_time" ? remDate : null, reminderTime: mode === "at_time" ? remTime : null,
       reminderMinutesBefore: mode === "before" ? before : null,
     };
@@ -128,6 +131,14 @@ export function TaskForm({ taskId, initial, businesses, goals, today, returnTo }
             {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
           </Select>
         </label>
+        {categories.length > 0 && (
+          <label className="block"><span className={label}>Categoría (proyecto)</span>
+            <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+              <option value="">Ninguna</option>
+              <CategoryOptions categories={categories} />
+            </Select>
+          </label>
+        )}
       </div>
 
       <div>

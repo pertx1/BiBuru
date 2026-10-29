@@ -3,13 +3,14 @@
  * El botón + de captura en el centro es opcional (`show_capture_button`, apagado por defecto); con él caben 4 secciones.
  * Se guarda en `user_ui_prefs.mobile_tabs` (null = por defecto).
  */
-export type SectionKey = "inicio" | "revision" | "tareas" | "negocios" | "calendario" | "objetivos" | "noticias" | "redes" | "notas" | "favoritos" | "bandeja" | "chat" | "ajustes";
+export type SectionKey = "inicio" | "revision" | "tareas" | "negocios" | "proyectos" | "calendario" | "objetivos" | "noticias" | "redes" | "notas" | "favoritos" | "bandeja" | "chat" | "ajustes";
 
 export const SECTIONS: { key: SectionKey; href: string; label: string; long: string }[] = [
   { key: "inicio", href: "/", label: "Inicio", long: "Inicio" },
   { key: "revision", href: "/revision", label: "Revisión", long: "Revisión (diaria, semanal y mensual)" },
   { key: "tareas", href: "/tareas", label: "Tareas", long: "Tareas" },
   { key: "negocios", href: "/negocios", label: "Negocios", long: "Negocios" },
+  { key: "proyectos", href: "/proyectos", label: "Proyectos", long: "Proyectos (categorías con tareas, notas y vídeos)" },
   { key: "calendario", href: "/calendario", label: "Calendario", long: "Calendario" },
   { key: "objetivos", href: "/objetivos", label: "Objetivos", long: "Objetivos" },
   { key: "noticias", href: "/noticias", label: "Noticias", long: "Noticias" },

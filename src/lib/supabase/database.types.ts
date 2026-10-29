@@ -615,13 +615,13 @@ isOneToOne: false
                   ]
                 },"notes": {
                   Row: {
-                    "body": string,"business_id": string | null,"created_at": string,"folder_id": string | null,"fts": unknown,"id": string,"pinned": boolean,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "body": string,"business_id": string | null,"category_id": string | null,"created_at": string,"folder_id": string | null,"fts": unknown,"id": string,"pinned": boolean,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "body"?: string,"business_id"?: string | null,"created_at"?: string,"folder_id"?: string | null,"fts"?: never,"id"?: string,"pinned"?: boolean,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "body"?: string,"business_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"folder_id"?: string | null,"fts"?: never,"id"?: string,"pinned"?: boolean,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "body"?: string,"business_id"?: string | null,"created_at"?: string,"folder_id"?: string | null,"fts"?: never,"id"?: string,"pinned"?: boolean,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "body"?: string,"business_id"?: string | null,"category_id"?: string | null,"created_at"?: string,"folder_id"?: string | null,"fts"?: never,"id"?: string,"pinned"?: boolean,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -629,6 +629,12 @@ isOneToOne: false
       columns: ["business_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "notes_category_fk"
+      columns: ["category_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "video_categories"
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "notes_folder_id_workspace_id_fkey"
@@ -1333,13 +1339,13 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "business_id": string | null,"completed_at": string | null,"created_at": string,"due_at": string | null,"due_date": string | null,"due_time": string | null,"external_key": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"remind_at": string | null,"reminder_at": string | null,"reminder_minutes_before": number | null,"reminder_mode": string,"repeat": string,"repeat_days": (number)[],"series_id": string | null,"sort_order": number,"spawned_from_id": string | null,"status": string,"stock_key": string | null,"stock_missing": number | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string | null,"category_id": string | null,"completed_at": string | null,"created_at": string,"due_at": string | null,"due_date": string | null,"due_time": string | null,"external_key": string | null,"folder_id": string | null,"fts": unknown,"goal_id": string | null,"id": string,"notes": string | null,"parent_id": string | null,"priority": number,"recurrence": Json | null,"remind_at": string | null,"reminder_at": string | null,"reminder_minutes_before": number | null,"reminder_mode": string,"repeat": string,"repeat_days": (number)[],"series_id": string | null,"sort_order": number,"spawned_from_id": string | null,"status": string,"stock_key": string | null,"stock_missing": number | null,"title": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id"?: string | null,"category_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title": string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string | null,"category_id"?: string | null,"completed_at"?: string | null,"created_at"?: string,"due_at"?: string | null,"due_date"?: string | null,"due_time"?: string | null,"external_key"?: string | null,"folder_id"?: string | null,"fts"?: never,"goal_id"?: string | null,"id"?: string,"notes"?: string | null,"parent_id"?: string | null,"priority"?: number,"recurrence"?: Json | null,"remind_at"?: string | null,"reminder_at"?: string | null,"reminder_minutes_before"?: number | null,"reminder_mode"?: string,"repeat"?: string,"repeat_days"?: (number)[],"series_id"?: string | null,"sort_order"?: number,"spawned_from_id"?: string | null,"status"?: string,"stock_key"?: string | null,"stock_missing"?: number | null,"title"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1347,6 +1353,12 @@ isOneToOne: false
       columns: ["business_id","workspace_id"]
 isOneToOne: false
       referencedRelation: "businesses"
+      referencedColumns: ["id","workspace_id"]
+    },{
+      foreignKeyName: "tasks_category_fk"
+      columns: ["category_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "video_categories"
       referencedColumns: ["id","workspace_id"]
     },{
       foreignKeyName: "tasks_folder_fk"
@@ -1426,16 +1438,22 @@ isOneToOne: false
                   ]
                 },"video_categories": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"pinned": boolean,"updated_at": string,"user_id": string,"workspace_id": string
+                    "created_at": string,"description": string | null,"id": string,"name": string,"parent_id": string | null,"pinned": boolean,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "created_at"?: string,"id"?: string,"name": string,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"name": string,"parent_id"?: string | null,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"name"?: string,"parent_id"?: string | null,"pinned"?: boolean,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "video_categories_parent_fk"
+      columns: ["parent_id","workspace_id"]
+isOneToOne: false
+      referencedRelation: "video_categories"
+      referencedColumns: ["id","workspace_id"]
+    },{
       foreignKeyName: "video_categories_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false

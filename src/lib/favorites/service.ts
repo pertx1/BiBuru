@@ -8,7 +8,8 @@ import { videoFps } from "@/lib/ai/thinking";
 import { geminiProvider, getModelNames } from "@/lib/ai/gemini";
 import type { Json } from "@/lib/supabase/database.types";
 import { createAdminClient, type AdminClient } from "@/lib/supabase/admin";
-import { buildVideoPrompt, parseVideoAnalysis, pickCategory, videoAnalysisJsonSchema } from "./analysis";
+import { buildVideoPrompt, parseVideoAnalysis, videoAnalysisJsonSchema } from "./analysis";
+import { categoryPaths, resolveProposed } from "@/lib/categories/tree";
 import { decryptSecret } from "./crypto";
 import { resolveTiktokShort, tiktokOembedStatus, youtubeOembed } from "./oembed";
 import { FeedError, fetchPlaylistFeed } from "./rss";
@@ -171,7 +172,7 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     const a: Actor = { supabase, workspaceId, userId: v.user_id, timezone: ctx.timezone };
     const [biz, cats] = await Promise.all([
       supabase.from("businesses").select("name, description").eq("workspace_id", workspaceId).eq("archived", false).limit(30),
-      supabase.from("video_categories").select("id, name").eq("workspace_id", workspaceId),
+      supabase.from("video_categories").select("id, name, parent_id, pinned").eq("workspace_id", workspaceId),
     ]);
     const useText = (textOnly && !tk) || light;
     const tags = v.source === "tiktok" ? hashtags(v.title) : [];
@@ -199,7 +200,7 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     const estimated = useText ? 0 : await estimateVideoCost(ctx, upload ? v.upload_duration_sec : duration);
     const res = await runAi(ctx, light ? "video_light" : useText ? "video_light" : "video", {
       model: useText ? ctx.models.fast : ctx.models.video,
-      system: buildVideoPrompt({ businesses: biz.data ?? [], categories: (cats.data ?? []).map((c) => c.name), textOnly: useText, light, cover: !!cover }),
+      system: buildVideoPrompt({ businesses: biz.data ?? [], categories: categoryPaths(cats.data ?? []), textOnly: useText, light, cover: !!cover }),
       // Margen amplio: en los modelos que «piensan», el pensamiento cuenta dentro de este tope y cortaba el JSON.
       contents: [{ role: "user", parts: parts as never }], jsonSchema: videoAnalysisJsonSchema(), temperature: 0.2, maxOutputTokens: 8192,
       ...(useText ? {} : { mediaResolution: "low" as const }), thinking: "low",
@@ -207,11 +208,14 @@ export async function analyzeVideo(ctx: Ctx, videoId: string, o: { mode?: "video
     const an = parseVideoAnalysis(res.text);
     if (!an) throw new Error("La IA no devolvió un análisis válido");
 
-    const pick = pickCategory(an.category, cats.data ?? []);
+    // Categoría: ruta («IA › Claude») o nombre; si es nueva, se crea dentro de su padre si lo trae.
+    const pick = resolveProposed(an.category, cats.data ?? []);
     let categoryId = pick.id;
     if (!categoryId) {
-      const ins = await supabase.from("video_categories").insert({ workspace_id: workspaceId, user_id: v.user_id, name: pick.name }).select("id").single();
-      categoryId = ins.data?.id ?? (await supabase.from("video_categories").select("id").eq("workspace_id", workspaceId).ilike("name", pick.name).maybeSingle()).data?.id ?? null;
+      const ins = await supabase.from("video_categories").insert({ workspace_id: workspaceId, user_id: v.user_id, name: pick.name, parent_id: pick.parentId }).select("id").single();
+      let again = supabase.from("video_categories").select("id").eq("workspace_id", workspaceId).ilike("name", pick.name);
+      again = pick.parentId ? again.eq("parent_id", pick.parentId) : again.is("parent_id", null);
+      categoryId = ins.data?.id ?? (await again.maybeSingle()).data?.id ?? null;
     }
     const b = await resolveBusiness(a, an.business);
     await save({

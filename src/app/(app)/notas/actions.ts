@@ -41,6 +41,17 @@ export async function createNote(folderId?: string | null, businessId?: string |
   return saveNote({ title: "", body: "", folder_id: folderId ?? null, business_id: businessId ?? null });
 }
 
+/** Categoría (proyecto) de una nota; la FK compuesta impide usar una de otro espacio. */
+export async function setNoteCategory(id: string, categoryId: string | null): Promise<ActionResult> {
+  if (!uuid.safeParse(id).success || (categoryId !== null && !uuid.safeParse(categoryId).success)) return { ok: false, error: "Datos no válidos" };
+  const { supabase, workspaceId } = await getContext();
+  const { error } = await supabase.from("notes").update({ category_id: categoryId }).eq("id", id).eq("workspace_id", workspaceId);
+  if (error) return fail("category", error);
+  refresh();
+  revalidatePath("/proyectos", "layout");
+  return { ok: true };
+}
+
 export async function setNotePinned(id: string, pinned: boolean): Promise<ActionResult> {
   if (!uuid.safeParse(id).success) return { ok: false, error: "Nota no válida" };
   const { supabase, workspaceId } = await getContext();

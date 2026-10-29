@@ -270,3 +270,14 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Los datos del correo que ya estaban (tablas `mail_*`, con el acceso a Outlook cifrado) no se borran: las migraciones solo añaden. Si se quieren borrar
   también, se hace aparte. El permiso se puede retirar desde la cuenta de Microsoft (Privacidad → Aplicaciones).
 - Revisión y Objetivos salen de la barra lateral de escritorio; siguen en «Más», en la barra inferior (si se eligen) y en sus widgets de Inicio.
+
+## Proyectos: categorías con subcategorías para vídeos, notas y tareas
+- En vez de un sistema nuevo, las categorías de Favoritos pasan a ser el árbol para organizar planes y proyectos: subcategorías («IA › Claude»),
+  descripción, y notas y tareas también pueden ir en una. Una sola taxonomía para todo (y la IA de vídeos ya clasificaba con ella).
+- Sección **Proyectos** (barra lateral y «Más»): el árbol con lo que hay en cada uno; cada proyecto reúne sus tareas (con alta rápida), notas (nueva
+  nota que se abre para escribir) y vídeos, contando también los de sus subcategorías.
+- Favoritos: al elegir una categoría salen sus subcategorías y el filtro las incluye. El gestor de categorías permite crear dentro de otra, mover y
+  fusionar (lo de dentro pasa a la otra).
+- La IA que analiza vídeos ve las rutas y elige la más concreta; si propone «IA › Gemini» la crea dentro de IA.
+- Categorías de partida (migración): «Posibles negocios» e «IA» con «Claude» y «Otras IA», fijadas. Si ya había una «Claude» suelta, pasa dentro de IA.
+- Borrar una categoría deja sus vídeos, notas y tareas sin categoría y sube sus subcategorías (no se borra nada más).

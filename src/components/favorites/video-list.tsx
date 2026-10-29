@@ -12,6 +12,8 @@ import { formatDuration } from "@/lib/favorites/url";
 import type { VideoCategory, VideoRow } from "@/lib/favorites/data";
 import { STATUS_LABELS } from "@/lib/favorites/labels";
 import { UploadFull } from "./upload-full";
+import { CategoryOptions } from "@/components/categories/category-options";
+import { buildTree, flatten } from "@/lib/categories/tree";
 import { createDraft } from "@/app/(app)/redes/actions";
 
 type Tag = { id: string; name: string; color: string };
@@ -54,7 +56,7 @@ export function VideoList({ videos, categories, businesses, tags, costs, openId 
     return () => clearInterval(t);
   }, [working, router]);
   const current = videos.find((v) => v.id === open) ?? null;
-  const catName = new Map(categories.map((c) => [c.id, c.name]));
+  const catName = new Map(flatten(buildTree(categories)).map((c) => [c.id, c.path]));
   const bizName = new Map(businesses.map((b) => [b.id, b.name]));
 
   return (
@@ -175,7 +177,7 @@ function VideoSheet({ v, categories, businesses, tags, cost, onClose }: { v: Vid
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted">Categoría
             <select defaultValue={v.category_id ?? ""} onChange={(e) => run(() => updateVideo(v.id, { category_id: e.target.value || null }))} className="min-h-11 rounded-lg border border-border bg-surface px-2 text-base text-foreground md:min-h-9 md:text-sm">
-              <option value="">Sin categoría</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="">Sin categoría</option><CategoryOptions categories={categories} />
             </select>
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted sm:col-span-2">Negocio

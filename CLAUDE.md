@@ -150,6 +150,13 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Atajo de iPhone «Compartir → BiBuru»: `POST /api/compartir` (`{ clave, enlace }`, público en el proxy) con clave personal en `share_tokens` (solo hash, RLS por `user_id`); lógica en `src/lib/favorites/share.ts`.
 - Listas por RSS (`youtube_feeds`, `src/lib/favorites/rss.ts`): alternativa sin Google Cloud. Solo se pide `https://www.youtube.com/feeds/videos.xml?playlist_id=<id validado>`; el feed trae ~15 vídeos y nada privado/oculto. Las revisa el cron de `/api/cron/videos` (las que llevan >1 h) y, de respaldo, abrir Favoritos (`after()`).
 
+## Proyectos (categorías con subcategorías)
+- Las categorías de Favoritos (`video_categories`) tienen `parent_id` (sin ciclos, trigger) y `description`, y sirven también para notas y tareas
+  (`notes.category_id`, `tasks.category_id`, FK compuesta por espacio). El nombre es único por padre. Lógica pura del árbol en `src/lib/categories/tree.ts`
+  (`buildTree`, `flatten`, `descendantIds`, `resolveProposed` para la IA de vídeos, que ve las rutas «IA › Claude»).
+- `/proyectos` (árbol con recuentos) y `/proyectos/[id]` (descripción, subcategorías, tareas rápidas, notas y vídeos, incluidas las de sus subcategorías).
+  Datos en `src/lib/projects/data.ts`; acciones en `proyectos/actions.ts`. Filtrar Favoritos por una categoría incluye sus subcategorías.
+
 ## Inicio personalizable y navegación
 - Barra lateral (`nav-items.ts`) sin Revisión ni Objetivos (a petición): siguen en «Más», en la barra inferior si se eligen y en sus widgets.
 - Catálogo de widgets en `src/lib/home/layout.ts` (metadatos puros: grupo, tamaños, ajustes, vista previa, por defecto) y componentes en

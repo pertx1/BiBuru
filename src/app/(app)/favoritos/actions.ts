@@ -18,7 +18,7 @@ import type { ActionResult } from "@/lib/schemas";
 
 const uuid = z.uuid();
 const STATUSES = ["por_ver", "visto", "aplicado", "archivado"] as const;
-const refresh = () => { revalidatePath("/favoritos"); revalidatePath("/"); };
+const refresh = () => { revalidatePath("/favoritos"); revalidatePath("/proyectos", "layout"); revalidatePath("/"); };
 const actorOf = async (): Promise<Actor> => { const c = await getContext(); return { supabase: c.supabase, workspaceId: c.workspaceId, userId: c.userId, timezone: c.timezone }; };
 
 /** Guarda un enlace en Favoritos. El análisis se hace después, en segundo plano. */
@@ -207,6 +207,16 @@ export async function renameCategory(id: string, name: string): Promise<ActionRe
   return { ok: true };
 }
 
+/** Mueve una categoría dentro de otra (o arriba del todo). La BD impide meterla dentro de una suya. */
+export async function moveCategory(id: string, parentId: string | null): Promise<ActionResult> {
+  if (!uuid.safeParse(id).success || (parentId !== null && !uuid.safeParse(parentId).success)) return { ok: false, error: "Datos no válidos" };
+  const a = await actorOf();
+  const { error } = await a.supabase.from("video_categories").update({ parent_id: parentId }).eq("id", id).eq("workspace_id", a.workspaceId);
+  if (error) return { ok: false, error: error.code === "23505" ? "Ya hay una con ese nombre ahí (puedes fusionarlas)" : /subcategor|sí misma/.test(error.message) ? "No se puede meter dentro de una de sus subcategorías" : "No se pudo mover" };
+  refresh();
+  return { ok: true };
+}
+
 export async function togglePinCategory(id: string, pinned: boolean): Promise<ActionResult> {
   if (!uuid.safeParse(id).success) return { ok: false, error: "Datos no válidos" };
   const a = await actorOf();
@@ -220,19 +230,35 @@ export async function togglePinCategory(id: string, pinned: boolean): Promise<Ac
 export async function mergeCategories(from: string, into: string): Promise<ActionResult> {
   if (!uuid.safeParse(from).success || !uuid.safeParse(into).success || from === into) return { ok: false, error: "Elige dos categorías distintas" };
   const a = await actorOf();
-  const m = await a.supabase.from("saved_videos").update({ category_id: into }).eq("category_id", from).eq("workspace_id", a.workspaceId);
-  if (m.error) return { ok: false, error: "No se pudieron mover los vídeos" };
-  await a.supabase.from("video_categories").delete().eq("id", from).eq("workspace_id", a.workspaceId);
+  // Vídeos, notas, tareas y subcategorías pasan a la otra; después se borra.
+  const ws = a.workspaceId;
+  const moves = await Promise.all([
+    a.supabase.from("saved_videos").update({ category_id: into }).eq("category_id", from).eq("workspace_id", ws),
+    a.supabase.from("notes").update({ category_id: into }).eq("category_id", from).eq("workspace_id", ws),
+    a.supabase.from("tasks").update({ category_id: into }).eq("category_id", from).eq("workspace_id", ws),
+  ]);
+  if (moves.some((m) => m.error)) return { ok: false, error: "No se pudieron mover los vídeos" };
+  const { data: kids } = await a.supabase.from("video_categories").select("id, name").eq("parent_id", from).eq("workspace_id", ws);
+  for (const k of kids ?? []) {
+    const r = await a.supabase.from("video_categories").update({ parent_id: into }).eq("id", k.id).eq("workspace_id", ws);
+    // Ya hay una subcategoría con ese nombre en el destino: se funde con ella.
+    if (r.error?.code === "23505") {
+      const { data: twin } = await a.supabase.from("video_categories").select("id").eq("workspace_id", ws).eq("parent_id", into).ilike("name", k.name).maybeSingle();
+      if (twin) await mergeCategories(k.id, twin.id);
+    }
+  }
+  await a.supabase.from("video_categories").delete().eq("id", from).eq("workspace_id", ws);
   refresh();
   return { ok: true };
 }
 
-export async function createCategory(name: string): Promise<ActionResult> {
+export async function createCategory(name: string, parentId: string | null = null): Promise<ActionResult> {
   const n = catName.safeParse(name);
   if (!n.success) return { ok: false, error: n.error.issues[0]?.message ?? "Nombre no válido" };
+  if (parentId !== null && !uuid.safeParse(parentId).success) return { ok: false, error: "Categoría no válida" };
   const a = await actorOf();
-  const { data, error } = await a.supabase.from("video_categories").insert({ workspace_id: a.workspaceId, user_id: a.userId, name: n.data }).select("id").single();
-  if (error) return { ok: false, error: error.code === "23505" ? "Ya existe esa categoría" : "No se pudo crear" };
+  const { data, error } = await a.supabase.from("video_categories").insert({ workspace_id: a.workspaceId, user_id: a.userId, name: n.data, parent_id: parentId }).select("id").single();
+  if (error) return { ok: false, error: error.code === "23505" ? "Ya existe esa categoría ahí" : "No se pudo crear" };
   refresh();
   return { ok: true, id: data.id };
 }

@@ -1,5 +1,5 @@
 import {
-  Briefcase, CalendarDays, CheckSquare, ClipboardCheck, Home, Inbox, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
+  Briefcase, CalendarDays, CheckSquare, ClipboardCheck, FolderKanban, Home, Inbox, Megaphone, MoreHorizontal, Newspaper, Sparkles, NotebookText, Settings, Target, Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -15,6 +15,7 @@ export const sidebarItems: NavItem[] = [
   { href: "/tareas", label: "Tareas", icon: CheckSquare },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/negocios", label: "Negocios", icon: Briefcase },
+  { href: "/proyectos", label: "Proyectos", icon: FolderKanban },
   { href: "/noticias", label: "Noticias", icon: Newspaper },
   { href: "/redes", label: "Redes", icon: Megaphone },
   { href: "/notas", label: "Notas", icon: NotebookText },
@@ -24,7 +25,7 @@ export const sidebarItems: NavItem[] = [
 
 /** Icono de cada sección (la barra inferior se elige en Ajustes → Navegación, ver `src/lib/home/nav.ts`). */
 export const SECTION_ICONS: Record<SectionKey, LucideIcon> = {
-  inicio: Home, revision: ClipboardCheck, tareas: CheckSquare, negocios: Briefcase, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, redes: Megaphone,
+  inicio: Home, revision: ClipboardCheck, tareas: CheckSquare, negocios: Briefcase, proyectos: FolderKanban, calendario: CalendarDays, objetivos: Target, noticias: Newspaper, redes: Megaphone,
   notas: NotebookText, favoritos: Video, bandeja: Inbox, chat: Sparkles, ajustes: Settings,
 };
 

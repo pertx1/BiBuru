@@ -18,6 +18,7 @@ const uuid = z.uuid();
 const NOT_FOUND = { ok: false as const, error: "No se encontró la tarea", notFound: true as const };
 const refresh = () => {
   revalidatePath("/tareas", "layout");
+  revalidatePath("/proyectos", "layout");
   revalidatePath("/calendario");
   revalidatePath("/objetivos");
   revalidatePath("/negocios", "layout");

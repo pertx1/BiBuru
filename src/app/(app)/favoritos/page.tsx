@@ -8,6 +8,7 @@ import { AddVideoForm } from "@/components/favorites/add-video-form";
 import { TiktokImport } from "@/components/favorites/tiktok-import";
 import { ShareShortcut } from "@/components/favorites/share-shortcut";
 import { CategoriesManager } from "@/components/favorites/categories-manager";
+import { ancestors, buildTree } from "@/lib/categories/tree";
 import { VideoList } from "@/components/favorites/video-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -34,7 +35,7 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
   const { supabase, workspaceId } = await getContext();
   // Respaldo del cron: las listas de YouTube con más de una hora sin revisar se miran tras enviar la página.
   after(async () => { try { await syncStaleFeeds(createAdminClient(), { workspaceId, staleMinutes: 60, limit: 3 }); } catch (e) { console.error("[videos] feeds:", e instanceof Error ? e.message : e); } });
-  const [{ videos, tags, byStatus, byCat, categories, costs }, biz, share] = await Promise.all([
+  const [{ videos, tags, byStatus, byCat, ownCount, categories, costs }, biz, share] = await Promise.all([
     listFavorites(f),
     supabase.from("businesses").select("id, name").eq("workspace_id", workspaceId).eq("archived", false).order("name"),
     supabase.from("share_tokens").select("created_at, last_used_at, uses").eq("workspace_id", workspaceId).maybeSingle(),
@@ -47,6 +48,10 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
   };
   const chip = (active: boolean) => cn("inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm md:min-h-9", active ? "border-accent bg-accent text-accent-foreground" : "border-border bg-surface hover:bg-surface-2");
   const businesses = biz.data ?? [];
+  const tree = buildTree(categories);
+  // Ruta de la categoría elegida dentro del árbol (para enseñar sus subcategorías).
+  const trail = f.cat && f.cat !== "none" ? (() => { const ids = ancestors(categories, f.cat).map((c) => c.id); const out: typeof tree = []; let level = tree; for (const id of ids) { const n = level.find((x) => x.id === id); if (!n) break; out.push(n); level = n.children; } return out; })() : [];
+  const top = trail[0];
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "localhost"}`;
   const opened = uuid.safeParse(sp.abrir).success ? sp.abrir! : null;
@@ -70,11 +75,18 @@ export default async function FavoritosPage({ searchParams }: { searchParams: Pr
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <nav aria-label="Categorías" className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
           <Link href={href({ cat: "" })} className={chip(!f.cat)}>Todas</Link>
-          {categories.map((c) => <Link key={c.id} href={href({ cat: c.id })} className={chip(f.cat === c.id)}>{c.pinned && "📌 "}{c.name} <span className="text-xs opacity-70">{byCat[c.id] ?? 0}</span></Link>)}
+          {tree.map((c) => <Link key={c.id} href={href({ cat: c.id })} className={chip(top?.id === c.id)}>{c.pinned && "📌 "}{c.name} <span className="text-xs opacity-70">{byCat[c.id] ?? 0}</span></Link>)}
           <Link href={href({ cat: "none" })} className={chip(f.cat === "none")}>Sin categoría</Link>
         </nav>
-        <CategoriesManager categories={categories} counts={byCat} />
+        <CategoriesManager categories={categories} counts={ownCount} />
       </div>
+      {/* Subcategorías de la categoría elegida (y de las suyas): «IA» → Claude, Otras IA… */}
+      {trail.map((node) => node.children.length > 0 && (
+        <nav key={node.id} aria-label={`Dentro de ${node.name}`} className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:px-0">
+          <Link href={href({ cat: node.id })} className={chip(f.cat === node.id)}>Todo {node.name}</Link>
+          {node.children.map((c) => <Link key={c.id} href={href({ cat: c.id })} className={chip(trail.some((t) => t.id === c.id))}>{c.name} <span className="text-xs opacity-70">{byCat[c.id] ?? 0}</span></Link>)}
+        </nav>
+      ))}
 
       <form method="get" action="/favoritos" className="mt-3 flex flex-wrap gap-2" role="search">
         {f.estado !== "por_ver" && <input type="hidden" name="estado" value={f.estado} />}

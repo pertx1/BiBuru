@@ -26,6 +26,8 @@ export const taskFieldsSchema = z.object({
   time: z.preprocess(blankToNull, hm.nullable()),
   businessId: z.preprocess(blankToNull, z.uuid().nullable()),
   goalId: z.preprocess(blankToNull, z.uuid().nullable()),
+  /** Categoría/proyecto («IA › Claude»). Sin enviar = no se toca. */
+  categoryId: z.preprocess(blankToNull, z.uuid().nullable()).optional(),
   repeat: z.enum(REPEATS).default("none"),
   repeatDays: z.array(z.number().int().min(0).max(6)).max(7).default([]),
   reminderMode: z.enum(REMINDER_MODES).default("none"),
@@ -51,7 +53,7 @@ export const firstIssue = (e: z.ZodError) => e.issues[0]?.message ?? "Datos no v
 
 export type TaskRowLike = {
   title: string; notes: string | null; priority: number; due_date: string | null; due_time: string | null;
-  business_id: string | null; goal_id: string | null; repeat: string; repeat_days: number[];
+  business_id: string | null; goal_id: string | null; category_id?: string | null; repeat: string; repeat_days: number[];
   reminder_mode: string; reminder_at: string | null; reminder_minutes_before: number | null;
 };
 
@@ -60,7 +62,7 @@ export function taskToFields(t: TaskRowLike, timeZone: string): TaskFieldsParsed
   const at = t.reminder_at ? nowLocal(new Date(t.reminder_at), timeZone) : null;
   return {
     title: t.title, notes: t.notes, priority: t.priority, dueDate: t.due_date, time: t.due_time?.slice(0, 5) ?? null,
-    businessId: t.business_id, goalId: t.goal_id, repeat: t.repeat as Repeat, repeatDays: t.repeat_days ?? [],
+    businessId: t.business_id, goalId: t.goal_id, categoryId: t.category_id, repeat: t.repeat as Repeat, repeatDays: t.repeat_days ?? [],
     reminderMode: t.reminder_mode as ReminderMode, reminderDate: at?.date ?? null, reminderTime: at?.time ?? null,
     reminderMinutesBefore: t.reminder_minutes_before,
   };
@@ -81,7 +83,7 @@ export function fieldsToRow(f: TaskFieldsParsed, timeZone: string, now: Date = n
   }, timeZone);
   return {
     title: f.title, notes: f.notes, priority: f.priority, due_date: dueDate, due_time: time,
-    business_id: f.businessId, goal_id: f.goalId, repeat, repeat_days: repeat === "weekdays" ? days : [],
+    business_id: f.businessId, goal_id: f.goalId, ...(f.categoryId !== undefined ? { category_id: f.categoryId } : {}), repeat, repeat_days: repeat === "weekdays" ? days : [],
     ...timingColumns(timing, now),
   };
 }

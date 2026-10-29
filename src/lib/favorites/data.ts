@@ -4,6 +4,7 @@ import { getContext } from "@/lib/context";
 import { tagsOf } from "@/lib/notes/data";
 import type { Database } from "@/lib/supabase/database.types";
 import { estimateVideoCost } from "./service";
+import { descendantIds } from "@/lib/categories/tree";
 
 export type VideoRow = Database["public"]["Tables"]["saved_videos"]["Row"];
 export type VideoCategory = Database["public"]["Tables"]["video_categories"]["Row"];
@@ -12,9 +13,12 @@ export { STATUS_LABELS } from "./labels";
 
 export async function listFavorites(f: VideoFilters) {
   const { supabase, workspaceId } = await getContext();
+  // Las categorías primero: filtrar por «IA» incluye «IA › Claude» y demás subcategorías.
+  const { data: catRows } = await supabase.from("video_categories").select("*").eq("workspace_id", workspaceId).order("pinned", { ascending: false }).order("name");
+  const allCats = catRows ?? [];
   let q = supabase.from("saved_videos").select("*").eq("workspace_id", workspaceId);
   if (f.estado !== "todos") q = q.eq("status", f.estado);
-  if (f.cat === "none") q = q.is("category_id", null); else if (f.cat) q = q.eq("category_id", f.cat);
+  if (f.cat === "none") q = q.is("category_id", null); else if (f.cat) q = q.in("category_id", descendantIds(allCats, f.cat));
   if (f.neg) q = q.eq("business_id", f.neg);
   if (f.q.trim()) {
     const { data: hits } = await supabase.rpc("search_all", { ws: workspaceId, q: f.q, max_rows: 100 });
@@ -25,10 +29,9 @@ export async function listFavorites(f: VideoFilters) {
   const { data, error } = await q.limit(200);
   if (error) throw new Error(`favoritos: ${error.message}`);
   const videos = data ?? [];
-  const [tags, counts, categories] = await Promise.all([
+  const [tags, counts] = await Promise.all([
     tagsOf("video", videos.map((v) => v.id)),
     supabase.from("saved_videos").select("status, category_id").eq("workspace_id", workspaceId).limit(5000),
-    supabase.from("video_categories").select("*").eq("workspace_id", workspaceId).order("pinned", { ascending: false }).order("name"),
   ]);
   const byStatus: Record<string, number> = { todos: 0, por_ver: 0, visto: 0, aplicado: 0, archivado: 0 };
   const byCat: Record<string, number> = {};
@@ -36,9 +39,12 @@ export async function listFavorites(f: VideoFilters) {
     byStatus.todos++; byStatus[r.status]++;
     if (r.category_id && (f.estado === "todos" || r.status === f.estado)) byCat[r.category_id] = (byCat[r.category_id] ?? 0) + 1;
   }
+  // Cada categoría cuenta también los de sus subcategorías.
+  const totals: Record<string, number> = {};
+  for (const c of allCats) totals[c.id] = descendantIds(allCats, c.id).reduce((s, id) => s + (byCat[id] ?? 0), 0);
   // Coste estimado de los vídeos que esperan confirmación (duración larga).
   const models = getModelNames();
   const costs: Record<string, number> = {};
   for (const v of videos.filter((x) => x.analysis_status === "needs_confirm")) costs[v.id] = await estimateVideoCost({ supabase, workspaceId, models }, v.duration_sec);
-  return { videos, tags, byStatus, byCat, categories: categories.data ?? [], costs };
+  return { videos, tags, byStatus, byCat: totals, ownCount: byCat, categories: allCats, costs };
 }

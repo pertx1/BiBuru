@@ -44,7 +44,7 @@ ${c.textOnly ? (c.cover
     ? "Solo dispones de la descripción, los hashtags, el autor y la imagen de portada (no se ve el vídeo): usa la portada (texto que aparezca, producto, escena) y di claramente en el resumen que está basado en el texto y la portada; no inventes lo que no conste.\n"
     : "Solo dispones del título, el autor y la descripción (no se ve el vídeo): di claramente en el resumen que está basado solo en ese texto y no inventes contenido que no conste.\n") : ""}${c.light ? "Haz un análisis ligero: resumen de 2-3 frases, 3 puntos clave como máximo.\n" : "Resumen de 3 a 5 frases.\n"}
 - key_points: puntos clave concretos (frases cortas).
-- category: UNA categoría. Reutiliza una existente si encaja; solo crea una nueva si ninguna sirve. Existentes: ${cats}.
+- category: UNA categoría, con su ruta tal cual si es una subcategoría (p. ej. «IA › Claude»). Elige la más concreta que encaje; reutiliza una existente si encaja; solo crea una nueva si ninguna sirve (puede ir dentro de una existente: «IA › Gemini»). Existentes: ${cats}.
 - tags: hasta 6 etiquetas cortas en minúsculas.
 - actions: ideas accionables concretas para el trabajo de la persona (vacío si no hay).
 - business: nombre EXACTO de uno de estos negocios si el vídeo le sirve, o null. Motivo breve en business_reason.

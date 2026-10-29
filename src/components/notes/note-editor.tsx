@@ -3,7 +3,9 @@
 import { Bold, Check, CheckSquare, Eye, Heading2, Italic, Link2, List, Pencil, Pin, PinOff, Quote, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deleteNote, moveNote, saveNote, setNotePinned } from "@/app/(app)/notas/actions";
+import { deleteNote, moveNote, saveNote, setNoteCategory, setNotePinned } from "@/app/(app)/notas/actions";
+import { CategoryOptions } from "@/components/categories/category-options";
+import type { CatRow } from "@/lib/categories/tree";
 import { Select } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import type { Folder, Note } from "@/lib/notes/data";
@@ -25,7 +27,7 @@ function folderOptions(folders: Folder[]) {
 }
 
 /** Editor de Markdown cómodo en móvil: barra de formato, vista previa y autoguardado (con copia local por si no hay red). */
-export function NoteEditor({ note, folders, businesses, tags, allTags }: { note: Note; folders: Folder[]; businesses: Biz[]; tags: TagLite[]; allTags: TagLite[] }) {
+export function NoteEditor({ note, folders, businesses, tags, allTags, categories = [] }: { note: Note; folders: Folder[]; businesses: Biz[]; tags: TagLite[]; allTags: TagLite[]; categories?: CatRow[] }) {
   const router = useRouter();
   const toast = useToast();
   const [title, setTitle] = useState(note.title);
@@ -33,6 +35,7 @@ export function NoteEditor({ note, folders, businesses, tags, allTags }: { note:
   const [pinned, setPinned] = useState(note.pinned);
   const [folderId, setFolderId] = useState(note.folder_id ?? "");
   const [businessId, setBusinessId] = useState(note.business_id ?? "");
+  const [categoryId, setCategoryId] = useState(note.category_id ?? "");
   const [preview, setPreview] = useState(false);
   const [state, setState] = useState<SaveState>("saved");
   const area = useRef<HTMLTextAreaElement>(null);
@@ -155,6 +158,13 @@ export function NoteEditor({ note, folders, businesses, tags, allTags }: { note:
             <option value="">Ninguno</option>{businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
           </Select>
         </label>
+        {categories.length > 0 && (
+          <label className="flex flex-col gap-1 text-xs text-muted md:col-span-2">Categoría (proyecto)
+            <Select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); void setNoteCategory(note.id, e.target.value || null); }}>
+              <option value="">Ninguna</option><CategoryOptions categories={categories} />
+            </Select>
+          </label>
+        )}
       </div>
       <div><p className="mb-1 text-xs text-muted">Etiquetas</p><TagPicker itemType="note" itemId={note.id} tags={tags} all={allTags} /></div>
       <div><button type="button" onClick={remove} className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-danger"><Trash2 className="size-4" aria-hidden /> Eliminar nota</button></div>
