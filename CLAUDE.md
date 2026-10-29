@@ -205,6 +205,7 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
   (`syncAllStockTasks`). Nunca lanza.
 - Pedidos de la web (canal con la palabra «web») salen pagados solos: triggers → `sync_web_payment` (cobro `auto_web` por lo que falte; `orders.auto_paid_off` si se marca «No pagado» a mano).
 - Pago: `markOrderUnpaid` / `restorePayments` (selector de estado de pago en la lista, con «Deshacer»).
+- Edición masiva en la lista («Seleccionar» → casillas + barra): `setOrdersStatus` (devuelve el estado previo; «Deshacer» con `restoreOrdersStatus`) y `markOrdersPaid`. Máx. 500; el stock lo ajustan los triggers.
 
 ## Correo (quitado)
 - El correo de Outlook se quitó entero (a petición): sin página, ajustes, widgets, avisos, pestaña «Mensajes» del negocio ni tarea programada

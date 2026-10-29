@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, Plus, Wallet } from "lucide-react";
+import { Check, CheckSquare, Plus, Wallet, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { setOrderStatus } from "@/app/(app)/negocios/actions";
-import { markOrderPaid, markOrderUnpaid, restorePayments } from "@/app/(app)/negocios/payments-actions";
+import { restoreOrdersStatus, setOrderStatus, setOrdersStatus } from "@/app/(app)/negocios/actions";
+import { markOrderPaid, markOrderUnpaid, markOrdersPaid, restorePayments } from "@/app/(app)/negocios/payments-actions";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
@@ -42,6 +42,34 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
   const [paying, setPaying] = useState<Order | null>(null);
   const [busy, start] = useTransition();
   const toast = useToast();
+  // Edición masiva: con «Seleccionar» cada fila lleva una casilla y abajo sale la barra de acciones.
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const visibleIds = orders.map((o) => o.id);
+  const chosen = visibleIds.filter((id) => selected.has(id));
+  const allOn = chosen.length === visibleIds.length && visibleIds.length > 0;
+  const toggle = (id: string) => setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const stopSelecting = () => { setSelecting(false); setSelected(new Set()); };
+  const plural = (n: number) => `${n} pedido${n === 1 ? "" : "s"}`;
+
+  const bulkStatus = (status: string) => start(async () => {
+    const r = await setOrdersStatus(chosen, status);
+    if (!r.ok) { toast({ message: r.error }); return; }
+    const prev = r.previous ?? [];
+    toast({
+      message: prev.length ? `${plural(prev.length)} → ${ORDER_STATUS_LABEL[status as OrderStatus]}` : `Ya estaban en ${ORDER_STATUS_LABEL[status as OrderStatus]}`,
+      ...(prev.length ? { actionLabel: "Deshacer", onAction: () => void restoreOrdersStatus(prev).then(() => router.refresh()) } : {}),
+    });
+    stopSelecting();
+    router.refresh();
+  });
+  const bulkPaid = () => start(async () => {
+    if (!confirm(`¿Marcar ${plural(chosen.length)} como pagados? Se apunta un cobro con fecha de hoy por lo que falte en cada uno (los cancelados se saltan).`)) return;
+    const r = await markOrdersPaid(chosen);
+    toast({ message: r.ok ? `${plural(r.changed ?? 0)} marcados como pagados` : r.error });
+    stopSelecting();
+    router.refresh();
+  });
 
   /** Cambiar el estado de pago desde la lista: «Pagado» apunta un cobro por lo que falte; «Pendiente» quita los cobros (con «Deshacer»). */
   const setPay = (o: Order, to: "paid" | "pending") => start(async () => {
@@ -72,14 +100,28 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
   return (
     <>
       {!hideList && <>
-      <div className="mb-3 hidden md:block"><Button onClick={() => setCreating(true)}><Plus className="size-4" aria-hidden /> Nuevo pedido</Button></div>
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Button className="hidden md:inline-flex" onClick={() => setCreating(true)}><Plus className="size-4" aria-hidden /> Nuevo pedido</Button>
+        {orders.length > 0 && (selecting
+          ? <>
+              <Button type="button" variant="secondary" onClick={() => setSelected(allOn ? new Set() : new Set(visibleIds))}>{allOn ? "Quitar todos" : `Seleccionar todos (${visibleIds.length})`}</Button>
+              <Button type="button" variant="secondary" onClick={stopSelecting}><X className="size-4" aria-hidden /> Cancelar</Button>
+            </>
+          : <Button type="button" variant="secondary" onClick={() => setSelecting(true)}><CheckSquare className="size-4" aria-hidden /> Seleccionar</Button>)}
+      </div>
+      <ul className={cn("divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface", selecting && "mb-40 md:mb-0")}>
         {orders.map((o) => {
           const st = payStatus(o);
           const left = Math.max(o.total_cents - o.paid_cents, 0);
           return (
-            <li key={o.id} id={`pedido-${o.id}`} className={cn("flex flex-col gap-1 pb-2 transition-colors md:flex-row md:items-center md:gap-2 md:pb-0 md:pr-3", highlightId === o.id && "bg-accent/10 ring-2 ring-inset ring-accent")}>
-              <button type="button" onClick={() => open(o)} className="flex min-h-14 min-w-0 flex-1 flex-col justify-center gap-0.5 px-4 py-2 text-left hover:bg-surface-2">
+            <li key={o.id} id={`pedido-${o.id}`} className={cn("flex flex-col gap-1 pb-2 transition-colors md:flex-row md:items-center md:gap-2 md:pb-0 md:pr-3", highlightId === o.id && "bg-accent/10 ring-2 ring-inset ring-accent", selecting && selected.has(o.id) && "bg-accent/10")}>
+              <div className="flex min-w-0 flex-1 items-stretch">
+              {selecting && (
+                <label className="flex min-h-14 w-12 shrink-0 cursor-pointer items-center justify-center pl-2">
+                  <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggle(o.id)} aria-label={`Seleccionar ${o.customer ?? o.order_number ?? "pedido"}`} className="size-5 accent-[var(--accent)]" />
+                </label>
+              )}
+              <button type="button" onClick={() => (selecting ? toggle(o.id) : open(o))} className="flex min-h-14 min-w-0 flex-1 flex-col justify-center gap-0.5 px-4 py-2 text-left hover:bg-surface-2">
                 <span className="flex items-baseline justify-between gap-3">
                   <span className="truncate text-sm font-medium">{o.customer ?? (o.order_number ? `Pedido ${o.order_number}` : "Sin cliente")}</span>
                   <span className={`shrink-0 text-sm font-semibold tabular-nums ${o.status === "cancelado" ? "text-muted line-through" : ""}`}>{formatEUR(o.total_cents)}</span>
@@ -87,6 +129,7 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
                 <span className="truncate text-xs text-muted">{formatDate(o.order_date)} · {summary(o)}</span>
                 {(st === "partial" || st === "pending") && <span className="text-xs text-bad">Falta cobrar {formatEUR(left)}</span>}
               </button>
+              </div>
               <div className="flex flex-wrap items-center gap-1.5 px-4 md:flex-nowrap md:px-0">
                 <select
                   aria-label="Estado del pedido" value={o.status}
@@ -124,14 +167,26 @@ export function OrdersView({ businessId, orders, products, today, openOrder, hig
         })}
         {orders.length === 0 && <li className="p-6 text-center text-sm text-muted">No hay pedidos con estos filtros. Pulsa «Nuevo pedido» para crear uno.</li>}
       </ul>
+      {selecting && (
+        <div role="toolbar" aria-label="Acciones con los pedidos seleccionados"
+          className="fixed inset-x-3 border border-border bg-surface bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex flex-wrap items-center gap-2 rounded-2xl p-3 shadow-lg md:sticky md:inset-x-auto md:bottom-4 md:mt-3">
+          <span className="text-sm font-medium tabular-nums">{chosen.length ? `${plural(chosen.length)} seleccionado${chosen.length === 1 ? "" : "s"}` : "Elige pedidos"}</span>
+          <select aria-label="Cambiar estado de los seleccionados" value="" disabled={busy || !chosen.length} onChange={(e) => e.target.value && bulkStatus(e.target.value)}
+            className="min-h-11 rounded-full bg-fill px-3 text-base font-semibold md:min-h-9 md:text-sm">
+            <option value="">Cambiar estado a…</option>
+            {ORDER_STATUSES.map((st) => <option key={st} value={st}>{ORDER_STATUS_LABEL[st]}</option>)}
+          </select>
+          <Button type="button" variant="secondary" disabled={busy || !chosen.length} onClick={bulkPaid}><Check className="size-4" aria-hidden /> Marcar pagados</Button>
+        </div>
+      )}
       </>}
 
       {/* Móvil: siempre a mano, encima de la barra inferior. */}
-      <button type="button" onClick={() => setCreating(true)} aria-label="Nuevo pedido"
+      {!selecting && <button type="button" onClick={() => setCreating(true)} aria-label="Nuevo pedido"
         className="fixed right-4 z-30 inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-accent-foreground shadow-lg md:hidden"
         style={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }}>
         <Plus className="size-5" aria-hidden /> Nuevo pedido
-      </button>
+      </button>}
 
       <Sheet open={creating} onClose={() => setCreating(false)} title="Nuevo pedido" variant="panel">
         {creating && (

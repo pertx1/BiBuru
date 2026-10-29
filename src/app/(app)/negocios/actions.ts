@@ -125,6 +125,46 @@ export async function setOrderStatus(id: string, status: string): Promise<Action
   return { ok: true };
 }
 
+const bulkIds = z.array(z.uuid()).min(1, "Elige algún pedido").max(500, "Como mucho 500 pedidos a la vez");
+
+/**
+ * Cambia el estado de varios pedidos a la vez. Devuelve el estado que tenía cada uno para «Deshacer».
+ * El stock lo ajustan los triggers de la base de datos pedido a pedido (como al cambiarlo de uno en uno).
+ */
+export async function setOrdersStatus(ids: string[], status: string): Promise<ActionResult & { changed?: number; previous?: { id: string; status: string }[] }> {
+  const parsed = z.object({ ids: bulkIds, status: orderSchema.shape.status }).safeParse({ ids, status });
+  if (!parsed.success) return firstError(parsed.error);
+  const { supabase, workspaceId } = await getContext();
+  const { data: before, error: readErr } = await supabase.from("orders").select("id, status, business_id").eq("workspace_id", workspaceId).in("id", parsed.data.ids);
+  if (readErr) return dbError("orders.bulk.read", readErr);
+  const toChange = (before ?? []).filter((o) => o.status !== parsed.data.status);
+  if (toChange.length) {
+    const { error } = await supabase.from("orders").update({ status: parsed.data.status }).eq("workspace_id", workspaceId).in("id", toChange.map((o) => o.id));
+    if (error) return dbError("orders.bulk.status", error);
+    for (const b of new Set(toChange.map((o) => o.business_id))) await syncStockTasks(b);
+  }
+  refresh();
+  return { ok: true, changed: toChange.length, previous: toChange.map((o) => ({ id: o.id, status: o.status })) };
+}
+
+/** «Deshacer» del cambio masivo: devuelve a cada pedido el estado que tenía. */
+export async function restoreOrdersStatus(previous: { id: string; status: string }[]): Promise<ActionResult> {
+  const parsed = z.array(z.object({ id: z.uuid(), status: orderSchema.shape.status })).min(1).max(500).safeParse(previous);
+  if (!parsed.success) return firstError(parsed.error);
+  const byStatus = new Map<string, string[]>();
+  for (const p of parsed.data) byStatus.set(p.status, [...(byStatus.get(p.status) ?? []), p.id]);
+  const { supabase, workspaceId } = await getContext();
+  const businesses = new Set<string>();
+  for (const [st, list] of byStatus) {
+    const { data, error } = await supabase.from("orders").update({ status: st as never }).eq("workspace_id", workspaceId).in("id", list).select("business_id");
+    if (error) return dbError("orders.bulk.restore", error);
+    for (const r of data ?? []) businesses.add(r.business_id);
+  }
+  for (const b of businesses) await syncStockTasks(b);
+  refresh();
+  return { ok: true };
+}
+
 export async function deleteOrder(id: string): Promise<ActionResult> {
   if (!z.uuid().safeParse(id).success) return { ok: false, error: "Pedido no válido" };
   const { supabase, workspaceId } = await getContext();

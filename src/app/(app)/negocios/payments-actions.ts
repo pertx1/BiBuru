@@ -57,6 +57,15 @@ export async function markOrderPaid(orderId: string, method: (typeof PAYMENT_MET
   return { ok: true };
 }
 
+/** Marca varios pedidos como pagados (un cobro por lo que falte en cada uno; los cancelados se saltan). */
+export async function markOrdersPaid(ids: string[]): Promise<ActionResult & { changed?: number }> {
+  const p = z.array(z.uuid()).min(1).max(500).safeParse(ids);
+  if (!p.success) return { ok: false, error: "Datos no válidos" };
+  let changed = 0;
+  for (const id of p.data) if ((await markOrderPaid(id)).ok) changed++;
+  return { ok: true, changed };
+}
+
 type SavedPayment = { paid_on: string; amount_cents: number; method: string; note: string | null };
 
 /**
