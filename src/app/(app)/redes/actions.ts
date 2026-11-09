@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { getContext } from "@/lib/context";
 import { zonedToUtc } from "@/lib/dates";
@@ -8,16 +9,19 @@ import { SOCIAL_BUCKET, STORAGE_LIMIT_BYTES } from "@/lib/social/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ActionResult } from "@/lib/schemas";
 import { tiktokModeFor } from "@/lib/social/tiktok-mode";
+import { checkCaption, SOCIAL_MAX_FILE, SOCIAL_MIME } from "@/lib/social/validate";
+import { captionFor } from "@/lib/social/stats";
 
 const uuid = z.uuid();
 const refresh = () => { revalidatePath("/redes"); revalidatePath("/calendario"); revalidatePath("/"); };
-const MIME = ["image/jpeg", "image/png", "video/mp4", "video/quicktime"] as const;
-const MAX_FILE = 50 * 1024 * 1024;
+const MIME = SOCIAL_MIME;
+const MAX_FILE = SOCIAL_MAX_FILE;
 
 /** Crea un borrador vacío (los archivos se suben a su carpeta). Opcionalmente a partir de un vídeo de Favoritos. */
-export async function createDraft(o: { videoId?: string } = {}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+export async function createDraft(o: { videoId?: string; businessId?: string | null } = {}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const { supabase, workspaceId, userId } = await getContext();
   let seed: { title?: string; caption?: string; notes?: string; source_video_id?: string; business_id?: string | null } = {};
+  if (o.businessId && uuid.safeParse(o.businessId).success) seed.business_id = o.businessId; // desde la pestaña Redes de un negocio
   if (o.videoId && uuid.safeParse(o.videoId).success) {
     const { data: v } = await supabase.from("saved_videos").select("id, title, url, summary, actions, notes, business_id").eq("id", o.videoId).eq("workspace_id", workspaceId).maybeSingle();
     if (v) {
@@ -38,6 +42,9 @@ const postSchema = z.object({
   id: uuid, title: z.string().trim().max(120).optional(), caption: z.string().max(2200), hashtags: z.string().max(1000),
   mediaKind: z.enum(["image", "carousel", "reel", "video"]), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
   time: z.string().regex(/^\d{2}:\d{2}$/).optional().or(z.literal("")), accountIds: z.array(uuid).max(10), schedule: z.boolean(), businessId: uuid.nullable().optional(), notes: z.string().max(5000).optional(),
+  captionInstagram: z.string().max(2200).nullable().optional(), captionTiktok: z.string().max(2200).nullable().optional(),
+  /** «Publicar ahora»: hora = ahora y el primer paso sale enseguida. */
+  now: z.boolean().optional(),
 });
 
 /** Guarda la publicación. «Programar» exige fecha, al menos una red y algún archivo; «Borrador» no exige nada. */
@@ -49,8 +56,11 @@ export async function savePost(input: z.input<typeof postSchema>): Promise<Actio
   const { data: post } = await supabase.from("social_posts").select("id, status").eq("id", d.id).eq("workspace_id", workspaceId).maybeSingle();
   if (!post) return { ok: false, error: "Publicación no encontrada" };
   if (post.status === "publicando" || post.status === "publicada") return { ok: false, error: "Ya se está publicando o está publicada: no se puede cambiar." };
-  const scheduled = d.date ? zonedToUtc(d.date, d.time || "10:00", timezone).toISOString() : null;
+  const scheduled = d.now ? new Date().toISOString() : d.date ? zonedToUtc(d.date, d.time || "10:00", timezone).toISOString() : null;
+  if (d.now) d.schedule = true;
   if (d.schedule) {
+    const texts = { caption: d.caption, hashtags: d.hashtags, caption_instagram: d.captionInstagram ?? null, caption_tiktok: d.captionTiktok ?? null };
+    for (const net of ["instagram", "tiktok"] as const) { const c = checkCaption(captionFor(texts, net)); if (c.errors.length) return { ok: false, error: c.errors[0] }; }
     if (!scheduled) return { ok: false, error: "Elige fecha y hora" };
     if (!d.accountIds.length) return { ok: false, error: "Elige al menos una cuenta" };
     const { count } = await supabase.from("social_post_files").select("id", { count: "exact", head: true }).eq("post_id", d.id).is("deleted_at", null);
@@ -60,6 +70,7 @@ export async function savePost(input: z.input<typeof postSchema>): Promise<Actio
   const { error } = await supabase.from("social_posts").update({
     title: d.title || null, caption: d.caption, hashtags: d.hashtags, media_kind: d.mediaKind, scheduled_at: scheduled, status: d.schedule ? "programada" : "borrador",
     business_id: d.businessId ?? null, ...(d.notes !== undefined ? { notes: d.notes || null } : {}),
+    caption_instagram: d.captionInstagram?.trim() ? d.captionInstagram : null, caption_tiktok: d.captionTiktok?.trim() ? d.captionTiktok : null,
   }).eq("id", d.id).eq("workspace_id", workspaceId);
   if (error) return { ok: false, error: "No se pudo guardar" };
   // Redes de destino: se quitan las que ya no están y se añaden las nuevas (con el mejor modo disponible en TikTok).
@@ -73,8 +84,53 @@ export async function savePost(input: z.input<typeof postSchema>): Promise<Actio
   if (add.length) await supabase.from("social_post_targets").insert(add);
   // Reprogramar reinicia los intentos.
   if (d.schedule) await supabase.from("social_post_targets").update({ status: "pendiente", attempts: 0, next_try_at: null, error: null, container_id: null }).eq("post_id", d.id).in("status", ["pendiente", "error"]);
+  if (d.now) {
+    // Tras responder: el primer paso ya (Instagram crea el contenedor; TikTok sube el borrador). El programador sigue el resto.
+    after(async () => {
+      try {
+        await import("@/lib/social/tiktok-service");
+        const { publishPostNow } = await import("@/lib/social/service");
+        await publishPostNow(createAdminClient(), d.id, workspaceId);
+      } catch (e) { console.error("[redes] publicar ahora:", e instanceof Error ? e.message : e); }
+    });
+  }
   refresh();
   return { ok: true };
+}
+
+/**
+ * Duplicar: borrador nuevo con el mismo texto, cuentas y archivos (se copian; si ya se borraron por estar publicada,
+ * sale sin archivos y hay que volver a subirlos).
+ */
+export async function duplicatePost(id: string): Promise<{ ok: true; id: string; files: number; missing: boolean } | { ok: false; error: string }> {
+  if (!uuid.safeParse(id).success) return { ok: false, error: "Datos no válidos" };
+  const { supabase, workspaceId, userId } = await getContext();
+  const { data: p } = await supabase.from("social_posts").select("title, caption, hashtags, caption_instagram, caption_tiktok, media_kind, business_id, notes, social_post_targets(account_id, mode), social_post_files(path, mime, size_bytes, position, deleted_at)").eq("id", id).eq("workspace_id", workspaceId).maybeSingle();
+  if (!p) return { ok: false, error: "Publicación no encontrada" };
+  const { data: created, error } = await supabase.from("social_posts").insert({
+    workspace_id: workspaceId, user_id: userId, title: `Copia de ${p.title || p.caption.slice(0, 40) || "publicación"}`.slice(0, 120), caption: p.caption, hashtags: p.hashtags,
+    caption_instagram: p.caption_instagram, caption_tiktok: p.caption_tiktok, media_kind: p.media_kind, business_id: p.business_id, notes: p.notes,
+  }).select("id").single();
+  if (error) return { ok: false, error: "No se pudo duplicar" };
+  if (p.social_post_targets.length) await supabase.from("social_post_targets").insert(p.social_post_targets.map((t) => ({ workspace_id: workspaceId, user_id: userId, post_id: created.id, account_id: t.account_id, mode: t.mode })));
+  const live = p.social_post_files.filter((f) => !f.deleted_at).sort((a, b) => a.position - b.position);
+  const used = await usedBytes(supabase, workspaceId);
+  let copied = 0;
+  if (used + live.reduce((s, f) => s + Number(f.size_bytes), 0) <= STORAGE_LIMIT_BYTES) {
+    for (const f of live) {
+      const to = `${workspaceId}/${created.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${f.path.split(".").pop()}`;
+      const { error: cpErr } = await supabase.storage.from(SOCIAL_BUCKET).copy(f.path, to);
+      if (cpErr) continue;
+      await supabase.from("social_post_files").insert({ workspace_id: workspaceId, user_id: userId, post_id: created.id, path: to, mime: f.mime, size_bytes: f.size_bytes, position: copied++ });
+    }
+  }
+  refresh();
+  return { ok: true, id: created.id, files: copied, missing: copied < live.length || p.social_post_files.some((f) => f.deleted_at) };
+}
+
+async function usedBytes(supabase: Awaited<ReturnType<typeof getContext>>["supabase"], workspaceId: string) {
+  const { data: files } = await supabase.from("social_post_files").select("size_bytes").eq("workspace_id", workspaceId).is("deleted_at", null).limit(5000);
+  return (files ?? []).reduce((s, f) => s + Number(f.size_bytes), 0);
 }
 
 /** Cambiar solo la fecha (arrastrar en el Calendario): mantiene la hora. */
@@ -96,8 +152,7 @@ export async function prepareSocialUpload(postId: string, file: { name: string; 
   const p = z.object({ postId: uuid, size: z.number().int().min(1).max(MAX_FILE), mime: z.enum(MIME) }).safeParse({ postId, size: file.size, mime: file.mime });
   if (!p.success) return { ok: false, error: file.size > MAX_FILE ? "El archivo pasa de 50 MB." : "Formato no válido: JPG, PNG, MP4 o MOV." };
   const { supabase, workspaceId } = await getContext();
-  const { data: files } = await supabase.from("social_post_files").select("size_bytes").eq("workspace_id", workspaceId).is("deleted_at", null).limit(5000);
-  const used = (files ?? []).reduce((s, f) => s + Number(f.size_bytes), 0);
+  const used = await usedBytes(supabase, workspaceId);
   if (used + file.size > STORAGE_LIMIT_BYTES) return { ok: false, error: "No queda espacio para archivos (máx. 500 MB). Borra borradores antiguos o espera a que se limpien los ya publicados." };
   const ext = { "image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov" }[p.data.mime];
   return { ok: true, path: `${workspaceId}/${postId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}` };

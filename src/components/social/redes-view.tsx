@@ -5,7 +5,7 @@ import { SocialStats } from "@/components/social/social-stats";
 import { RefreshAll } from "@/components/social/refresh-all";
 import { listBusinesses } from "@/lib/data";
 import { addDays, requestNowMs, todayISO } from "@/lib/dates";
-import { accountsExtras, accountStats, listPosts, listSocialAccounts, socialConfigured, storageUsed } from "@/lib/social/data";
+import { accountsExtras, accountStats, listPosts, listSocialAccounts, postMetrics, socialConfigured, storageUsed } from "@/lib/social/data";
 import { refreshIfStale } from "@/lib/sync/service";
 import { STORAGE_LIMIT_BYTES } from "@/lib/social/service";
 import { followerDelta } from "@/lib/social/stats";
@@ -50,6 +50,7 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
   const to = addDays(today, -1), from = addDays(to, -(days - 1)), prevFrom = addDays(from, -days);
   const single = accounts.find((a) => a.id === sp.cuenta);
   const statsIds = single ? [single.id] : accounts.map((a) => a.id);
+  const posts = view === "contenido" ? (await listPosts()).filter((p) => !filterBiz || p.business_id === filterBiz) : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,7 +71,7 @@ export async function RedesView({ sp, businessId, basePath }: { sp: RedesSP; bus
       <nav className="flex gap-1 border-b border-border" aria-label="Secciones de Redes">{tab("contenido", "Contenido")}{tab("estadisticas", "Estadísticas")}</nav>
 
       {view === "contenido" && (
-        <PostsView posts={(await listPosts()).filter((p) => !filterBiz || p.business_id === filterBiz)} accounts={accounts.map((a) => ({ id: a.id, platform: a.platform, username: a.username, status: a.status, scopes: a.scopes }))}
+        <PostsView posts={posts} metrics={await postMetrics(posts)} businessId={filterBiz ?? null} accounts={accounts.map((a) => ({ id: a.id, platform: a.platform, username: a.username, status: a.status, scopes: a.scopes }))}
           businesses={businesses.map((b) => ({ id: b.id, name: b.name }))} today={today} openId={sp.abrir ?? null} used={await storageUsed()} limit={STORAGE_LIMIT_BYTES} />
       )}
       {view === "estadisticas" && (

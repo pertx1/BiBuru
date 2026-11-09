@@ -306,3 +306,14 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   que no existe, la negra (lo de antes). `resolveShirtModel` ya distingue entre varias sudaderas por color (antes cogía la primera).
 - Migración solo aditiva para los negocios «Akerra»: crea Sudadera gris/negra/blanca con las tallas de las sudaderas que ya había (o S–XXL) a 0
   y pone Eguzkilore en «Sudadera». Gatazka Sudadera sigue fija en la negra. En Reglas → «Prenda fija» sale la opción «Sudadera (del color del pedido)».
+
+## Redes v2: publicar sin duplicados, texto por red y guía (tipo Metricool)
+- Se aprovecha el módulo de Redes que ya había (cuentas por negocio, Instagram completo, TikTok en borrador, pg_cron cada 5 min) y se completa.
+- Programador: Supabase pg_cron + pg_net (ya configurado al desplegar). Descartados el cron de Vercel Hobby (1 vez al día) y GitHub Actions
+  (retrasos de 10–60 min y se desactiva tras 60 días sin actividad).
+- Bloqueo: `claim_social_target` (UPDATE atómico con `locked_until` de 4 min). Dos pasadas a la vez, o «Publicar ahora» + programador, nunca envían dos veces.
+- Reintentos 3 (5, 15, 45 min); los errores sin arreglo (formato, permisos) van directos a «Error». Mensajes traducidos por código/subcódigo.
+- Cupo de Instagram con `content_publishing_limit` antes de crear el contenedor (que se crea justo al publicar: caduca a las 24 h).
+- Archivos: se borran nada más salir bien en todas las cuentas (antes, a los 3 días). La publicación asistida los conserva para descargarlos.
+- TikTok en modo borrador (inbox) no admite título por la API: botón «Copiar texto para TikTok» y aviso al móvil al llegar a la bandeja.
+- Tope de 50 MB por archivo (límite de subida del plan gratis de Supabase); PNG se convierte a JPEG en el navegador (Instagram por API solo publica JPEG).

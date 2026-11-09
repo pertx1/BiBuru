@@ -129,7 +129,8 @@ describe("estadísticas", () => {
     expect(tokenState("2026-12-01T00:00:00Z", now)).toBe("ok");
     expect(tokenState("2026-10-10T00:00:00Z", now)).toBe("expiring");
     expect(tokenState("2026-10-01T00:00:00Z", now)).toBe("expired");
-    expect(nextRetry(0, now)?.toISOString()).toBe("2026-10-07T00:02:00.000Z");
+    expect(nextRetry(0, now)?.toISOString()).toBe("2026-10-07T00:05:00.000Z");
+    expect(nextRetry(2, now)?.toISOString()).toBe("2026-10-07T00:45:00.000Z");
     expect(nextRetry(3, now)).toBeNull();
   });
   it("texto + hashtags sin repetir", () => {

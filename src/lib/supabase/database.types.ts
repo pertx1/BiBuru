@@ -1109,13 +1109,13 @@ isOneToOne: false
                   ]
                 },"social_post_targets": {
                   Row: {
-                    "account_id": string,"attempts": number,"container_id": string | null,"created_at": string,"error": string | null,"external_id": string | null,"id": string,"mode": string,"next_try_at": string | null,"permalink": string | null,"post_id": string,"privacy": string | null,"published_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
+                    "account_id": string,"attempts": number,"container_id": string | null,"created_at": string,"error": string | null,"external_id": string | null,"id": string,"locked_until": string | null,"mode": string,"next_try_at": string | null,"permalink": string | null,"post_id": string,"privacy": string | null,"published_at": string | null,"status": string,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "account_id": string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id": string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "account_id": string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"locked_until"?: string | null,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id": string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "account_id"?: string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id"?: string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "account_id"?: string,"attempts"?: number,"container_id"?: string | null,"created_at"?: string,"error"?: string | null,"external_id"?: string | null,"id"?: string,"locked_until"?: string | null,"mode"?: string,"next_try_at"?: string | null,"permalink"?: string | null,"post_id"?: string,"privacy"?: string | null,"published_at"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1140,13 +1140,13 @@ isOneToOne: false
                   ]
                 },"social_posts": {
                   Row: {
-                    "business_id": string | null,"caption": string,"created_at": string,"hashtags": string,"id": string,"media_kind": string,"notes": string | null,"scheduled_at": string | null,"source_video_id": string | null,"status": string,"title": string | null,"updated_at": string,"user_id": string,"workspace_id": string
+                    "business_id": string | null,"caption": string,"caption_instagram": string | null,"caption_tiktok": string | null,"created_at": string,"hashtags": string,"id": string,"media_kind": string,"notes": string | null,"scheduled_at": string | null,"source_video_id": string | null,"status": string,"title": string | null,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "business_id"?: string | null,"caption"?: string,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "business_id"?: string | null,"caption"?: string,"caption_instagram"?: string | null,"caption_tiktok"?: string | null,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "business_id"?: string | null,"caption"?: string,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "business_id"?: string | null,"caption"?: string,"caption_instagram"?: string | null,"caption_tiktok"?: string | null,"created_at"?: string,"hashtags"?: string,"id"?: string,"media_kind"?: string,"notes"?: string | null,"scheduled_at"?: string | null,"source_video_id"?: string | null,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1574,6 +1574,9 @@ isOneToOne: false
                            },
 "apply_workspace_policies":
 { Args: { "tbl": string }; Returns: undefined
+                           },
+"claim_social_target":
+{ Args: { "p_id": string,"p_until": string }; Returns: boolean
                            },
 "configure_cron":
 { Args: { "app_url": string,"secret": string }; Returns: string

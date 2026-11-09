@@ -72,8 +72,8 @@ export function tokenState(expiresAt: string | null, now = new Date()): "ok" | "
   return ms <= 0 ? "expired" : ms < 7 * 86400_000 ? "expiring" : "ok";
 }
 
-/** Reintentos de publicación: 2, 10 y 30 minutos; después, error visible. */
-export const RETRY_MINUTES = [2, 10, 30];
+/** Reintentos de publicación: 3, esperando 5, 15 y 45 minutos; después, error visible con botón «Reintentar». */
+export const RETRY_MINUTES = [5, 15, 45];
 export const nextRetry = (attempts: number, now = new Date()) => (attempts >= RETRY_MINUTES.length ? null : new Date(now.getTime() + RETRY_MINUTES[attempts] * 60_000));
 
 /** Texto final: texto + hashtags (cada uno con #, sin repetir), recortado al máximo de la red. */
@@ -81,6 +81,12 @@ export function composeCaption(caption: string, hashtags: string, max = 2200): s
   const tags = [...new Set(hashtags.split(/[\s,]+/).map((t) => t.replace(/^#+/, "").trim()).filter(Boolean))].map((t) => `#${t}`);
   const text = [caption.trim(), tags.join(" ")].filter(Boolean).join("\n\n");
   return text.slice(0, max);
+}
+
+/** Texto para una red: el propio de esa red si se escribió, si no el común; con los hashtags. TikTok también admite 2.200. */
+export function captionFor(post: { caption: string; hashtags: string; caption_instagram?: string | null; caption_tiktok?: string | null }, platform: "instagram" | "tiktok"): string {
+  const own = platform === "instagram" ? post.caption_instagram : post.caption_tiktok;
+  return composeCaption(own?.trim() ? own : post.caption, post.hashtags);
 }
 
 /**

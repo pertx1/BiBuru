@@ -68,4 +68,17 @@ d("Redes: cuentas con token ilegible, estadísticas y programación por espacio"
     expect((await q("select count(*)::int n from social_daily")).rows[0].n).toBe(0);
     expect((await q("select count(*)::int n from social_post_targets where post_id=$1", [ids.post])).rows[0].n).toBe(0);
   });
+
+  it("claim_social_target: solo una pasada se queda con cada destino; nadie más puede llamarla", async () => {
+    const acc = (await q("insert into social_accounts (workspace_id,user_id,platform,external_id,access_token_enc) values ($1,$2,'instagram','999','x') returning id", [ids.aWs, ids.alice])).rows[0].id;
+    const t = (await q("insert into social_post_targets (workspace_id,user_id,post_id,account_id) values ($1,$2,$3,$4) returning id", [ids.aWs, ids.alice, ids.post, acc])).rows[0].id;
+    const claim = () => q("select public.claim_social_target($1, now() + interval '4 minutes') ok", [t]).then((r) => r.rows[0].ok);
+    expect(await Promise.all([claim(), claim()])).toEqual(expect.arrayContaining([true, false]));
+    expect(await claim()).toBe(false); // sigue bloqueado
+    await q("update social_post_targets set locked_until = now() - interval '1 second' where id=$1", [t]);
+    expect(await claim()).toBe(true); // bloqueo vencido (p. ej. la función se cortó): se puede reclamar otra vez
+    await q("update social_post_targets set locked_until=null, next_try_at = now() + interval '5 minutes' where id=$1", [t]);
+    expect(await claim()).toBe(false); // aún no toca reintentar
+    await expect(as(ids.alice, (c) => c.query("select public.claim_social_target($1, now())", [t]))).rejects.toThrow(/permission/);
+  });
 });

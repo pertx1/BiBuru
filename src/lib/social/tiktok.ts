@@ -4,6 +4,10 @@
  * BiBuru usa «Creator's draft» (el vídeo llega a la bandeja de TikTok y lo publicas tú) o la publicación asistida.
  * Documentación: developers.tiktok.com/doc/login-kit-web, /content-posting-api-get-started, /tiktok-api-v2-video-object
  */
+import { ttFriendlyError } from "./errors";
+
+import { socialFetch } from "./test-fetch";
+
 type Fetch = typeof fetch;
 export const TT_API = "https://open.tiktokapis.com/v2";
 
@@ -33,7 +37,7 @@ async function readJson(res: Response) {
     const msg = typeof j.error === "object" ? j.error?.message : j.error_description;
     const expired = code === "access_token_invalid" || code === "invalid_grant" || res.status === 401;
     const retryable = !expired && (res.status >= 500 || res.status === 429 || code === "rate_limit_exceeded" || code === "internal_error");
-    throw new TtError(`TikTok: ${(msg || code || String(res.status)).slice(0, 250)}`, res.status, expired, retryable);
+    throw new TtError(ttFriendlyError({ code: code || undefined, status: res.status, message: msg }), res.status, expired, retryable || code === "video_pull_failed");
   }
   return j;
 }
@@ -48,13 +52,13 @@ async function token(body: Record<string, string>, f: Fetch): Promise<TtTokens> 
   }));
   return { accessToken: String(j.access_token), expiresIn: Number(j.expires_in ?? 86400), refreshToken: String(j.refresh_token), refreshExpiresIn: Number(j.refresh_expires_in ?? 31536000), openId: String(j.open_id ?? ""), scope: String(j.scope ?? "") };
 }
-export const ttExchangeCode = (code: string, redirectUri: string, f: Fetch = fetch) => token({ code, grant_type: "authorization_code", redirect_uri: redirectUri }, f);
-export const ttRefresh = (refreshToken: string, f: Fetch = fetch) => token({ grant_type: "refresh_token", refresh_token: refreshToken }, f);
+export const ttExchangeCode = (code: string, redirectUri: string, f: Fetch = socialFetch) => token({ code, grant_type: "authorization_code", redirect_uri: redirectUri }, f);
+export const ttRefresh = (refreshToken: string, f: Fetch = socialFetch) => token({ grant_type: "refresh_token", refresh_token: refreshToken }, f);
 
 const authed = (tokenStr: string, init: RequestInit = {}): RequestInit => ({ ...init, headers: { Authorization: `Bearer ${tokenStr}`, "Content-Type": "application/json; charset=UTF-8", ...(init.headers ?? {}) }, signal: AbortSignal.timeout(30000) });
 
 export type TtProfile = { openId: string; username: string | null; name: string | null; avatar: string | null; followers: number | null; likes: number | null; videos: number | null };
-export async function ttProfile(tokenStr: string, f: Fetch = fetch): Promise<TtProfile> {
+export async function ttProfile(tokenStr: string, f: Fetch = socialFetch): Promise<TtProfile> {
   const j = await readJson(await f(`${TT_API}/user/info/?fields=open_id,avatar_url,display_name,username,follower_count,likes_count,video_count`, authed(tokenStr)));
   const u = ((j.data as { user?: Record<string, unknown> })?.user ?? {}) as Record<string, unknown>;
   const n = (v: unknown) => (typeof v === "number" ? v : null);
@@ -63,7 +67,7 @@ export async function ttProfile(tokenStr: string, f: Fetch = fetch): Promise<TtP
 
 export type TtVideo = { id: string; caption: string | null; cover: string | null; url: string | null; createdAt: string; views: number; likes: number; comments: number; shares: number };
 /** Vídeos públicos recientes con sus contadores acumulados (hasta `pages` páginas de 20). */
-export async function ttVideos(tokenStr: string, pages = 2, f: Fetch = fetch): Promise<TtVideo[]> {
+export async function ttVideos(tokenStr: string, pages = 2, f: Fetch = socialFetch): Promise<TtVideo[]> {
   const out: TtVideo[] = [];
   let cursor: number | undefined;
   for (let i = 0; i < pages; i++) {
@@ -80,7 +84,7 @@ export async function ttVideos(tokenStr: string, pages = 2, f: Fetch = fetch): P
 }
 
 /** Opciones de privacidad que TikTok permite ahora a esta cuenta (obligatorio consultarlo antes de una publicación directa). */
-export async function ttCreatorInfo(tokenStr: string, f: Fetch = fetch): Promise<{ privacyOptions: string[]; maxDurationSec: number | null }> {
+export async function ttCreatorInfo(tokenStr: string, f: Fetch = socialFetch): Promise<{ privacyOptions: string[]; maxDurationSec: number | null }> {
   const j = await readJson(await f(`${TT_API}/post/publish/creator_info/query/`, authed(tokenStr, { method: "POST", body: "{}" })));
   const d = (j.data ?? {}) as { privacy_level_options?: string[]; max_video_post_duration_sec?: number };
   return { privacyOptions: d.privacy_level_options ?? [], maxDurationSec: d.max_video_post_duration_sec ?? null };
@@ -96,7 +100,7 @@ export function ttPrivacy(options: string[], audited: boolean): string {
  * Inicia una subida de archivo (un solo trozo: los archivos son de 50 MB como mucho).
  * mode "draft" → bandeja de TikTok (video.upload); "direct" → publicación directa (video.publish).
  */
-export async function ttInitUpload(tokenStr: string, o: { mode: "draft" | "direct"; size: number; title?: string; privacy?: string }, f: Fetch = fetch): Promise<{ publishId: string; uploadUrl: string }> {
+export async function ttInitUpload(tokenStr: string, o: { mode: "draft" | "direct"; size: number; title?: string; privacy?: string }, f: Fetch = socialFetch): Promise<{ publishId: string; uploadUrl: string }> {
   const source_info = { source: "FILE_UPLOAD", video_size: o.size, chunk_size: o.size, total_chunk_count: 1 };
   const body = o.mode === "draft" ? { source_info } : { source_info, post_info: { title: (o.title ?? "").slice(0, 2200), privacy_level: o.privacy ?? "SELF_ONLY", disable_comment: false, disable_duet: false, disable_stitch: false } };
   const j = await readJson(await f(`${TT_API}/post/publish/${o.mode === "draft" ? "inbox/" : ""}video/init/`, authed(tokenStr, { method: "POST", body: JSON.stringify(body) })));
@@ -106,14 +110,14 @@ export async function ttInitUpload(tokenStr: string, o: { mode: "draft" | "direc
 }
 
 /** Sube el vídeo entero al upload_url que dio TikTok. */
-export async function ttUpload(uploadUrl: string, bytes: Buffer, mime: string, f: Fetch = fetch) {
+export async function ttUpload(uploadUrl: string, bytes: Buffer, mime: string, f: Fetch = socialFetch) {
   if (!/^https:\/\/[^/]*tiktokapis\.com\//.test(uploadUrl)) throw new TtError("Dirección de subida no válida", undefined, false, false);
   const res = await f(uploadUrl, { method: "PUT", headers: { "Content-Type": mime, "Content-Length": String(bytes.length), "Content-Range": `bytes 0-${bytes.length - 1}/${bytes.length}` }, body: new Uint8Array(bytes), signal: AbortSignal.timeout(120000) });
   if (!res.ok && res.status !== 201) throw new TtError(`TikTok rechazó la subida (${res.status})`, res.status);
 }
 
 /** Estado: PROCESSING_UPLOAD / PROCESSING_DOWNLOAD / SEND_TO_USER_INBOX / PUBLISH_COMPLETE / FAILED. */
-export async function ttPublishStatus(tokenStr: string, publishId: string, f: Fetch = fetch): Promise<{ status: string; reason: string | null; postId: string | null }> {
+export async function ttPublishStatus(tokenStr: string, publishId: string, f: Fetch = socialFetch): Promise<{ status: string; reason: string | null; postId: string | null }> {
   const j = await readJson(await f(`${TT_API}/post/publish/status/fetch/`, authed(tokenStr, { method: "POST", body: JSON.stringify({ publish_id: publishId }) })));
   const d = (j.data ?? {}) as { status?: string; fail_reason?: string; publicaly_available_post_id?: (string | number)[] };
   return { status: d.status ?? "PROCESSING_UPLOAD", reason: d.fail_reason ?? null, postId: d.publicaly_available_post_id?.[0] != null ? String(d.publicaly_available_post_id[0]) : null };

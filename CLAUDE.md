@@ -221,6 +221,12 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - Instagram tiene dos variantes según la app de Meta: inicio de sesión de Instagram (por defecto, graph.instagram.com) o con Facebook (`INSTAGRAM_LOGIN=facebook`, graph.facebook.com, token de la página vinculada que no caduca, `INSTAGRAM_FB_CONFIG_ID` opcional). Todo en `instagram.ts` con `igMode()`.
 - TikTok sin auditoría = privado: por defecto no se pide `video.publish`; modo con `tiktokModeFor` (directa solo con `TIKTOK_DIRECT_POST_AUDITED=1`).
 - Las publicaciones salen en el Calendario (`postsToItems`) y se arrastran con `@dnd-kit` (asa `touch-none`, pulsación larga en táctil).
+- Publicar (v2, migración `20261109000002`): `processPost` reclama cada destino con `claim_social_target` (UPDATE atómico + `locked_until`) antes de cada paso: nunca dos envíos.
+  Reintentos 5/15/45 min (`RETRY_MINUTES`); errores de las APIs en español (`src/lib/social/errors.ts`). Instagram mira `content_publishing_limit` antes del contenedor (sin cupo = +1 h sin gastar intento).
+  Archivos borrados en cuanto todo sale bien (`filesNoLongerNeeded`; la asistida los conserva). Texto por red: `social_posts.caption_instagram/caption_tiktok` → `captionFor`.
+  «Publicar ahora» = `savePost({ now: true })` + `after()` con `publishPostNow`. TikTok borrador no admite texto: «Copiar texto para TikTok» + aviso push al quedar en la bandeja.
+- Comprobaciones antes de subir en el navegador (`src/lib/social/validate.ts`: formato, 50 MB, 3 s–15 min, 9:16, texto ≤ 2.200, 30 hashtags); PNG → JPEG en el móvil.
+- e2e real: `scripts/e2e/fake-social.mjs` (Instagram/TikTok falsos, `SOCIAL_API_TEST_BASE` → `socialFetch`, ignorado en Vercel) + storage en memoria en `mock-supabase.mjs` + `social-publish.mjs`. Guía: `docs/REDES-GUIA.md`.
 
 ## Diseño (estilo Apple)
 - Tokens en `globals.css`:

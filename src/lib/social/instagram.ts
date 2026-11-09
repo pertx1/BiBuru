@@ -6,6 +6,10 @@
  * Funciona con la app de Meta en modo desarrollo para las cuentas que tengan un rol en la app (acceso estándar).
  * Documentación: developers.facebook.com/docs/instagram-platform (login, insights y content-publishing).
  */
+import { igFriendlyError } from "./errors";
+
+import { socialFetch } from "./test-fetch";
+
 type Fetch = typeof fetch;
 
 export const IG_SCOPES = ["instagram_business_basic", "instagram_business_content_publish", "instagram_business_manage_insights"];
@@ -44,13 +48,16 @@ async function readJson(res: Response) {
     const expired = code === 190 || res.status === 401;
     const retryable = !expired && (res.status >= 500 || res.status === 429 || code === 4 || code === 17 || code === 32 || code === 613 || code === 2);
     const limited = res.status === 429 || code === 4 || code === 17 || code === 32 || code === 613;
-    throw new IgError(`Instagram: ${(j.error?.message ?? String(res.status)).slice(0, 250)}`, res.status, expired, retryable, limited);
+    const sub = j.error?.error_subcode;
+    // 2207042 = límite de 24 h; 2207008/2207020 = contenedor caducado (se crea otro): se puede reintentar.
+    const retry2 = retryable || sub === 2207001 || sub === 2207003 || sub === 2207027 || sub === 2207032 || sub === 2207052 || sub === 2207053 || sub === 2207008 || sub === 2207020;
+    throw new IgError(igFriendlyError({ code, subcode: sub, status: res.status, message: j.error?.message }), res.status, expired, retry2, limited || sub === 2207042);
   }
   return j;
 }
 
 /** Código → token corto (1 h) → token largo (60 días). */
-export async function igExchangeCode(code: string, redirectUri: string, f: Fetch = fetch) {
+export async function igExchangeCode(code: string, redirectUri: string, f: Fetch = socialFetch) {
   const cfg = instagramConfig();
   if (!cfg) throw new IgError("Faltan INSTAGRAM_APP_ID / INSTAGRAM_APP_SECRET", undefined, false, false);
   if (igMode() === "facebook") return fbExchangeCode(cfg, code, redirectUri, f);
@@ -83,7 +90,7 @@ async function fbExchangeCode(cfg: { appId: string; appSecret: string }, code: s
 }
 
 /** Renueva un token largo (vale si tiene más de 24 h y no ha caducado): otros 60 días. Con Facebook, el token de página no caduca. */
-export async function igRefresh(token: string, f: Fetch = fetch) {
+export async function igRefresh(token: string, f: Fetch = socialFetch) {
   if (igMode() === "facebook") return { accessToken: token, expiresIn: PAGE_TOKEN_SECONDS };
   const j = await readJson(await f(`${IG_GRAPH}/refresh_access_token?${new URLSearchParams({ grant_type: "ig_refresh_token", access_token: token })}`, { signal: AbortSignal.timeout(15000) }));
   return { accessToken: String(j.access_token), expiresIn: Number(j.expires_in ?? 5_184_000) };
@@ -94,7 +101,7 @@ const post = async (url: string, token: string, body: Record<string, string>, f:
   readJson(await f(url, { method: "POST", signal: AbortSignal.timeout(30000), body: new URLSearchParams({ ...body, access_token: token }) }));
 
 export type IgProfile = { id: string; username: string | null; name: string | null; avatar: string | null; accountType: string | null; followers: number | null; mediaCount: number | null };
-export async function igProfile(token: string, f: Fetch = fetch): Promise<IgProfile> {
+export async function igProfile(token: string, f: Fetch = socialFetch): Promise<IgProfile> {
   if (igMode() === "facebook") {
     // Con el token de la página: su cuenta de Instagram profesional.
     const pg = await get(igApi("/me?fields=instagram_business_account{id,username,name,profile_picture_url,followers_count,media_count}"), token, f);
@@ -110,7 +117,7 @@ export async function igProfile(token: string, f: Fetch = fetch): Promise<IgProf
 
 /** Métricas de la cuenta de UN día (total_value entre since y until). `impressions` ya no existe: se usa `views`. */
 export const IG_DAY_METRICS = ["reach", "views", "total_interactions", "likes", "comments", "shares", "saves", "profile_views"];
-export async function igDayInsights(token: string, igUserId: string, dayStartUnix: number, f: Fetch = fetch): Promise<Record<string, number>> {
+export async function igDayInsights(token: string, igUserId: string, dayStartUnix: number, f: Fetch = socialFetch): Promise<Record<string, number>> {
   const qs = new URLSearchParams({ metric: IG_DAY_METRICS.join(","), period: "day", metric_type: "total_value", since: String(dayStartUnix), until: String(dayStartUnix + 86400) });
   const j = await get(igApi(`/${igUserId}/insights?${qs}`), token, f);
   const out: Record<string, number> = {};
@@ -119,7 +126,7 @@ export async function igDayInsights(token: string, igUserId: string, dayStartUni
 }
 
 export type IgMedia = { id: string; caption: string | null; mediaType: string | null; permalink: string | null; thumbnail: string | null; postedAt: string; likes: number | null; comments: number | null };
-export async function igRecentMedia(token: string, limit = 30, f: Fetch = fetch, igUserId?: string): Promise<IgMedia[]> {
+export async function igRecentMedia(token: string, limit = 30, f: Fetch = socialFetch, igUserId?: string): Promise<IgMedia[]> {
   const who = igMode() === "facebook" && igUserId ? igUserId : "me";
   const j = await get(igApi(`/${who}/media?fields=id,caption,media_type,media_product_type,permalink,thumbnail_url,media_url,timestamp,like_count,comments_count&limit=${limit}`), token, f);
   return ((j.data as Record<string, unknown>[] | undefined) ?? []).map((m) => ({
@@ -130,7 +137,7 @@ export async function igRecentMedia(token: string, limit = 30, f: Fetch = fetch,
 }
 
 /** Métricas de una publicación (alcance, visualizaciones, interacciones, guardados, compartidos). Si alguna no aplica, se ignora. */
-export async function igMediaInsights(token: string, mediaId: string, f: Fetch = fetch): Promise<Record<string, number>> {
+export async function igMediaInsights(token: string, mediaId: string, f: Fetch = socialFetch): Promise<Record<string, number>> {
   try {
     const j = await get(igApi(`/${mediaId}/insights?metric=reach,views,total_interactions,saved,shares`), token, f);
     const out: Record<string, number> = {};
@@ -146,7 +153,7 @@ export async function igMediaInsights(token: string, mediaId: string, f: Fetch =
 export type IgPublishInput = { kind: "image" | "carousel" | "reel"; urls: { url: string; video: boolean }[]; caption: string };
 
 /** Paso 1: crea el contenedor (para carrusel, primero uno por elemento). Devuelve su id. */
-export async function igCreateContainer(token: string, igUserId: string, p: IgPublishInput, f: Fetch = fetch): Promise<string> {
+export async function igCreateContainer(token: string, igUserId: string, p: IgPublishInput, f: Fetch = socialFetch): Promise<string> {
   const url = igApi(`/${igUserId}/media`);
   if (p.kind === "image") return String((await post(url, token, { image_url: p.urls[0].url, caption: p.caption }, f)).id);
   if (p.kind === "reel") return String((await post(url, token, { media_type: "REELS", video_url: p.urls[0].url, caption: p.caption, share_to_feed: "true" }, f)).id);
@@ -155,13 +162,22 @@ export async function igCreateContainer(token: string, igUserId: string, p: IgPu
   return String((await post(url, token, { media_type: "CAROUSEL", children: children.join(","), caption: p.caption }, f)).id);
 }
 
+/** Cupo de publicaciones en 24 h (Instagram: 50 por cuenta; el carrusel cuenta como una). null si no se puede consultar. */
+export async function igPublishingQuota(token: string, igUserId: string, f: Fetch = socialFetch): Promise<{ used: number; total: number } | null> {
+  try {
+    const j = await get(igApi(`/${igUserId}/content_publishing_limit?fields=quota_usage,config`), token, f);
+    const d = (j.data as { quota_usage?: number; config?: { quota_total?: number } }[] | undefined)?.[0];
+    return d ? { used: Number(d.quota_usage ?? 0), total: Number(d.config?.quota_total ?? 50) } : null;
+  } catch { return null; }
+}
+
 /** Estado del contenedor: FINISHED (listo), IN_PROGRESS (aún procesando vídeo), ERROR / EXPIRED. */
-export async function igContainerStatus(token: string, containerId: string, f: Fetch = fetch): Promise<string> {
+export async function igContainerStatus(token: string, containerId: string, f: Fetch = socialFetch): Promise<string> {
   return String((await get(igApi(`/${containerId}?fields=status_code`), token, f)).status_code ?? "IN_PROGRESS");
 }
 
 /** Paso 3: publica y devuelve el id y el enlace de la publicación. */
-export async function igPublish(token: string, igUserId: string, containerId: string, f: Fetch = fetch): Promise<{ id: string; permalink: string | null }> {
+export async function igPublish(token: string, igUserId: string, containerId: string, f: Fetch = socialFetch): Promise<{ id: string; permalink: string | null }> {
   const id = String((await post(igApi(`/${igUserId}/media_publish`), token, { creation_id: containerId }, f)).id);
   const j = await get(igApi(`/${id}?fields=permalink`), token, f).catch(() => ({ permalink: null }));
   return { id, permalink: (j.permalink as string) ?? null };

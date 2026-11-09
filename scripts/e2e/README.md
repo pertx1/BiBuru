@@ -17,3 +17,4 @@ Sirven para ver la app funcionando de verdad antes de desplegar. No forman parte
 - No uses `pkill -f` con el nombre del servidor dentro de una orden larga: puede matar tu propio shell; `down.sh` ya lo hace bien.
 - Noche (`noche-mejoras`): `orders.mjs`, `stock.mjs` (necesitan `BIZ`), `gestures.mjs`, `tiktok.mjs`, `mail.mjs`, `social.mjs`, `tiktok-business.mjs` y
   `mobile-audit.mjs` (`npm run test:mobile`; necesita `BIZ`, `NOTE`, `GOAL`; con `SHOTS=docs/movil/despues` guarda capturas).
+- Redes (publicar de verdad): `node scripts/e2e/fake-social.mjs &` y luego `social-publish.mjs` (Instagram/TikTok falsos en :9700; necesita ffmpeg).

@@ -2,8 +2,8 @@ import "server-only";
 import { addDays, nowLocal, zonedToUtc } from "@/lib/dates";
 import { decryptSecret, encryptSecret } from "@/lib/favorites/crypto";
 import type { AdminClient } from "@/lib/supabase/admin";
-import { IgError, igContainerStatus, igCreateContainer, igDayInsights, igMediaInsights, igProfile, igPublish, igRecentMedia, igRefresh } from "./instagram";
-import { composeCaption, nextRetry, tokenState } from "./stats";
+import { IgError, igContainerStatus, igCreateContainer, igDayInsights, igMediaInsights, igProfile, igPublish, igPublishingQuota, igRecentMedia, igRefresh } from "./instagram";
+import { captionFor, nextRetry, tokenState } from "./stats";
 
 export type SocialAccount = {
   id: string; workspace_id: string; user_id: string; platform: string; external_id: string; access_token_enc: string; refresh_token_enc: string | null;
@@ -64,7 +64,7 @@ export async function snapshotAccount(admin: AdminClient, acc: SocialAccount, no
 
 /** Publicaciones recientes de Instagram con sus métricas (las de los últimos 45 días con estadísticas detalladas). */
 export async function upsertIgMedia(admin: AdminClient, acc: SocialAccount, token: string, now = new Date()) {
-  const media = await igRecentMedia(token, 30, fetch, acc.external_id);
+  const media = await igRecentMedia(token, 30, undefined, acc.external_id);
   const recent = media.filter((m) => now.getTime() - new Date(m.postedAt).getTime() < 45 * 86400_000);
   const rows = [];
   for (const m of media) {
@@ -77,7 +77,8 @@ export async function upsertIgMedia(admin: AdminClient, acc: SocialAccount, toke
   return rows.length;
 }
 
-export type PostRow = { id: string; workspace_id: string; user_id: string; caption: string; hashtags: string; media_kind: string; scheduled_at: string | null; status: string; title: string | null };
+export type PostRow = { id: string; workspace_id: string; user_id: string; caption: string; hashtags: string; media_kind: string; scheduled_at: string | null; status: string; title: string | null; caption_instagram: string | null; caption_tiktok: string | null };
+const POST_FIELDS = "id, workspace_id, user_id, caption, hashtags, media_kind, scheduled_at, status, title, caption_instagram, caption_tiktok";
 export type TargetRow = { id: string; post_id: string; account_id: string; mode: string; status: string; attempts: number; container_id: string | null; next_try_at: string | null };
 export type FileRow = { path: string; mime: string; position: number };
 
@@ -99,8 +100,14 @@ async function stepInstagram(admin: AdminClient, t: TargetRow, acc: SocialAccoun
   try {
     if (!t.container_id) {
       if (!files.length) throw new IgError("La publicación no tiene ninguna foto o vídeo", undefined, false, false);
+      // Cupo de 24 h: si no queda, se espera una hora sin gastar intento (el contenedor se crea justo al publicar).
+      const quota = await igPublishingQuota(token, acc.external_id);
+      if (quota && quota.used >= quota.total) {
+        await save({ next_try_at: new Date(now.getTime() + 3600_000).toISOString(), error: `Instagram: ya has hecho ${quota.used} de ${quota.total} publicaciones en 24 h. Se intenta de nuevo en 1 hora.` });
+        return;
+      }
       const kind = post.media_kind === "carousel" && files.length > 1 ? "carousel" : post.media_kind === "reel" || post.media_kind === "video" ? "reel" : "image";
-      const id = await igCreateContainer(token, acc.external_id, { kind, urls: await signedUrls(admin, files), caption: composeCaption(post.caption, post.hashtags) });
+      const id = await igCreateContainer(token, acc.external_id, { kind, urls: await signedUrls(admin, files), caption: captionFor(post, "instagram") });
       await save({ container_id: id, status: "publicando", next_try_at: new Date(now.getTime() + (kind === "image" ? 30_000 : 60_000)).toISOString(), error: null });
       return;
     }
@@ -126,33 +133,62 @@ export function overallStatus(targets: { status: string }[]): "programada" | "pu
   return targets.some((t) => t.status !== "pendiente") ? "publicando" : "programada";
 }
 
+/** Archivos ya no necesarios: todo salió bien y nada depende de ellos (la publicación asistida los necesita para descargarlos). */
+export const filesNoLongerNeeded = (targets: { status: string; mode: string }[]) =>
+  targets.length > 0 && targets.every((t) => t.status === "publicada" || (t.status === "enviada" && t.mode !== "assisted"));
+
+/**
+ * Pasos pendientes de una publicación. Cada destino se reclama antes (claim_social_target) para que dos pasadas a la
+ * vez nunca envíen lo mismo; al acabar se suelta. Si todo salió bien, se borran sus archivos (el plan gratis tiene poco espacio).
+ */
+export async function processPost(admin: AdminClient, post: PostRow, now = new Date()): Promise<{ steps: number; status: string }> {
+  let steps = 0;
+  const [{ data: targets }, { data: files }] = await Promise.all([
+    admin.from("social_post_targets").select("id").eq("post_id", post.id).in("status", ["pendiente", "publicando"]),
+    admin.from("social_post_files").select("path, mime, position").eq("post_id", post.id).is("deleted_at", null),
+  ]);
+  for (const { id } of targets ?? []) {
+    const { data: claimed } = await admin.rpc("claim_social_target", { p_id: id, p_until: new Date(now.getTime() + 4 * 60_000).toISOString() });
+    if (!claimed) continue; // la tiene otra pasada, o aún no toca
+    try {
+      const { data: t } = await admin.from("social_post_targets").select("id, post_id, account_id, mode, status, attempts, container_id, next_try_at").eq("id", id).single();
+      const { data: acc } = await admin.from("social_accounts").select(ACC_FIELDS).eq("id", t!.account_id).maybeSingle();
+      if (!t || !acc) continue;
+      steps++;
+      if (acc.platform === "instagram") await stepInstagram(admin, t, acc, post, files ?? [], now);
+      else if (hooks.tiktokTarget) await hooks.tiktokTarget(admin, t, acc, post, files ?? []);
+    } catch (e) { // un fallo inesperado (p. ej. token ilegible) no para las demás
+      await admin.from("social_post_targets").update({ status: "error", error: (e instanceof Error ? e.message : "Error").slice(0, 500) }).eq("id", id);
+    } finally {
+      await admin.from("social_post_targets").update({ locked_until: null }).eq("id", id);
+    }
+  }
+  const { data: after } = await admin.from("social_post_targets").select("status, mode").eq("post_id", post.id);
+  const st = overallStatus(after ?? []);
+  if (st !== post.status) await admin.from("social_posts").update({ status: st }).eq("id", post.id);
+  if (st === "publicada" && files?.length && filesNoLongerNeeded(after ?? [])) {
+    await admin.storage.from(SOCIAL_BUCKET).remove(files.map((f) => f.path));
+    await admin.from("social_post_files").update({ deleted_at: now.toISOString() }).eq("post_id", post.id).is("deleted_at", null);
+  }
+  return { steps, status: st };
+}
+
+/** «Publicar ahora»: el primer paso enseguida (tras responder); el resto lo sigue el programador cada 5 min. */
+export async function publishPostNow(admin: AdminClient, postId: string, workspaceId: string) {
+  const { data: post } = await admin.from("social_posts").select(POST_FIELDS).eq("id", postId).eq("workspace_id", workspaceId).maybeSingle();
+  if (post) await processPost(admin, post);
+}
+
 /** Cron: publica lo que toque (con reintentos), hace la foto diaria, renueva tokens y borra archivos viejos. */
 export async function runSocialCron(admin: AdminClient, now = new Date()) {
   const out: Record<string, number> = { published: 0, steps: 0, snapshots: 0, cleaned: 0 };
   // 1) Publicaciones vencidas.
-  const { data: due } = await admin.from("social_posts").select("id, workspace_id, user_id, caption, hashtags, media_kind, scheduled_at, status, title")
+  const { data: due } = await admin.from("social_posts").select(POST_FIELDS)
     .in("status", ["programada", "publicando"]).lte("scheduled_at", now.toISOString()).order("scheduled_at").limit(10);
   for (const post of due ?? []) {
-    const [{ data: targets }, { data: files }] = await Promise.all([
-      admin.from("social_post_targets").select("id, post_id, account_id, mode, status, attempts, container_id, next_try_at").eq("post_id", post.id),
-      admin.from("social_post_files").select("path, mime, position").eq("post_id", post.id).is("deleted_at", null),
-    ]);
-    for (const t of targets ?? []) {
-      if (!(t.status === "pendiente" || t.status === "publicando") || (t.next_try_at && t.next_try_at > now.toISOString())) continue;
-      const { data: acc } = await admin.from("social_accounts").select(ACC_FIELDS).eq("id", t.account_id).maybeSingle();
-      if (!acc) continue;
-      out.steps++;
-      try {
-        if (acc.platform === "instagram") await stepInstagram(admin, t, acc, post, files ?? [], now);
-        else if (hooks.tiktokTarget) await hooks.tiktokTarget(admin, t, acc, post, files ?? []);
-      } catch (e) { // un fallo inesperado (p. ej. token ilegible) no para las demás
-        await admin.from("social_post_targets").update({ status: "error", error: (e instanceof Error ? e.message : "Error").slice(0, 500) }).eq("id", t.id);
-      }
-    }
-    const { data: after } = await admin.from("social_post_targets").select("status").eq("post_id", post.id);
-    const st = overallStatus(after ?? []);
-    if (st === "publicada") out.published++;
-    if (st !== post.status) await admin.from("social_posts").update({ status: st }).eq("id", post.id);
+    const r = await processPost(admin, post, now);
+    out.steps += r.steps;
+    if (r.status === "publicada") out.published++;
   }
   // 2) Foto diaria (una cuenta por pasada para no pasar del tiempo máximo).
   const yesterday = addDays(nowLocal(now, "Europe/Madrid").date, -1);

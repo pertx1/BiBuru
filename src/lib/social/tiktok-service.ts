@@ -2,7 +2,7 @@ import "server-only";
 import { decryptSecret, encryptSecret } from "@/lib/favorites/crypto";
 import { webPushSender } from "@/lib/notifications/push";
 import type { AdminClient } from "@/lib/supabase/admin";
-import { composeCaption, nextRetry } from "./stats";
+import { captionFor, nextRetry } from "./stats";
 import { registerSocialHooks, SOCIAL_BUCKET, type FileRow, type PostRow, type SocialAccount, type TargetRow } from "./service";
 import { TtError, ttCreatorInfo, ttInitUpload, ttPrivacy, ttProfile, ttPublishStatus, ttRefresh, ttUpload, ttVideos } from "./tiktok";
 
@@ -53,14 +53,19 @@ export async function tiktokSnapshot(admin: AdminClient, acc: SocialAccount, day
 }
 
 /** Publicación asistida: aviso al móvil a la hora programada con el vídeo y el texto listos (/redes/publicar/<id>). */
-async function sendAssistedPush(admin: AdminClient, userId: string, t: TargetRow, post: PostRow): Promise<boolean> {
+function sendAssistedPush(admin: AdminClient, userId: string, t: TargetRow, post: PostRow): Promise<boolean> {
+  return sendPush(admin, userId, t, { title: "Hora de publicar en TikTok", body: post.title || post.caption.slice(0, 80) || "Tu vídeo está listo", url: `/redes/publicar/${post.id}` });
+}
+
+/** Aviso al móvil (una sola vez por destino: notification_log). */
+async function sendPush(admin: AdminClient, userId: string, t: TargetRow, msg: { title: string; body: string; url: string }): Promise<boolean> {
   const { data: claimed } = await admin.from("notification_log").upsert({ user_id: userId, dedupe_key: `social:${t.id}`, kind: "social" }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true }).select("id");
   if (!claimed?.length) return true; // ya avisado
   const { data: subs } = await admin.from("push_subscriptions").select("id, endpoint, p256dh, auth").eq("user_id", userId);
   if (!subs?.length) return true; // sin móvil suscrito: se queda visible en Redes como «Aviso enviado» igualmente
   let send;
   try { send = webPushSender(); } catch { return true; }
-  const payload = { title: "Hora de publicar en TikTok", body: post.title || post.caption.slice(0, 80) || "Tu vídeo está listo", url: `/redes/publicar/${post.id}`, kind: "social", tag: `social:${t.id}` };
+  const payload = { ...msg, kind: "social", tag: `social:${t.id}` };
   const results = await Promise.all(subs.map((s) => send(s, payload)));
   const gone = subs.filter((_, i) => !results[i].ok && (results[i] as { gone: boolean }).gone).map((s) => s.id);
   if (gone.length) await admin.from("push_subscriptions").delete().in("id", gone);
@@ -86,13 +91,16 @@ export async function tiktokTarget(admin: AdminClient, t: TargetRow, acc: Social
       const bytes = Buffer.from(await file.data.arrayBuffer());
       const mode = t.mode === "direct" && audited() ? "direct" : "draft";
       const privacy = mode === "direct" ? ttPrivacy((await ttCreatorInfo(token)).privacyOptions, audited()) : undefined;
-      const init = await ttInitUpload(token, { mode, size: bytes.length, title: composeCaption(post.caption, post.hashtags), privacy });
+      const init = await ttInitUpload(token, { mode, size: bytes.length, title: captionFor(post, "tiktok"), privacy });
       await ttUpload(init.uploadUrl, bytes, video.mime);
       await save({ container_id: init.publishId, status: "publicando", privacy: privacy ?? null, next_try_at: new Date(now.getTime() + 60_000).toISOString(), error: null });
       return;
     }
     const st = await ttPublishStatus(token, t.container_id);
-    if (st.status === "SEND_TO_USER_INBOX") await save({ status: "enviada", published_at: now.toISOString(), error: null, next_try_at: null });
+    if (st.status === "SEND_TO_USER_INBOX") {
+      await save({ status: "enviada", published_at: now.toISOString(), error: null, next_try_at: null });
+      await sendPush(admin, post.user_id, t, { title: "Vídeo en tu bandeja de TikTok", body: `Ábrelo en TikTok y publícalo: ${post.title || post.caption.slice(0, 60) || "tu vídeo"}`, url: "/redes" }).catch(() => false);
+    }
     else if (st.status === "PUBLISH_COMPLETE") await save({ status: t.mode === "draft" ? "enviada" : "publicada", external_id: st.postId, published_at: now.toISOString(), error: null, next_try_at: null });
     else if (st.status === "FAILED") throw new TtError(`TikTok no pudo procesar el vídeo${st.reason ? ` (${st.reason})` : ""}`, undefined, false, false);
     else await save({ next_try_at: new Date(now.getTime() + 60_000).toISOString() });

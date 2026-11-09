@@ -37,6 +37,7 @@ const w=require("web-push");const k=w.generateVAPIDKeys();
 console.log("NEXT_PUBLIC_VAPID_PUBLIC_KEY="+k.publicKey+"\nVAPID_PRIVATE_KEY="+k.privateKey+"\nVAPID_SUBJECT=mailto:test@example.com")' > /tmp/vapid.env
 set -a; . /tmp/vapid.env; set +a
 # IA y Google de pruebas: un Gemini falso (lo levanta phase67.mjs en :9500) y claves ficticias de Google.
+export SOCIAL_API_TEST_BASE=http://localhost:9700   # Instagram/TikTok falsos (scripts/e2e/fake-social.mjs)
 export GEMINI_API_KEY=test-gemini-key GEMINI_BASE_URL=http://localhost:9500 AI_MAX_RPM=60
 export GOOGLE_CLIENT_ID=test-client GOOGLE_CLIENT_SECRET=test-secret TOKEN_ENCRYPTION_KEY=$(node -e 'console.log(Buffer.alloc(32,5).toString("base64"))')
 export NODE_TLS_REJECT_UNAUTHORIZED=0   # el "servicio push" de pruebas usa un certificado autofirmado

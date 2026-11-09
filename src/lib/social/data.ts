@@ -46,10 +46,20 @@ export async function accountStats(accountIds: string | string[], from: string, 
 export async function listPosts(limit = 100) {
   const { supabase, workspaceId } = await getContext();
   const { data } = await supabase.from("social_posts")
-    .select("id, title, caption, hashtags, media_kind, scheduled_at, status, business_id, notes, source_video_id, created_at, social_post_targets(id, account_id, mode, status, error, permalink, privacy, published_at), social_post_files(id, path, mime, size_bytes, position, deleted_at)")
+    .select("id, title, caption, hashtags, caption_instagram, caption_tiktok, media_kind, scheduled_at, status, business_id, notes, source_video_id, created_at, social_post_targets(id, account_id, mode, status, error, permalink, privacy, published_at, external_id, next_try_at), social_post_files(id, path, mime, size_bytes, position, deleted_at)")
     .eq("workspace_id", workspaceId).order("scheduled_at", { ascending: false, nullsFirst: true }).limit(limit);
   return data ?? [];
 }
+
+/** Métricas de lo publicado desde BiBuru (las guarda la foto diaria en social_media): clave «cuenta:id externo». */
+export async function postMetrics(posts: { social_post_targets: { account_id: string; external_id: string | null }[] }[]) {
+  const ids = posts.flatMap((p) => p.social_post_targets.filter((t) => t.external_id).map((t) => t.external_id!));
+  if (!ids.length) return {} as Record<string, PostMetric>;
+  const { supabase, workspaceId } = await getContext();
+  const { data } = await supabase.from("social_media").select("account_id, external_id, views, likes, comments, shares, saves").eq("workspace_id", workspaceId).in("external_id", ids.slice(0, 300));
+  return Object.fromEntries((data ?? []).map((m) => [`${m.account_id}:${m.external_id}`, { views: m.views, likes: m.likes, comments: m.comments, shares: m.shares, saves: m.saves }])) as Record<string, PostMetric>;
+}
+export type PostMetric = { views: number | null; likes: number | null; comments: number | null; shares: number | null; saves: number | null };
 
 /** Espacio usado por los archivos aún no borrados (para no pasar del plan gratuito). */
 export async function storageUsed() {
