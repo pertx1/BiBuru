@@ -25,13 +25,30 @@ export function resolveShirtModel(value: string | null | undefined, catalog: Cat
   if (!value || !value.trim()) return null;
   const n = normalizeText(value);
   if (n.includes("sudadera")) {
-    return catalog.models.find((m) => normalizeText(m).includes("sudadera")) ?? null;
+    // Varias sudaderas (gris, negra, blanca…): la del color escrito; sin color (o uno que no hay), la negra o la primera.
+    const hoodies = catalog.models.filter((m) => normalizeText(m).includes("sudadera"));
+    const colorOf = (t: string) => { const c = normalizeText(t).replace(/\bsudaderas?\b/g, " ").replace(/\bde\b/g, " ").trim().replace(/\s+/g, " "); return colorKey(ALIASES[c] ?? c); };
+    const want = colorOf(n);
+    return (want && hoodies.find((m) => colorOf(m) === want)) || hoodies.find((m) => colorOf(m) === "negr") || hoodies[0] || null;
   }
   const key = colorKey(ALIASES[n] ?? n);
   const exact = catalog.models.find((m) => colorKey(m) === key);
   if (exact) return exact;
   // "Camiseta de fútbol" -> modelo "Fútbol": el texto contiene el nombre del modelo.
   return catalog.models.find((m) => colorKey(m).length >= 5 && n.includes(normalizeText(m))) ?? null;
+}
+
+/** Valor de «prenda fija» que no es un modelo sino una familia: «Sudadera» = la sudadera del color del pedido. */
+export const GARMENT_FAMILY_HOODIE = "Sudadera";
+
+/**
+ * Prenda fija de un diseño para una línea: un modelo concreto («Sudadera negra») siempre ese; una familia
+ * («Sudadera») la de esa familia en el color del pedido (gris, negra, blanca…). null = sin prenda fija.
+ */
+export function designGarment(garment: string | null | undefined, color: string | null | undefined, catalog: Catalog): string | null {
+  if (!garment) return null;
+  if (catalog.models.includes(garment)) return garment;
+  return resolveShirtModel(`${garment} ${color ?? ""}`, catalog);
 }
 
 export function resolveSize(value: string | null | undefined): string | null {

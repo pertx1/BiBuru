@@ -59,3 +59,18 @@ describe("DTF elegido a mano de un diseño con prenda fija", () => {
     expect(resolveLineStock({ stock_key: "dtf|Ola|BLANCO", product_name: "x", size: "M", quantity: 1 }, c).map((e) => e.key)).toEqual(["dtf|Ola|BLANCO"]);
   });
 });
+
+describe("DTF Eguzkilore elegido a mano con prenda «Sudadera» (del color del pedido)", () => {
+  const prod = {
+    catalog: { models: ["Sudadera negra", "Sudadera gris", "Sudadera blanca"], designs: [{ name: "Eguzkilore", kind: "standalone" as const, garment: "Sudadera" }] },
+    rules: { shirt: [], design: [] },
+    rows: { tshirts: ["Sudadera negra", "Sudadera gris", "Sudadera blanca"].map((model) => ({ model, size: "M" })), dtfs: [{ name: "Eguzkilore", variant: "UNICO" as const }] },
+  };
+  const c: StockLinkContext = { production: { catalog: prod.catalog, rules: prod.rules }, items: [], options: stockOptions(prod, []) };
+  it("resta la sudadera gris si el pedido es gris", () => {
+    expect(resolveLineStock({ stock_key: "dtf|Eguzkilore|UNICO", product_name: "Eguzkilore", color: "Gris", size: "M", quantity: 1 }, c).map((e) => e.key))
+      .toEqual(["dtf|Eguzkilore|UNICO", "tshirt|Sudadera gris|M"]);
+    expect(resolveLineStock({ stock_key: "dtf|Eguzkilore|UNICO", product_name: "Eguzkilore", color: "Blanca", size: "M", quantity: 1 }, c).map((e) => e.key))
+      .toEqual(["dtf|Eguzkilore|UNICO", "tshirt|Sudadera blanca|M"]);
+  });
+});

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createAntolaToken, deleteRule, revokeAntolaToken, saveDesignGarment, saveDesignRule, saveShirtRule } from "@/app/(app)/negocios/actions-production";
 import { garmentLabel } from "@/lib/production/stock";
+import { GARMENT_FAMILY_HOODIE } from "@/lib/production/catalog";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -57,13 +58,14 @@ export function RulesView({ businessId, designs, shirtRules, designRules, garmen
 
       <section className="rounded-xl border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold">Prenda fija de un diseño</h2>
-        <p className="mb-3 text-xs text-muted">Si un diseño va siempre en la misma prenda (p. ej. Eguzkilore en sudadera negra), al pedirlo —o al elegir su DTF en el pedido— resta también esa prenda de la talla del pedido, diga lo que diga el color.</p>
+        <p className="mb-3 text-xs text-muted">Si un diseño va siempre en la misma prenda (p. ej. Gatazka en sudadera negra, o Eguzkilore en sudadera gris, negra o blanca según el color del pedido), al pedirlo —o al elegir su DTF en el pedido— resta también esa prenda de la talla del pedido, diga lo que diga el color.</p>
         <ul className="divide-y divide-border">
           {garments.map((g) => (
             <li key={g.design} className="flex items-center justify-between gap-2 py-1.5 text-sm">
               <span className="min-w-0 truncate">{g.design}</span>
               <Select aria-label={`Prenda fija de ${g.design}`} className="w-48" value={g.garment ?? ""} onChange={(e) => run(() => saveDesignGarment({ businessId, design: g.design, garment: e.target.value || null }))}>
                 <option value="">Según el color del pedido</option>
+                {models.some((m) => /sudadera/i.test(m)) && <option value={GARMENT_FAMILY_HOODIE}>Sudadera (del color del pedido)</option>}
                 {models.map((m) => <option key={m} value={m}>{garmentLabel(m)}</option>)}
               </Select>
             </li>

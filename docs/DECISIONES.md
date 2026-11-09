@@ -299,3 +299,10 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - «A medias» no se puede detectar desde fuera de Claude: se le pide a Claude que llame a `apuntar_pendiente` (instrucciones del servidor + texto para
   las preferencias). Va a «Pendiente de Claude» (proyecto fijado), sin fecha → sale en Proyectos y en Tareas → Bandeja.
 - «Borra lo que se quede vacío»: categorías sin nada, sin fijar ni descripción y con más de 24 h se borran al terminar de reordenar y con «Borrar vacías».
+
+## Eguzkilore en sudadera gris, negra o blanca (Akerra)
+- Petición: que Eguzkilore reste de la sudadera gris, negra o blanca, y crear en el stock las que no estaban.
+- «Prenda fija» admite ahora la familia «Sudadera» (además de un modelo concreto): resta la sudadera del color del pedido; sin color o con uno
+  que no existe, la negra (lo de antes). `resolveShirtModel` ya distingue entre varias sudaderas por color (antes cogía la primera).
+- Migración solo aditiva para los negocios «Akerra»: crea Sudadera gris/negra/blanca con las tallas de las sudaderas que ya había (o S–XXL) a 0
+  y pone Eguzkilore en «Sudadera». Gatazka Sudadera sigue fija en la negra. En Reglas → «Prenda fija» sale la opción «Sudadera (del color del pedido)».

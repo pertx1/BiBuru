@@ -1,4 +1,4 @@
-import { resolveDesign, resolveDtfColor, resolveShirtModel, resolveSize, type Catalog, type DtfVariant, type Rules } from "./catalog";
+import { designGarment, resolveDesign, resolveDtfColor, resolveShirtModel, resolveSize, type Catalog, type DtfVariant, type Rules } from "./catalog";
 import { capitalize, colorKey, garmentName, normalizeText, shirtColorLabel, sizeRank } from "./text";
 
 export type PendingItem = { product_name: string; color: string | null; size: string | null; quantity: number };
@@ -18,7 +18,7 @@ export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "col
   const design = resolveDesign(item.product_name, catalog, item.color);
 
   if (design) {
-    const model = design.garment && catalog.models.includes(design.garment) ? design.garment : garmentModel(item, design.name, catalog);
+    const model = designGarment(design.garment, item.color, catalog) ?? garmentModel(item, design.name, catalog);
     if (model && size) effect.tshirt = { model, size };
     if (design.kind === "standalone") {
       effect.dtf = { name: design.name, variant: "UNICO" };

@@ -192,3 +192,30 @@ describe("prenda fija de un diseño (Gatazka Sudadera y Eguzkilore → Sudadera 
     expect(resolveStockEffect({ product_name: "Flysch", color: "Blanca", size: "M" }, cat, none).tshirt).toEqual({ model: "Blanca", size: "M" });
   });
 });
+
+describe("prenda fija «Sudadera» (Eguzkilore en sudadera gris, negra o blanca según el color del pedido)", () => {
+  const cat: Catalog = {
+    models: ["Blanca", "Negra", "Sudadera negra", "Sudadera gris", "Sudadera blanca"],
+    designs: [
+      { name: "Eguzkilore", kind: "standalone", garment: "Sudadera" },
+      { name: "Gatazka Sudadera", kind: "standalone", garment: "Sudadera negra" },
+    ],
+  };
+  const none: Rules = { shirt: [], design: [] };
+  const hoodie = (color: string | null) => resolveStockEffect({ product_name: "Eguzkilore", color, size: "M" }, cat, none).tshirt?.model;
+  it("la sudadera del color del pedido", () => {
+    expect(hoodie("Gris")).toBe("Sudadera gris");
+    expect(hoodie("Blanco")).toBe("Sudadera blanca");
+    expect(hoodie("negra")).toBe("Sudadera negra");
+    expect(hoodie("Sudadera gris")).toBe("Sudadera gris");
+  });
+  it("sin color (o uno que no hay), la negra; un modelo fijo sigue fijo", () => {
+    expect(hoodie(null)).toBe("Sudadera negra");
+    expect(hoodie("Roja")).toBe("Sudadera negra");
+    expect(resolveStockEffect({ product_name: "Gatazka Sudadera", color: "Gris", size: "L" }, cat, none).tshirt).toEqual({ model: "Sudadera negra", size: "L" });
+  });
+  it("«Sudadera blanca» escrita en el producto busca la blanca", () => {
+    expect(resolveShirtModel("Sudadera blanca", cat)).toBe("Sudadera blanca");
+    expect(resolveShirtModel("sudadera", cat)).toBe("Sudadera negra");
+  });
+});
