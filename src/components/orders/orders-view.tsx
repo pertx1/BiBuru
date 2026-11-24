@@ -20,7 +20,7 @@ import { OrderForm } from "./order-form";
 import { PaymentForm } from "./order-payments";
 
 function summary(o: Order) {
-  return o.order_items.map((i) => `${i.quantity}× ${i.product_name}${i.color ? ` ${i.color}` : ""}${i.size ? ` ${i.size}` : ""}`).join(" · ");
+  return o.order_items.map((i) => `${i.quantity}× ${i.product_name}${i.color ? ` ${i.color}` : ""}${i.size ? ` ${i.size}` : ""}${i.garment === "sudadera" || i.garment === "camiseta" ? ` (${i.garment})` : ""}`).join(" · ");
 }
 
 /**

@@ -250,6 +250,10 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 
 ## Pedidos que descuentan stock
 - Prenda fija por diseño (`dtf_designs.garment_model`): un modelo («Sudadera negra») manda sobre el color del pedido; la familia «Sudadera» = la sudadera del color del pedido (gris/negra/blanca; sin color, la negra) con `designGarment`. Akerra: Eguzkilore = «Sudadera» (migración `20261109000001`); también al elegir el DTF a mano (`resolveLineStock` añade la prenda de esa talla).
+- Camiseta / sudadera / otro en cada línea (`order_items.garment`, migración `20261124000001`): obligatorio en negocios con prendas (formulario y `saveOrder`);
+  `chosenGarment` decide el modelo (lo marcado manda; la prenda fija del diseño solo si es del mismo tipo; «otro» = sin prenda; null = pedidos antiguos, se deduce como antes).
+  Elige también la versión del diseño («Gatazka Camiseta/Sudadera») y, con el DTF elegido a mano, añade la prenda marcada. Al editar pedidos antiguos se propone lo deducido (`guessGarment`).
+  La comprobación del formulario va en `onSubmit` (con `action`, React vacía los campos aunque no se guarde).
 - `order_items.stock_key` (artículo elegido) y `stock_effects` ([{key,label,qty}], null = sin vincular). Lógica pura en `src/lib/stock/link.ts` (`resolveLineStock`, mismo código en formulario y servidor).
 - `apply_order_stock(order, clear)` (security invoker, `for update`): aplica la diferencia entre lo que debe descontar y sus movimientos (`stock_movements.order_id`, `source`). Triggers: cambio de estado y borrado.
   `saveOrder` y la IA la llaman tras guardar. Nunca restar «a mano» en el código: siempre esta función.

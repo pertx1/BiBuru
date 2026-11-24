@@ -219,3 +219,39 @@ describe("prenda fija «Sudadera» (Eguzkilore en sudadera gris, negra o blanca 
     expect(resolveShirtModel("sudadera", cat)).toBe("Sudadera negra");
   });
 });
+
+describe("camiseta o sudadera marcado en cada línea", () => {
+  const cat: Catalog = {
+    models: ["Blanca", "Negra", "Gris", "Sudadera negra", "Sudadera gris", "Sudadera blanca"],
+    designs: [
+      { name: "Flysch", kind: "standalone" },
+      { name: "Eguzkilore", kind: "standalone", garment: "Sudadera" },
+      { name: "Gatazka Camiseta", kind: "standalone" },
+      { name: "Gatazka Sudadera", kind: "standalone", garment: "Sudadera negra" },
+    ],
+  };
+  const none: Rules = { shirt: [], design: [] };
+  const fx = (product_name: string, color: string | null, garment: string | null) => resolveStockEffect({ product_name, color, size: "M", garment }, cat, none);
+  it("el mismo diseño y color resta camiseta o sudadera según lo marcado", () => {
+    expect(fx("Flysch", "Gris", "camiseta").tshirt).toEqual({ model: "Gris", size: "M" });
+    expect(fx("Flysch", "Gris", "sudadera").tshirt).toEqual({ model: "Sudadera gris", size: "M" });
+    expect(fx("Flysch", "Blanca", "sudadera").tshirt).toEqual({ model: "Sudadera blanca", size: "M" });
+  });
+  it("«Otro» no resta prenda (pero sí el DTF)", () => {
+    expect(fx("Flysch", "Gris", "otro")).toEqual({ dtf: { name: "Flysch", variant: "UNICO" } });
+  });
+  it("lo marcado elige la versión del diseño y manda sobre la prenda fija si es de otro tipo", () => {
+    expect(fx("Gatazka", "Negra", "sudadera")).toEqual({ tshirt: { model: "Sudadera negra", size: "M" }, dtf: { name: "Gatazka Sudadera", variant: "UNICO" } });
+    expect(fx("Gatazka", "Negra", "camiseta")).toEqual({ tshirt: { model: "Negra", size: "M" }, dtf: { name: "Gatazka Camiseta", variant: "UNICO" } });
+    expect(fx("Eguzkilore", "Blanca", "camiseta").tshirt).toEqual({ model: "Blanca", size: "M" });
+    expect(fx("Eguzkilore", "Gris", "sudadera").tshirt).toEqual({ model: "Sudadera gris", size: "M" });
+  });
+  it("prenda lisa: el color (o el producto) con lo marcado", () => {
+    expect(fx("Lisa", "Negra", "sudadera").tshirt).toEqual({ model: "Sudadera negra", size: "M" });
+    expect(fx("Camiseta blanca", null, "camiseta").tshirt).toEqual({ model: "Blanca", size: "M" });
+  });
+  it("sin marcar (pedidos antiguos) sigue como antes", () => {
+    expect(fx("Flysch", "Gris", null).tshirt).toEqual({ model: "Gris", size: "M" });
+    expect(fx("Eguzkilore", "Gris", null).tshirt).toEqual({ model: "Sudadera gris", size: "M" });
+  });
+});

@@ -51,6 +51,34 @@ export function designGarment(garment: string | null | undefined, color: string 
   return resolveShirtModel(`${garment} ${color ?? ""}`, catalog);
 }
 
+/** Lo que se marca en cada línea del pedido: de qué prenda resta. null = pedido antiguo (se deduce como antes). */
+export const GARMENT_KINDS = ["camiseta", "sudadera", "otro"] as const;
+export type GarmentKind = (typeof GARMENT_KINDS)[number];
+export const GARMENT_KIND_LABEL: Record<GarmentKind, string> = { camiseta: "Camiseta", sudadera: "Sudadera", otro: "Otro (sin prenda)" };
+export const isHoodieModel = (model: string) => normalizeText(model).includes("sudadera");
+
+/** Modelo de la prenda marcada en ese color: la sudadera gris, la camiseta blanca… (null si no hay ese modelo). */
+export function garmentModelFor(kind: "camiseta" | "sudadera", color: string | null | undefined, catalog: Catalog): string | null {
+  const c = normalizeText(color ?? "").replace(/\b(camisetas?|sudaderas?)\b/g, " ").trim();
+  if (kind === "sudadera") return resolveShirtModel(`sudadera ${c}`, catalog);
+  return c ? resolveShirtModel(c, { ...catalog, models: catalog.models.filter((m) => !isHoodieModel(m)) }) : null;
+}
+
+/**
+ * Prenda de una línea según lo marcado («camiseta» / «sudadera» / «otro») y la prenda fija del diseño. La prenda fija
+ * manda si es del mismo tipo que lo marcado (o no se marcó nada); si se marcó otra cosa, manda lo marcado.
+ * Devuelve el modelo, null (sin prenda) o undefined (no se marcó nada ni hay prenda fija: se deduce como antes).
+ */
+export function chosenGarment(o: { fixed?: string | null; garment?: string | null; color?: string | null }, catalog: Catalog): string | null | undefined {
+  const g = o.garment && (GARMENT_KINDS as readonly string[]).includes(o.garment) ? (o.garment as GarmentKind) : null;
+  if (g === "otro") return null;
+  if (o.fixed) {
+    const fixedKind = isHoodieModel(o.fixed) ? "sudadera" : "camiseta";
+    if (!g || g === fixedKind) return designGarment(o.fixed, o.color, catalog) ?? (g ? garmentModelFor(g, o.color, catalog) : undefined);
+  }
+  return g ? garmentModelFor(g, o.color, catalog) : undefined;
+}
+
 export function resolveSize(value: string | null | undefined): string | null {
   if (!value) return null;
   const n = normalizeText(value).toUpperCase();

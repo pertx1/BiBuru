@@ -1,7 +1,8 @@
-import { designGarment, resolveDesign, resolveDtfColor, resolveShirtModel, resolveSize, type Catalog, type DtfVariant, type Rules } from "./catalog";
+import { chosenGarment, garmentModelFor, resolveDesign, resolveDtfColor, resolveShirtModel, resolveSize, type Catalog, type DtfVariant, type Rules } from "./catalog";
 import { capitalize, colorKey, garmentName, normalizeText, shirtColorLabel, sizeRank } from "./text";
 
-export type PendingItem = { product_name: string; color: string | null; size: string | null; quantity: number };
+/** `garment`: lo marcado en la línea (camiseta / sudadera / otro); null o ausente = pedido antiguo, se deduce. */
+export type PendingItem = { product_name: string; color: string | null; size: string | null; quantity: number; garment?: string | null };
 export type StockEffect = {
   tshirt?: { model: string; size: string };
   dtf?: { name: string; variant: DtfVariant };
@@ -12,13 +13,16 @@ export type StockEffect = {
  * modelo y talla y, si el "producto" es un diseño DTF, el DTF correspondiente
  * (blanco/negro según la prenda, o único si el diseño no depende del color).
  */
-export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "color" | "size">, catalog: Catalog, rules: Rules): StockEffect {
+export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "color" | "size" | "garment">, catalog: Catalog, rules: Rules): StockEffect {
   const effect: StockEffect = {};
   const size = resolveSize(item.size);
-  const design = resolveDesign(item.product_name, catalog, item.color);
+  const g = item.garment ?? null;
+  // Lo marcado decide la versión del diseño («Gatazka Camiseta» / «Gatazka Sudadera»).
+  const design = resolveDesign(item.product_name, catalog, g === "camiseta" || g === "sudadera" ? `${g} ${item.color ?? ""}` : item.color);
 
   if (design) {
-    const model = designGarment(design.garment, item.color, catalog) ?? garmentModel(item, design.name, catalog);
+    const chosen = chosenGarment({ fixed: design.garment, garment: g, color: item.color }, catalog);
+    const model = chosen !== undefined ? chosen : garmentModel(item, design.name, catalog);
     if (model && size) effect.tshirt = { model, size };
     if (design.kind === "standalone") {
       effect.dtf = { name: design.name, variant: "UNICO" };
@@ -30,7 +34,10 @@ export function resolveStockEffect(item: Pick<PendingItem, "product_name" | "col
     return effect;
   }
 
-  const model = resolveShirtModel(item.product_name, catalog) ?? resolveShirtModel(item.color, catalog);
+  if (g === "otro") return effect;
+  const model = g === "camiseta" || g === "sudadera"
+    ? garmentModelFor(g, item.color?.trim() ? item.color : item.product_name, catalog)
+    : resolveShirtModel(item.product_name, catalog) ?? resolveShirtModel(item.color, catalog);
   if (model && size) effect.tshirt = { model, size };
   return effect;
 }

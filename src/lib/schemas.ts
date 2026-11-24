@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GARMENT_KINDS } from "@/lib/production/catalog";
 import { isValidISO } from "@/lib/dates";
 import { toCents } from "@/lib/money";
 
@@ -61,6 +62,8 @@ export const orderItemSchema = z.object({
   product_name: z.string().trim().min(1, "Cada línea necesita un producto").max(80),
   color: optText(40),
   size: optText(20),
+  /** De qué prenda resta: camiseta, sudadera u otro (sin prenda). Obligatorio en negocios con prendas (ver `saveOrder`). */
+  garment: z.preprocess((v) => (v === "" ? null : v), z.enum(GARMENT_KINDS).nullish()),
   quantity: z.coerce.number().int("La cantidad debe ser un número entero").min(1).max(10_000),
   unit_price: nonNegativeMoney,
   unit_cost: nonNegativeMoney,

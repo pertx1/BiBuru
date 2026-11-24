@@ -12,11 +12,22 @@ import { formatDecimal, formatEUR, orderTotals, toCents } from "@/lib/money";
 import { ORDER_STATUSES, ORDER_STATUS_LABEL } from "@/lib/schemas";
 import type { OrderWithPayments } from "@/lib/orders/data";
 import { effectsText, resolveLineStock, type StockLinkContext } from "@/lib/stock/link";
+import { GARMENT_KINDS, GARMENT_KIND_LABEL, isHoodieModel, type Catalog } from "@/lib/production/catalog";
+import { resolveStockEffect } from "@/lib/production/stock";
+import { cn } from "@/lib/utils";
 import { OrderPayments } from "./order-payments";
 
-type Line = { key: string; product_id: string | null; stock_key: string; product_name: string; color: string; size: string; quantity: string; unit_price: string; unit_cost: string };
+type Line = { key: string; product_id: string | null; stock_key: string; product_name: string; color: string; size: string; garment: string; quantity: string; unit_price: string; unit_cost: string };
 
-const newLine = (): Line => ({ key: crypto.randomUUID(), product_id: null, stock_key: "", product_name: "", color: "", size: "", quantity: "1", unit_price: "", unit_cost: "" });
+const newLine = (): Line => ({ key: crypto.randomUUID(), product_id: null, stock_key: "", product_name: "", color: "", size: "", garment: "", quantity: "1", unit_price: "", unit_cost: "" });
+
+/** Líneas guardadas antes de marcar la prenda: se propone lo que se deducía (sudadera / camiseta), o nada si no había prenda. */
+function guessGarment(i: { product_name: string; color: string | null; size: string | null; stock_key?: string | null }, catalog: Catalog | null): string {
+  if (!catalog) return "";
+  const [kind, model] = (i.stock_key ?? "").split("|");
+  const m = kind === "tshirt" ? model : resolveStockEffect({ product_name: i.product_name, color: i.color, size: i.size ?? "M" }, catalog, { shirt: [], design: [] }).tshirt?.model;
+  return m ? (isHoodieModel(m) ? "sudadera" : "camiseta") : "";
+}
 
 /** Borrador del pedido nuevo (si sales a medias se conserva en este dispositivo). */
 type Draft = { fields: Record<string, string>; lines: Line[] };
@@ -31,7 +42,7 @@ export function orderToPayload(o: Order): OrderPayload {
     id: o.id, business_id: o.business_id, order_date: o.order_date, order_number: o.order_number ?? undefined,
     customer: o.customer ?? undefined, channel: o.channel ?? undefined, status: o.status as OrderPayload["status"], notes: o.notes ?? undefined,
     items: o.order_items.map((i) => ({
-      product_id: i.product_id, stock_key: i.stock_key, product_name: i.product_name, color: i.color ?? undefined, size: i.size ?? undefined,
+      product_id: i.product_id, stock_key: i.stock_key, product_name: i.product_name, color: i.color ?? undefined, size: i.size ?? undefined, garment: i.garment ?? undefined,
       quantity: i.quantity, unit_price: formatDecimal(i.unit_price_cents), unit_cost: formatDecimal(i.unit_cost_cents),
     })),
   };
@@ -56,10 +67,14 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
   const v = (k: string, fallback: string) => draft?.fields[k] ?? fallback;
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const catalog = stock?.production?.catalog ?? null;
+  // Negocio con prendas: en cada línea hay que marcar camiseta, sudadera u otro.
+  const askGarment = !!catalog?.models.length;
   const [lines, setLines] = useState<Line[]>(
-    draft ? draft.lines.map((l) => ({ ...l, stock_key: l.stock_key ?? "" })) : order && order.order_items.length
+    draft ? draft.lines.map((l) => ({ ...l, stock_key: l.stock_key ?? "", garment: l.garment ?? "" })) : order && order.order_items.length
       ? order.order_items.map((i) => ({
           key: i.id, product_id: i.product_id, stock_key: i.stock_key ?? "", product_name: i.product_name, color: i.color ?? "", size: i.size ?? "",
+          garment: i.garment ?? guessGarment(i, catalog),
           quantity: String(i.quantity), unit_price: formatDecimal(i.unit_price_cents), unit_cost: formatDecimal(i.unit_cost_cents),
         }))
       : [newLine()],
@@ -82,7 +97,9 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
       if (!opt) return { ...l, stock_key: "" };
       const [, a, b] = stockKey.split("|");
       const name = l.product_name.trim() ? l.product_name : opt.group === "prendas" ? opt.label.replace(new RegExp(` ${b}$`), "") : opt.label;
-      return { ...l, stock_key: stockKey, product_name: name.slice(0, 80), size: opt.group === "prendas" && !l.size ? b : l.size, color: opt.group === "prendas" && !l.color ? a : l.color };
+      // Una prenda elegida del stock ya dice si es camiseta o sudadera.
+      const garment = opt.group === "prendas" ? (isHoodieModel(a) ? "sudadera" : "camiseta") : l.garment;
+      return { ...l, stock_key: stockKey, garment, product_name: name.slice(0, 80), size: opt.group === "prendas" && !l.size ? b : l.size, color: opt.group === "prendas" && !l.color ? a : l.color };
     }));
   }
 
@@ -102,13 +119,23 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
     );
   }
 
+  /** Antes de enviar (si no, React vacía el formulario aunque no se guarde): cada línea tiene que decir qué prenda es. */
+  function checkGarments(e: React.FormEvent<HTMLFormElement>) {
+    if (!askGarment) return;
+    const missing = lines.findIndex((l) => !l.garment);
+    if (missing < 0) return;
+    e.preventDefault();
+    setError(`Marca en la línea ${missing + 1} si es camiseta, sudadera u otro.`);
+    document.getElementById(`garment-${lines[missing].key}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
   function submit(fd: FormData) {
     const payload: OrderPayload = {
       id: order?.id, business_id: businessId, order_date: String(fd.get("order_date")),
       order_number: String(fd.get("order_number") ?? ""), customer: String(fd.get("customer") ?? ""),
       channel: String(fd.get("channel") ?? ""), status: String(fd.get("status")) as OrderPayload["status"], notes: String(fd.get("notes") ?? ""),
       items: lines.map((l) => ({
-        product_id: l.product_id, stock_key: l.stock_key || null, product_name: l.product_name, color: l.color, size: l.size,
+        product_id: l.product_id, stock_key: l.stock_key || null, product_name: l.product_name, color: l.color, size: l.size, garment: l.garment || null,
         quantity: l.quantity, unit_price: l.unit_price, unit_cost: l.unit_cost,
       })),
     };
@@ -143,7 +170,7 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
   }
 
   return (
-    <form ref={formRef} action={submit} onChange={(e) => { dirty.current = true; saveDraft(e.currentTarget); }} className="flex flex-col gap-4">
+    <form ref={formRef} action={submit} onSubmit={checkGarments} onChange={(e) => { dirty.current = true; saveDraft(e.currentTarget); }} className="flex flex-col gap-4">
       {draft && <p className="flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-sm">Borrador recuperado.
         <button type="button" className="min-h-11 md:min-h-10 text-xs font-semibold underline" onClick={onDiscard}>Descartar</button></p>}
       <div className="grid grid-cols-2 gap-3">
@@ -173,6 +200,16 @@ function OrderFormInner({ businessId, order, products, today, onDone, onDiscard,
               </Select>
             )}
             <Input aria-label={`Producto de la línea ${idx + 1}`} placeholder="Producto" list="products-list" value={l.product_name} onChange={(e) => onProductName(l.key, e.target.value)} className="col-span-6" maxLength={80} required />
+            {askGarment && (
+              <div id={`garment-${l.key}`} role="radiogroup" aria-label={`Prenda de la línea ${idx + 1}`} className="col-span-6 grid grid-cols-3 gap-1 rounded-full bg-fill p-1">
+                {GARMENT_KINDS.map((g) => (
+                  <button key={g} type="button" role="radio" aria-checked={l.garment === g} onClick={() => { dirty.current = true; setLine(l.key, { garment: g }); }}
+                    className={cn("min-h-11 rounded-full px-2 text-sm font-medium md:min-h-9", l.garment === g ? "bg-accent text-accent-foreground shadow-sm" : "text-muted")}>
+                    {g === "otro" ? "Otro" : GARMENT_KIND_LABEL[g]}
+                  </button>
+                ))}
+              </div>
+            )}
             <Input aria-label="Color" placeholder="Color" value={l.color} onChange={(e) => setLine(l.key, { color: e.target.value })} className="col-span-3" maxLength={40} />
             <Input aria-label="Talla" placeholder="Talla" value={l.size} onChange={(e) => setLine(l.key, { size: e.target.value })} className="col-span-3" maxLength={20} />
             <label className="col-span-2 flex flex-col gap-1 text-xs text-muted">Cantidad

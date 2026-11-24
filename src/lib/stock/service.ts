@@ -22,7 +22,7 @@ export type GenericRow = GenericItem & { quantity: number; min_quantity: number 
  */
 async function pendingLines(businessId: string): Promise<PendingLine[]> {
   const { supabase, workspaceId } = await getContext();
-  const { data, error } = await supabase.from("orders").select("order_date, order_items(product_id, product_name, color, size, quantity, stock_effects)")
+  const { data, error } = await supabase.from("orders").select("order_date, order_items(product_id, product_name, color, size, garment, quantity, stock_effects)")
     .eq("workspace_id", workspaceId).eq("business_id", businessId).in("status", RESERVING).limit(5000);
   if (error) throw new Error(`stock: pedidos pendientes: ${error.message}`);
   return data.flatMap((o) => o.order_items.filter((i) => i.stock_effects == null).map(({ stock_effects: _e, ...i }) => ({ ...i, order_date: o.order_date }))); // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -178,7 +178,7 @@ export type RecalcPreview = {
 /** Pedidos anteriores que aún no descuentan (ninguna línea vinculada), no cancelados, según el modo. */
 async function legacyOrders(businessId: string, mode: RecalcMode, from: string | null) {
   const { supabase, workspaceId } = await getContext();
-  let q = supabase.from("orders").select("id, order_date, status, order_items(id, product_id, product_name, color, size, quantity, stock_key, stock_effects)")
+  let q = supabase.from("orders").select("id, order_date, status, order_items(id, product_id, product_name, color, size, garment, quantity, stock_key, stock_effects)")
     .eq("workspace_id", workspaceId).eq("business_id", businessId).neq("status", "cancelado").order("order_date").limit(3000);
   q = mode === "pendientes" ? q.in("status", RESERVING) : q.gte("order_date", from ?? "1900-01-01");
   const { data, error } = await q;

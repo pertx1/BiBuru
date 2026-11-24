@@ -62,6 +62,13 @@ export async function saveOrder(input: OrderPayload): Promise<ActionResult> {
   if (!parsed.success) return firstError(parsed.error);
   const { supabase, workspaceId, userId } = await getContext();
   const { items, id, ...o } = parsed.data;
+  // Qué descuenta cada línea (artículo elegido o reconocido). Si falla la carga del catálogo, las líneas quedan sin vincular.
+  const link = await loadStockLinkContext(o.business_id).catch(() => null);
+  // Negocio con prendas: cada línea tiene que decir si es camiseta, sudadera u otra cosa (decide de qué prenda resta).
+  if (link?.production?.catalog.models.length) {
+    const missing = items.findIndex((i) => !i.garment);
+    if (missing >= 0) return { ok: false, error: `Marca en la línea ${missing + 1} si es camiseta, sudadera u otro.` };
+  }
   const row = {
     business_id: o.business_id, order_date: o.order_date, status: o.status,
     order_number: o.order_number ?? null, customer: o.customer ?? null, channel: o.channel ?? null, notes: o.notes ?? null,
@@ -90,14 +97,12 @@ export async function saveOrder(input: OrderPayload): Promise<ActionResult> {
     orderId = data.id;
   }
 
-  // Qué descuenta cada línea (artículo elegido o reconocido). Si falla la carga del catálogo, las líneas quedan sin vincular.
-  const link = await loadStockLinkContext(o.business_id).catch(() => null);
   const { error: itemsErr } = await supabase.from("order_items").insert(
     items.map((i) => {
       const effects = link && (!legacy || i.stock_key) ? resolveLineStock(i, link) : [];
       return {
         workspace_id: workspaceId, user_id: userId, order_id: orderId!, product_id: i.product_id ?? null,
-        product_name: i.product_name, color: i.color ?? null, size: i.size ?? null,
+        product_name: i.product_name, color: i.color ?? null, size: i.size ?? null, garment: i.garment ?? null,
         quantity: i.quantity, unit_price_cents: i.unit_price, unit_cost_cents: i.unit_cost,
         stock_key: i.stock_key ?? null, stock_effects: effects.length ? effects : null,
       };

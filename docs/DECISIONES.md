@@ -317,3 +317,10 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Archivos: se borran nada más salir bien en todas las cuentas (antes, a los 3 días). La publicación asistida los conserva para descargarlos.
 - TikTok en modo borrador (inbox) no admite título por la API: botón «Copiar texto para TikTok» y aviso al móvil al llegar a la bandeja.
 - Tope de 50 MB por archivo (límite de subida del plan gratis de Supabase); PNG se convierte a JPEG en el navegador (Instagram por API solo publica JPEG).
+
+## Camiseta o sudadera en cada línea del pedido
+- Petición: que en cada prenda haya que marcar camiseta o sudadera y que, según eso, reste de una cosa o de otra.
+- `order_items.garment` (camiseta / sudadera / otro). Obligatorio en negocios con prendas en Producción; «Otro» para lo que no es prenda (no resta prenda, sí el DTF).
+- Lo marcado manda sobre lo que se deducía del texto. La prenda fija de un diseño (p. ej. Gatazka Sudadera → sudadera negra) se respeta si es del mismo tipo; si se marca el otro tipo, se usa la prenda marcada del color del pedido.
+- Pedidos antiguos (null) siguen como antes; al editarlos se propone lo deducido y basta con confirmar.
+- Arreglado de paso: con `<form action>`, un aviso del propio formulario vaciaba los campos escritos; la comprobación va ahora en `onSubmit`.

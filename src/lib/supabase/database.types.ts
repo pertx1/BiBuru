@@ -684,13 +684,13 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "color": string | null,"created_at": string,"fts": unknown,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"stock_effects": Json | null,"stock_key": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
+                    "color": string | null,"created_at": string,"fts": unknown,"garment": string | null,"id": string,"order_id": string,"product_id": string | null,"product_name": string,"quantity": number,"size": string | null,"stock_effects": Json | null,"stock_key": string | null,"unit_cost_cents": number,"unit_price_cents": number,"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   Insert: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"garment"?: string | null,"id"?: string,"order_id": string,"product_id"?: string | null,"product_name": string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id": string
                   }
                   Update: {
-                    "color"?: string | null,"created_at"?: string,"fts"?: never,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
+                    "color"?: string | null,"created_at"?: string,"fts"?: never,"garment"?: string | null,"id"?: string,"order_id"?: string,"product_id"?: string | null,"product_name"?: string,"quantity"?: number,"size"?: string | null,"stock_effects"?: Json | null,"stock_key"?: string | null,"unit_cost_cents"?: number,"unit_price_cents"?: number,"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

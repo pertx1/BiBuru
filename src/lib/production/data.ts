@@ -49,7 +49,7 @@ async function loadOrderItems(businessId: string, statuses: string[], onlyUnlink
   const { supabase, workspaceId } = await getContext();
   const { data, error } = await supabase
     .from("orders")
-    .select("id, order_number, order_date, order_items(product_name, color, size, quantity, stock_effects)")
+    .select("id, order_number, order_date, order_items(product_name, color, size, garment, quantity, stock_effects)")
     .eq("workspace_id", workspaceId).eq("business_id", businessId).in("status", statuses)
     .order("order_date", { ascending: true }).limit(5000);
   if (error) fail("pedidos pendientes", error);
@@ -58,7 +58,7 @@ async function loadOrderItems(businessId: string, statuses: string[], onlyUnlink
 
 export async function getStockOverview(businessId: string) {
   const [base, orders] = await Promise.all([loadBase(businessId), loadOrderItems(businessId, ["sin_hacer", "sin_llegar"], true)]);
-  const pending: PendingItem[] = orders.flatMap((o) => o.order_items.map((i) => ({ product_name: i.product_name, color: i.color, size: i.size, quantity: i.quantity })));
+  const pending: PendingItem[] = orders.flatMap((o) => o.order_items.map((i) => ({ product_name: i.product_name, color: i.color, size: i.size, garment: i.garment, quantity: i.quantity })));
   return { ...computeStockOverview(base.rows, pending, base.catalog, base.rules), catalog: base.catalog };
 }
 
@@ -73,7 +73,8 @@ export async function getPrintBagData(businessId: string) {
   ]);
   if (checks.error) fail("bolsa", checks.error);
   const bagOrders: BagOrder[] = orders.flatMap((o) =>
-    o.order_items.map((i) => ({ id: o.id, orderNumber: o.order_number, model: i.product_name, color: i.color, size: i.size, quantity: i.quantity })),
+        // Sudadera marcada: la bolsa la agrupa como «sudadera <color>» (si no, sería «camiseta <color>»).
+    o.order_items.map((i) => ({ id: o.id, orderNumber: o.order_number, model: i.product_name, color: i.garment === "sudadera" && i.color && !/sudadera/i.test(i.color) ? `Sudadera ${i.color.trim().toLowerCase()}` : i.color, size: i.size, quantity: i.quantity })),
   );
   const bag = buildPrintBag(bagOrders, base.rules, base.catalog);
   const byKey = new Map(checks.data.map((c) => [c.key, c.quantity]));

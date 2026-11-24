@@ -74,3 +74,19 @@ describe("DTF Eguzkilore elegido a mano con prenda «Sudadera» (del color del p
       .toEqual(["dtf|Eguzkilore|UNICO", "tshirt|Sudadera blanca|M"]);
   });
 });
+
+describe("DTF elegido a mano con camiseta o sudadera marcado", () => {
+  const prod = {
+    catalog: { models: ["Negra", "Sudadera negra"], designs: [{ name: "Ola", kind: "standalone" as const }] },
+    rules: { shirt: [], design: [] },
+    rows: { tshirts: ["Negra", "Sudadera negra"].map((model) => ({ model, size: "M" })), dtfs: [{ name: "Ola", variant: "UNICO" as const }] },
+  };
+  const c: StockLinkContext = { production: { catalog: prod.catalog, rules: prod.rules }, items: [], options: stockOptions(prod, []) };
+  const keys = (garment: string | null) => resolveLineStock({ stock_key: "dtf|Ola|UNICO", product_name: "Ola", color: "Negra", size: "M", quantity: 1, garment }, c).map((e) => e.key);
+  it("resta también la prenda marcada; sin marcar, solo el DTF", () => {
+    expect(keys("sudadera")).toEqual(["dtf|Ola|UNICO", "tshirt|Sudadera negra|M"]);
+    expect(keys("camiseta")).toEqual(["dtf|Ola|UNICO", "tshirt|Negra|M"]);
+    expect(keys("otro")).toEqual(["dtf|Ola|UNICO"]);
+    expect(keys(null)).toEqual(["dtf|Ola|UNICO"]);
+  });
+});
