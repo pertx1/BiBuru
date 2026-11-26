@@ -2,7 +2,11 @@ import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { handleRpc } from "./protocol";
+import { MCP_READ_TOOLS } from "./read-tools";
 import { MCP_INSTRUCTIONS, MCP_TOOLS, mcpContext } from "./tools";
+
+/** Todas las herramientas: las de lectura (verlo todo) y las que crean o cambian (tareas, notas, proyectos…). */
+const ALL_TOOLS = [...MCP_TOOLS, ...MCP_READ_TOOLS];
 
 /**
  * Punto de entrada HTTP del conector de Claude (MCP, «Streamable HTTP» sin estado). Público para el proxy de
@@ -24,7 +28,7 @@ export async function mcpPost(request: NextRequest, pathToken: string | null): P
   try { body = await request.json(); } catch { return json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "JSON no válido" } }, 400); }
   const ctx = await mcpContext(createAdminClient(), token, origin(request), request.headers.get("user-agent")).catch((e) => { console.error("[mcp] clave:", e instanceof Error ? e.message : e); return null; });
   if (!ctx) return json({ jsonrpc: "2.0", id: null, error: { code: -32001, message: "Clave de BiBuru no válida: crea otra en BiBuru → Ajustes → Conectar Claude." } }, 401);
-  const out = await handleRpc(body, MCP_TOOLS, ctx, MCP_INSTRUCTIONS, (e) => console.error("[mcp] herramienta:", e instanceof Error ? e.message : e));
+  const out = await handleRpc(body, ALL_TOOLS, ctx, MCP_INSTRUCTIONS, (e) => console.error("[mcp] herramienta:", e instanceof Error ? e.message : e));
   return out === null ? new NextResponse(null, { status: 202 }) : json(out);
 }
 

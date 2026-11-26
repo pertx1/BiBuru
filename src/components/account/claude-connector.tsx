@@ -40,7 +40,7 @@ export function ClaudeConnector({ status }: { status: { createdAt: string; lastU
 
   return (
     <div className="flex flex-col gap-3 text-sm">
-      <p className="text-muted">Conecta BiBuru a Claude (web, app del móvil y escritorio) y a Claude Code. Desde cualquier chat podrás decirle «apúntame…», «¿qué tengo hoy?», «crea el proyecto…», «guarda esta nota», y lo que se quede a medias aparecerá aquí en el proyecto <strong>Pendiente de Claude</strong> (Proyectos y Tareas → Bandeja).</p>
+      <p className="text-muted">Conecta BiBuru a Claude (web, app del móvil y escritorio) y a Claude Code. Claude podrá <strong>verlo todo</strong>: tus negocios y sus cifras, pedidos, quién te debe, gastos, stock, calendario, objetivos, redes, vídeos guardados, notas, noticias y revisiones. Pregúntale «¿cómo va Akerra este mes?», «¿quién me debe?», «¿qué tengo que pedir?»; y dile «apúntame…», «crea el proyecto…» o «guarda esta nota». Lo que se quede a medias aparecerá aquí en el proyecto <strong>Pendiente de Claude</strong> (Proyectos y Tareas → Bandeja).</p>
       {status && !url && <p className="text-muted">Conectado desde el {fmt(status.createdAt)}{status.lastUsedAt ? ` · último uso: ${fmt(status.lastUsedAt)}${status.lastClient ? ` (${status.lastClient.slice(0, 40)})` : ""}` : " · aún no se ha usado"}.</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="button" disabled={pending} onClick={create}>{status ? "Generar dirección nueva" : "Generar dirección para Claude"}</Button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDay, parseTime, pendingNotes, taskLine } from "./format";
+import { changeText, parseDay, parseTime, pendingNotes, periodRange, previousRange, taskLine } from "./format";
 
 const today = "2026-10-29"; // jueves
 
@@ -38,5 +38,24 @@ describe("pendientes y listas", () => {
       .toBe("- [ ] A · ATRASADA 28/10/2026 10:00 · prioridad alta · proyecto: IA › Claude · id: 1");
     expect(taskLine({ id: "2", title: "B", due_date: null, due_time: null, priority: 2, status: "done" }, today)).toBe("- [x] B · sin fecha · id: 2");
     expect(taskLine({ id: "3", title: "C", due_date: today, due_time: null, priority: 2, status: "open" }, today)).toBe("- [ ] C · hoy · id: 3");
+  });
+});
+
+describe("periodos para las consultas", () => {
+  it("por nombre (semana desde el lunes)", () => {
+    expect(periodRange({ periodo: "semana" }, today)).toEqual({ from: "2026-10-26", to: today, label: "esta semana" });
+    expect(periodRange({ periodo: "mes_pasado" }, today)).toEqual({ from: "2026-09-01", to: "2026-09-30", label: "el mes pasado" });
+    expect(periodRange({}, today)?.from).toBe("2026-10-01");
+    expect(periodRange({ periodo: "año_pasado" }, today)).toMatchObject({ from: "2025-01-01", to: "2025-12-31" });
+  });
+  it("desde/hasta en lenguaje normal, y el anterior de la misma duración", () => {
+    expect(periodRange({ desde: "01/10/2026", hasta: "hoy" }, today)).toMatchObject({ from: "2026-10-01", to: today });
+    expect(periodRange({ desde: "cuando sea" }, today)).toBeNull();
+    expect(previousRange({ from: "2026-10-01", to: "2026-10-31", label: "" })).toMatchObject({ from: "2026-08-31", to: "2026-09-30" });
+  });
+  it("variación", () => {
+    expect(changeText(150, 100)).toBe("+50 %");
+    expect(changeText(50, 100)).toBe("−50 %");
+    expect(changeText(5, 0)).toBe("nuevo");
   });
 });

@@ -2,7 +2,7 @@
  * Utilidades puras del conector de Claude (con tests): fechas dichas en lenguaje normal, prioridad, el texto de
  * «lo que quedó a medias» y el formato de las listas que lee Claude.
  */
-import { addDays, formatDate, isValidISO, parseDateInput } from "@/lib/dates";
+import { addDays, addMonths, diffDays, endOfMonth, formatDate, isValidISO, parseDateInput, startOfMonth, startOfWeek } from "@/lib/dates";
 import { normalizeText } from "@/lib/production/text";
 
 export const PENDING_CATEGORY = "Pendiente de Claude";
@@ -58,4 +58,46 @@ export function taskLine(t: TaskLine, today: string): string {
   if (t.business) bits.push(`negocio: ${t.business}`);
   bits.push(`id: ${t.id}`);
   return bits.join(" · ");
+}
+
+export const PERIODS = ["hoy", "ayer", "semana", "semana_pasada", "mes", "mes_pasado", "ultimos_30", "trimestre", "año", "año_pasado", "todo"] as const;
+export type PeriodName = (typeof PERIODS)[number];
+export type Range = { from: string; to: string; label: string };
+
+/** Periodo por nombre (semana desde el lunes) o desde/hasta en cualquier formato que entienda `parseDay`. */
+export function periodRange(o: { periodo?: PeriodName; desde?: string | null; hasta?: string | null }, today: string, fallback: PeriodName = "mes"): Range | null {
+  if (o.desde || o.hasta) {
+    const from = o.desde ? parseDay(o.desde, today) : "2000-01-01";
+    const to = o.hasta ? parseDay(o.hasta, today) : today;
+    if (!from || !to) return null;
+    return from <= to ? { from, to, label: `del ${formatDate(from)} al ${formatDate(to)}` } : { from: to, to: from, label: `del ${formatDate(to)} al ${formatDate(from)}` };
+  }
+  const week = startOfWeek(today), month = startOfMonth(today), year = `${today.slice(0, 4)}-01-01`;
+  switch (o.periodo ?? fallback) {
+    case "hoy": return { from: today, to: today, label: "hoy" };
+    case "ayer": { const d = addDays(today, -1); return { from: d, to: d, label: "ayer" }; }
+    case "semana": return { from: week, to: today, label: "esta semana" };
+    case "semana_pasada": return { from: addDays(week, -7), to: addDays(week, -1), label: "la semana pasada" };
+    case "mes": return { from: month, to: today, label: "este mes" };
+    case "mes_pasado": { const f = addMonths(month, -1); return { from: f, to: endOfMonth(f), label: "el mes pasado" }; }
+    case "ultimos_30": return { from: addDays(today, -29), to: today, label: "los últimos 30 días" };
+    case "trimestre": return { from: addMonths(month, -2), to: today, label: "los últimos 3 meses" };
+    case "año": return { from: year, to: today, label: "este año" };
+    case "año_pasado": { const y = String(Number(today.slice(0, 4)) - 1); return { from: `${y}-01-01`, to: `${y}-12-31`, label: `el año ${y}` }; }
+    case "todo": return { from: "2000-01-01", to: today, label: "desde siempre" };
+  }
+}
+
+/** Periodo anterior de la misma duración (para comparar). */
+export function previousRange(r: Range): Range {
+  const days = diffDays(r.from, r.to) + 1;
+  const to = addDays(r.from, -1), from = addDays(to, -(days - 1));
+  return { from, to, label: "el periodo anterior" };
+}
+
+/** «+12 %» / «−3 %» / «nuevo» frente al periodo anterior. */
+export function changeText(now: number, before: number): string {
+  if (!before) return now ? "nuevo" : "=";
+  const pct = Math.round(((now - before) / Math.abs(before)) * 100);
+  return `${pct > 0 ? "+" : pct < 0 ? "−" : ""}${Math.abs(pct)} %`;
 }

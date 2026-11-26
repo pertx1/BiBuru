@@ -324,3 +324,10 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
 - Lo marcado manda sobre lo que se deducía del texto. La prenda fija de un diseño (p. ej. Gatazka Sudadera → sudadera negra) se respeta si es del mismo tipo; si se marca el otro tipo, se usa la prenda marcada del color del pedido.
 - Pedidos antiguos (null) siguen como antes; al editarlos se propone lo deducido y basta con confirmar.
 - Arreglado de paso: con `<form action>`, un aviso del propio formulario vaciaba los campos escritos; la comprobación va ahora en `onSubmit`.
+
+## Conector de Claude: verlo todo
+- Petición: un conector para Claude «que pueda ver todo».
+- Se amplía el conector que ya había (misma dirección, nada que reconfigurar) con 16 herramientas de solo lectura: negocios, resumen con comparación,
+  ventas mes a mes, pedidos, pedido entero, quién me debe, gastos, stock, calendario, objetivos, redes, vídeos, notas, noticias y revisiones.
+- Antes no se exponían pedidos ni gastos; ahora se LEEN, pero crearlos o cambiarlos sigue necesitando la app (confirmación humana, como con la IA).
+- Todo filtrado por el espacio de la clave (probado con la clave de otra persona en `scripts/e2e/mcp-read.mjs`).

@@ -37,23 +37,24 @@ export const MCP_INSTRUCTIONS = [
   "Cuando la persona te pida apuntar, recordar o planificar algo, usa crear_tarea (o crear_nota para ideas y apuntes largos).",
   "MUY IMPORTANTE: si en esta conversación queda trabajo a medias (la persona se va, se corta, se deja para luego, o terminas con pasos pendientes), llama a apuntar_pendiente ANTES de despedirte, con qué falta exactamente y el contexto necesario para retomarlo. Si sabes de qué proyecto es, pásalo.",
   "Para retomar algo, mira primero listar_tareas con proyecto «Pendiente de Claude» o ver_proyecto.",
+  "Puedes ver TODO BiBuru: negocios y sus cifras (listar_negocios, resumen_negocio, estadisticas_mensuales), pedidos (listar_pedidos, ver_pedido, quien_me_debe), gastos, stock, calendario, objetivos, redes, vídeos guardados, notas, noticias y revisiones. Consulta antes de responder sobre los negocios en vez de suponer; las cifras están en euros.",
   "Los proyectos son categorías con subcategorías; se escriben con ruta: «IA › Claude».",
 ].join("\n");
 
 const actor = (c: McpCtx): Actor => ({ supabase: c.db, workspaceId: c.workspaceId, userId: c.userId, timezone: c.timezone });
 const taskCtx = (c: McpCtx): TaskCtx => ({ supabase: c.db, workspaceId: c.workspaceId, userId: c.userId, timezone: c.timezone });
-const today = (c: McpCtx) => nowLocal(new Date(), c.timezone).date;
-const link = (c: McpCtx, path: string) => `${c.origin}${path}`;
+export const today = (c: McpCtx) => nowLocal(new Date(), c.timezone).date;
+export const link = (c: McpCtx, path: string) => `${c.origin}${path}`;
 
 type Cat = CatRow & { description: string | null };
-async function categories(c: McpCtx): Promise<Cat[]> {
+export async function categories(c: McpCtx): Promise<Cat[]> {
   const { data } = await c.db.from("video_categories").select("id, name, parent_id, pinned, description").eq("workspace_id", c.workspaceId);
   return data ?? [];
 }
-const pathOf = (cats: Cat[], id: string | null) => (id ? flatten(buildTree(cats)).find((n) => n.id === id)?.path ?? null : null);
+export const pathOf = (cats: Cat[], id: string | null) => (id ? flatten(buildTree(cats)).find((n) => n.id === id)?.path ?? null : null);
 
 /** Proyecto existente por ruta o nombre único; null si no existe. */
-function findCategory(cats: Cat[], name: string): Cat | null {
+export function findCategory(cats: Cat[], name: string): Cat | null {
   const r = resolveProposed(name, cats);
   return r.id ? cats.find((x) => x.id === r.id) ?? null : null;
 }
@@ -92,7 +93,7 @@ async function ensureCategory(c: McpCtx, raw: string, o: { pinned?: boolean; des
   return { id: parent!, path: pathOf(cats, parent) ?? raw, created };
 }
 
-const dayArg = (c: McpCtx, raw: string | undefined): string | null | undefined => {
+export const dayArg = (c: McpCtx, raw: string | undefined): string | null | undefined => {
   if (raw === undefined) return undefined;
   if (/^(ninguna|sin fecha|-|)$/i.test(raw.trim())) return null;
   const d = parseDay(raw, today(c));
@@ -106,7 +107,7 @@ const timeArg = (raw: string | undefined): string | null | undefined => {
   if (!t) throw new ToolError(`No entiendo la hora «${raw}». Usa 09:30.`);
   return t;
 };
-async function businessArg(c: McpCtx, raw: string | undefined): Promise<string | null | undefined> {
+export async function businessArg(c: McpCtx, raw: string | undefined): Promise<string | null | undefined> {
   if (raw === undefined) return undefined;
   if (/^(ninguno|-|)$/i.test(raw.trim())) return null;
   const b = await resolveBusiness(actor(c), raw);
