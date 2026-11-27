@@ -20,16 +20,28 @@ import { hashMcpToken, MCP_TOKEN_RE } from "./token";
 export type McpCtx = { db: AdminClient; workspaceId: string; userId: string; timezone: string; origin: string };
 
 
-/** Clave → contexto (null = no vale). Apunta el último uso y el cliente («claude-ai», «claude-code»…). */
-export async function mcpContext(db: AdminClient, token: string, origin: string, client: string | null): Promise<McpCtx | null> {
-  if (!MCP_TOKEN_RE.test(token)) return null;
-  const { data: t } = await db.from("mcp_tokens").select("id, user_id, workspace_id").eq("token_hash", hashMcpToken(token)).maybeSingle();
-  if (!t) return null;
-  const [{ data: p }] = await Promise.all([
-    db.from("profiles").select("timezone").eq("user_id", t.user_id).maybeSingle(),
-    db.from("mcp_tokens").update({ last_used_at: new Date().toISOString(), ...(client ? { last_client: client.slice(0, 120) } : {}) }).eq("id", t.id),
-  ]);
-  return { db, workspaceId: t.workspace_id, userId: t.user_id, timezone: p?.timezone ?? "Europe/Madrid", origin };
+/**
+ * Clave → contexto («invalid» = la clave no existe; «unavailable» = la base de datos no responde ahora). La clave se comprueba en cada llamada (desconectar es inmediato); la zona horaria
+ * de la persona se recuerda 10 min en la instancia. El último uso se apunta después de responder (no hace esperar).
+ */
+const tzCache = new Map<string, { at: number; tz: string }>();
+export async function mcpContext(db: AdminClient, token: string, origin: string, client: string | null, later: (fn: () => Promise<unknown>) => void = (fn) => void fn()): Promise<McpCtx | "invalid" | "unavailable"> {
+  if (!MCP_TOKEN_RE.test(token)) return "invalid";
+  const lookup = () => db.from("mcp_tokens").select("id, user_id, workspace_id").eq("token_hash", hashMcpToken(token)).maybeSingle();
+  // Un fallo momentáneo de la base de datos NO es «clave no válida»: con un 401, Claude da el conector por desconectado.
+  let r = await lookup();
+  if (r.error) { await new Promise((ok) => setTimeout(ok, 300)); r = await lookup(); }
+  if (r.error) { console.error("[mcp] clave (base de datos):", r.error.message); return "unavailable"; }
+  const t = r.data;
+  if (!t) return "invalid";
+  let tz = tzCache.get(t.user_id);
+  if (!tz || Date.now() - tz.at > 600_000) {
+    const { data: p } = await db.from("profiles").select("timezone").eq("user_id", t.user_id).maybeSingle();
+    tz = { at: Date.now(), tz: p?.timezone ?? "Europe/Madrid" };
+    tzCache.set(t.user_id, tz);
+  }
+  later(() => Promise.resolve(db.from("mcp_tokens").update({ last_used_at: new Date().toISOString(), ...(client ? { last_client: client.slice(0, 120) } : {}) }).eq("id", t.id)));
+  return { db, workspaceId: t.workspace_id, userId: t.user_id, timezone: tz.tz, origin };
 }
 
 export const MCP_INSTRUCTIONS = [

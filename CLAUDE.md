@@ -283,5 +283,9 @@ Antes de usar una API de Next lee `node_modules/next/dist/docs/` (ver AGENTS.md)
 - «Verlo todo» (solo lectura, `src/lib/mcp/read-tools.ts`, `MCP_READ_TOOLS` se suman en `http.ts`): negocios, `resumen_negocio` (stats_* con periodo y comparación), mes a mes,
   pedidos (filtros, `ver_pedido`, `quien_me_debe`), gastos, stock (a 0 o bajo mínimo = PEDIR), calendario (eventos + tareas + publicaciones), objetivos (progreso en vivo),
   redes, vídeos, notas, noticias y revisiones. Periodos con `periodRange`/`previousRange` (puros, en `format.ts`). Siguen sin crear ni cambiar pedidos ni gastos.
+- Estabilidad: solo una clave que NO existe da 401 (Claude lo toma como desconexión). Fallo de la base de datos al comprobarla = 1 reintento y, si sigue,
+  se responde igual (`initialize`/`tools/list` sin base de datos) y las herramientas devuelven «no responde, reintenta» (`ctx` null). Nunca HTML de error: siempre JSON-RPC.
+  La zona horaria se recuerda 10 min; el último uso se apunta con `after()`.
+- Región: `vercel.json` → `regions: ["cdg1"]` (París), la misma que el Supabase de la integración (`store … metadata.region`). Antes iad1: cada consulta cruzaba el Atlántico.
 - Proyectos por ruta («IA › Claude»): `ensureCategory` crea lo que falte. Añadir una herramienta = `tool({...})` con esquema Zod en `MCP_TOOLS`.
 - Categorías vacías: `deleteEmptyCategories` (sin fijar, sin descripción, >24 h, sin vídeos/notas/tareas/hijas) tras reordenar y con «Borrar vacías».

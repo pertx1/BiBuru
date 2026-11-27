@@ -1,5 +1,5 @@
 import "server-only";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { handleRpc } from "./protocol";
 import { MCP_READ_TOOLS } from "./read-tools";
@@ -26,10 +26,19 @@ export async function mcpPost(request: NextRequest, pathToken: string | null): P
   const token = pathToken ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim() ?? "";
   let body: unknown;
   try { body = await request.json(); } catch { return json({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "JSON no válido" } }, 400); }
-  const ctx = await mcpContext(createAdminClient(), token, origin(request), request.headers.get("user-agent")).catch((e) => { console.error("[mcp] clave:", e instanceof Error ? e.message : e); return null; });
-  if (!ctx) return json({ jsonrpc: "2.0", id: null, error: { code: -32001, message: "Clave de BiBuru no válida: crea otra en BiBuru → Ajustes → Conectar Claude." } }, 401);
-  const out = await handleRpc(body, ALL_TOOLS, ctx, MCP_INSTRUCTIONS, (e) => console.error("[mcp] herramienta:", e instanceof Error ? e.message : e));
-  return out === null ? new NextResponse(null, { status: 202 }) : json(out);
+  try {
+    const ctx = await mcpContext(createAdminClient(), token, origin(request), request.headers.get("user-agent"), (fn) => after(fn))
+      .catch((e) => { console.error("[mcp] clave:", e instanceof Error ? e.message : e); return "unavailable" as const; });
+    // Solo una clave que no existe da 401 (Claude lo toma como «hay que volver a conectar»).
+    if (ctx === "invalid") return json({ jsonrpc: "2.0", id: null, error: { code: -32001, message: "Clave de BiBuru no válida: crea otra en BiBuru → Ajustes → Conectar Claude." } }, 401);
+    const out = await handleRpc(body, ALL_TOOLS, ctx === "unavailable" ? null : ctx, MCP_INSTRUCTIONS, (e) => console.error("[mcp] herramienta:", e instanceof Error ? e.message : e));
+    return out === null ? new NextResponse(null, { status: 202 }) : json(out);
+  } catch (e) {
+    // Nunca una página de error: siempre JSON-RPC, para que Claude no corte la conexión.
+    console.error("[mcp]", e instanceof Error ? e.message : e);
+    const id = body && typeof body === "object" && !Array.isArray(body) && "id" in body ? (body as { id: unknown }).id : null;
+    return json({ jsonrpc: "2.0", id: typeof id === "string" || typeof id === "number" ? id : null, error: { code: -32603, message: "Error interno de BiBuru. Vuelve a intentarlo." } });
+  }
 }
 
 /** Sin flujo SSE del servidor ni sesiones: GET/DELETE no se usan (lo indica la especificación con 405). */

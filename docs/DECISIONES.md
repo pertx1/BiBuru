@@ -331,3 +331,10 @@ Cada línea: qué decidí y por qué. Si quieres cambiar alguna, dímelo y lo ca
   ventas mes a mes, pedidos, pedido entero, quién me debe, gastos, stock, calendario, objetivos, redes, vídeos, notas, noticias y revisiones.
 - Antes no se exponían pedidos ni gastos; ahora se LEEN, pero crearlos o cambiarlos sigue necesitando la app (confirmación humana, como con la IA).
 - Todo filtrado por el espacio de la clave (probado con la clave de otra persona en `scripts/e2e/mcp-read.mjs`).
+
+## Conector de Claude: «va mal, se desconecta»
+- Causa 1: cualquier fallo momentáneo de la base de datos al comprobar la clave se respondía como 401 «clave no válida», y claude.ai da
+  el conector por desconectado con un 401. Ahora solo da 401 una clave que no existe; si la base de datos falla, 1 reintento y respuesta normal
+  (las herramientas dicen «no responde, reintenta»). Nunca páginas de error HTML.
+- Causa 2: las funciones de Vercel corrían en Washington (iad1) y el Supabase está en París (cdg1): ~0,3 s por consulta medidos desde Vercel.
+  `vercel.json` fija la región cdg1 para toda la app (Hobby permite una región). También acelera el resto de BiBuru.

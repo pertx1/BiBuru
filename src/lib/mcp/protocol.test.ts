@@ -58,3 +58,14 @@ describe("servidor MCP", () => {
     expect(await call([{ jsonrpc: "2.0", id: 1, method: "ping" }, { jsonrpc: "2.0", method: "notifications/x" }])).toEqual([{ jsonrpc: "2.0", id: 1, result: {} }]);
   });
 });
+
+describe("sin base de datos (ctx null)", () => {
+  it("responde a initialize y tools/list; las herramientas devuelven un error que se puede reintentar", async () => {
+    const init = await handleRpc({ jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, tools, null, "x");
+    expect(init).toMatchObject({ result: { serverInfo: { name: "BiBuru" } } });
+    expect(await handleRpc({ jsonrpc: "2.0", id: 2, method: "tools/list" }, tools, null, "x")).toMatchObject({ result: { tools: expect.any(Array) } });
+    expect(await handleRpc({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "eco", arguments: { titulo: "a" } } }, tools, null, "x"))
+      .toMatchObject({ result: { isError: true, content: [{ text: expect.stringMatching(/no responde/) }] } });
+    expect(await handleRpc({ jsonrpc: "2.0", id: 4, method: "resources/templates/list" }, tools, null, "x")).toEqual({ jsonrpc: "2.0", id: 4, result: { resourceTemplates: [] } });
+  });
+});

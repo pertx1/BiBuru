@@ -281,8 +281,7 @@ export const MCP_READ_TOOLS: McpTool<McpCtx>[] = [
         c.db.from("tasks").select("goal_id, status").eq("workspace_id", c.workspaceId).in("goal_id", ids),
         businesses(c),
       ]);
-      const out = [];
-      for (const g of goals) {
+      const out = await Promise.all(goals.map(async (g) => {
         const live: { metricCents?: number; tasksDone?: number; tasksTotal?: number; milestonesDone?: number; milestonesTotal?: number } = {};
         if (g.auto_source === "income" || g.auto_source === "profit") {
           const t = await totals(c, { from: g.period_start ?? g.created_at.slice(0, 10), to: today(c), label: "" }, g.business_id);
@@ -291,8 +290,8 @@ export const MCP_READ_TOOLS: McpTool<McpCtx>[] = [
         const mine = (tk.data ?? []).filter((x) => x.goal_id === g.id), mm = (ms.data ?? []).filter((x) => x.goal_id === g.id);
         Object.assign(live, { tasksTotal: mine.length, tasksDone: mine.filter((x) => x.status === "done").length, milestonesTotal: mm.length, milestonesDone: mm.filter((x) => x.done).length });
         const p = progressPct({ measure_type: g.measure_type as GoalMeasure, target_value: g.target_value, current_value: g.current_value, auto_source: g.auto_source as GoalAuto }, live);
-        out.push(`- ${g.title}${g.business_id ? ` (${bizName(list, g.business_id)})` : ""}: ${formatGoalValue(g.measure_type as GoalMeasure, p.value)} de ${formatGoalValue(g.measure_type as GoalMeasure, p.target)} · ${p.pct} %${p.reached ? " ✅" : ""}${g.deadline ? ` · hasta el ${formatDate(g.deadline)}` : ""}${g.status !== "active" ? ` · ${g.status}` : ""}`);
-      }
+        return `- ${g.title}${g.business_id ? ` (${bizName(list, g.business_id)})` : ""}: ${formatGoalValue(g.measure_type as GoalMeasure, p.value)} de ${formatGoalValue(g.measure_type as GoalMeasure, p.target)} · ${p.pct} %${p.reached ? " ✅" : ""}${g.deadline ? ` · hasta el ${formatDate(g.deadline)}` : ""}${g.status !== "active" ? ` · ${g.status}` : ""}`;
+      }));
       return out.join("\n");
     },
   }),

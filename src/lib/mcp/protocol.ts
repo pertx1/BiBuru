@@ -46,7 +46,7 @@ export function toolList<C>(tools: McpTool<C>[]) {
   });
 }
 
-async function handleOne<C>(msg: Rpc, tools: McpTool<C>[], ctx: C, instructions: string, log: (e: unknown) => void): Promise<RpcResponse | null> {
+async function handleOne<C>(msg: Rpc, tools: McpTool<C>[], ctx: C | null, instructions: string, log: (e: unknown) => void): Promise<RpcResponse | null> {
   const id: Id = typeof msg.id === "string" || typeof msg.id === "number" ? msg.id : null;
   const isNotification = !("id" in msg) || msg.id === undefined;
   if (msg.jsonrpc !== "2.0" || typeof msg.method !== "string") return isNotification ? null : err(id, -32600, "Petición no válida");
@@ -61,10 +61,13 @@ async function handleOne<C>(msg: Rpc, tools: McpTool<C>[], ctx: C, instructions:
     case "ping": return ok(id, {});
     case "tools/list": return ok(id, { tools: toolList(tools) });
     case "resources/list": return ok(id, { resources: [] });
+    case "resources/templates/list": return ok(id, { resourceTemplates: [] });
     case "prompts/list": return ok(id, { prompts: [] });
     case "tools/call": {
       const t = tools.find((x) => x.name === params.name);
       if (!t) return err(id, -32602, `Herramienta desconocida: ${String(params.name)}`);
+      // Sin contexto (la base de datos no respondió): la conexión sigue viva y Claude puede reintentar.
+      if (ctx === null) return ok(id, { content: [{ type: "text", text: "BiBuru no responde ahora mismo. Vuelve a intentarlo en unos segundos." }], isError: true });
       const parsed = t.input.safeParse(params.arguments ?? {});
       if (!parsed.success) return ok(id, { content: [{ type: "text", text: `Datos no válidos — ${zodMessage(parsed.error)}` }], isError: true });
       try {
@@ -81,7 +84,7 @@ async function handleOne<C>(msg: Rpc, tools: McpTool<C>[], ctx: C, instructions:
 }
 
 /** Procesa un mensaje o un lote. `null` = solo notificaciones (se responde 202 sin cuerpo). */
-export async function handleRpc<C>(body: unknown, tools: McpTool<C>[], ctx: C, instructions: string, log: (e: unknown) => void = () => {}): Promise<RpcResponse | RpcResponse[] | null> {
+export async function handleRpc<C>(body: unknown, tools: McpTool<C>[], ctx: C | null, instructions: string, log: (e: unknown) => void = () => {}): Promise<RpcResponse | RpcResponse[] | null> {
   if (Array.isArray(body)) {
     if (!body.length) return err(null, -32600, "Lote vacío");
     const out = (await Promise.all(body.map((m) => handleOne(m as Rpc, tools, ctx, instructions, log)))).filter((r): r is RpcResponse => !!r);
